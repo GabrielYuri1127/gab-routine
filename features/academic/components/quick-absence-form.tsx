@@ -7,18 +7,27 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useRoutineData } from "@/features/data/routine-store";
 import { calculateAttendanceSummary } from "@/lib/academic-rules/attendance";
-import { getTodayInAppTimeZone } from "@/lib/date";
+import { getRecentClassDates, isClassDate } from "@/lib/academic-rules/schedule";
+import { formatShortDate, getTodayInAppTimeZone } from "@/lib/date";
+import { cn } from "@/lib/utils";
 import type { AttendanceRecord } from "@/types/academic";
 
 export function QuickAbsenceForm() {
   const { data, addAttendanceRecord, removeAttendanceRecord } = useRoutineData();
   const subjects = data.subjects;
+  const today = getTodayInAppTimeZone();
   const [subjectId, setSubjectId] = useState(subjects[0]?.id ?? "");
-  const [toast, setToast] = useState<{ subjectName: string; quantity: number; recordId: string } | null>(null);
+  const [date, setDate] = useState(today);
+  const [notes, setNotes] = useState("");
+  const [toast, setToast] = useState<{ subjectName: string; quantity: number; recordId: string; date: string } | null>(null);
   const selectedSubject = subjects.find((subject) => subject.id === subjectId) ?? subjects[0];
   const summary = useMemo(
     () => selectedSubject ? calculateAttendanceSummary(selectedSubject.attendance, selectedSubject.rules, selectedSubject.name) : null,
     [selectedSubject]
+  );
+  const recentClassDates = useMemo(
+    () => selectedSubject ? getRecentClassDates(selectedSubject, today, 50).slice(0, 8) : [],
+    [selectedSubject, today]
   );
 
   useEffect(() => {
@@ -28,20 +37,22 @@ export function QuickAbsenceForm() {
   }, [subjectId, subjects]);
 
   function registerAbsence(quantity: number) {
-    if (!selectedSubject) {
+    if (!selectedSubject || !date) {
       return;
     }
 
     const record: AttendanceRecord = {
-      id: `${selectedSubject.id}-quick-${Date.now()}`,
+      id: `${selectedSubject.id}-quick-${date}-${Date.now()}`,
       subjectId: selectedSubject.id,
-      date: getTodayInAppTimeZone(),
+      date,
       quantity,
-      status: "absence"
+      status: "absence",
+      notes: notes.trim() || undefined
     };
 
     addAttendanceRecord(selectedSubject.id, record);
-    setToast({ subjectName: selectedSubject.name, quantity, recordId: record.id });
+    setToast({ subjectName: selectedSubject.name, quantity, recordId: record.id, date });
+    setNotes("");
   }
 
   function undo() {
@@ -61,24 +72,36 @@ export function QuickAbsenceForm() {
       <header>
         <p className="text-sm font-medium text-mint">Acao rapida</p>
         <h1 className="mt-1 text-2xl font-semibold text-ink">Registrar falta</h1>
-        <p className="mt-2 text-sm text-slate-600">Escolha a disciplina e toque na quantidade. Sem formulario comprido.</p>
+        <p className="mt-2 text-sm text-slate-600">Escolha a disciplina, ajuste a data e toque na quantidade.</p>
       </header>
 
       <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
-        <label>
-          <span className="text-sm font-medium text-slate-700">Disciplina</span>
-          <select
-            className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
-            onChange={(event) => setSubjectId(event.target.value)}
-            value={subjectId}
-          >
-            {subjects.map((subject) => (
-              <option key={subject.id} value={subject.id}>
-                {subject.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label>
+            <span className="text-sm font-medium text-slate-700">Disciplina</span>
+            <select
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
+              onChange={(event) => setSubjectId(event.target.value)}
+              value={subjectId}
+            >
+              {subjects.map((subject) => (
+                <option key={subject.id} value={subject.id}>
+                  {subject.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span className="text-sm font-medium text-slate-700">Data da aula</span>
+            <input
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
+              max={today}
+              onChange={(event) => setDate(event.target.value)}
+              type="date"
+              value={date}
+            />
+          </label>
+        </div>
 
         {selectedSubject && summary ? (
           <div className="mt-4 grid grid-cols-3 gap-2">
@@ -87,6 +110,41 @@ export function QuickAbsenceForm() {
             <Mini label="Restam" value={`${summary.remainingAbsences}`} />
           </div>
         ) : null}
+
+        {recentClassDates.length ? (
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+            {recentClassDates.map((option) => (
+              <button
+                className={cn(
+                  "shrink-0 rounded-lg border border-line bg-white px-3 py-2 text-left text-xs text-slate-600",
+                  option.date === date && "border-ink bg-ink text-white"
+                )}
+                key={option.date}
+                onClick={() => setDate(option.date)}
+                type="button"
+              >
+                <span className="block font-semibold">{option.label}</span>
+                <span className="block opacity-75">{option.alreadyRegistered ? "ja tem" : `${option.classesQuantity} aulas`}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        <label className="mt-4 block">
+          <span className="text-sm font-medium text-slate-700">Observacao</span>
+          <input
+            className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+            onChange={(event) => setNotes(event.target.value)}
+            placeholder="Ex.: aula de semana passada"
+            value={notes}
+          />
+        </label>
+
+        <p className="mt-3 text-xs text-slate-500">
+          {selectedSubject && isClassDate(selectedSubject, date)
+            ? "Essa data bate com seu horario de aula cadastrado."
+            : "Voce tambem pode registrar uma data manual para ajustes."}
+        </p>
 
         <div className="mt-5 grid grid-cols-4 gap-2">
           {[1, 2, 3].map((quantity) => (
@@ -111,7 +169,8 @@ export function QuickAbsenceForm() {
         <div className="rounded-lg bg-ink px-4 py-3 text-white shadow-soft">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm">
-              {toast.quantity} {toast.quantity === 1 ? "falta registrada" : "faltas registradas"} em {toast.subjectName}.
+              {toast.quantity} {toast.quantity === 1 ? "falta registrada" : "faltas registradas"} em {toast.subjectName} no dia{" "}
+              {formatShortDate(toast.date)}.
             </p>
             <button className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium hover:bg-white/10" onClick={undo} type="button">
               <RotateCcw aria-hidden className="h-4 w-4" />

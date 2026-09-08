@@ -40,6 +40,12 @@ export function RoutineDataProvider({ children }: { children: ReactNode }) {
           subjects: [subject, ...current.subjects]
         }));
       },
+      updateSubject: (subjectId, patch) => {
+        updateData((current) => ({
+          ...current,
+          subjects: current.subjects.map((subject) => (subject.id === subjectId ? { ...subject, ...patch } : subject))
+        }));
+      },
       addTask: (task) => {
         updateData((current) => ({
           ...current,
@@ -180,6 +186,16 @@ export function RoutineDataProvider({ children }: { children: ReactNode }) {
                     activity.id === activityId ? { ...activity, ...patch } : activity
                   )
                 }
+              : subject
+          )
+        }));
+      },
+      removeActivity: (subjectId, activityId) => {
+        updateData((current) => ({
+          ...current,
+          subjects: current.subjects.map((subject) =>
+            subject.id === subjectId
+              ? { ...subject, activities: subject.activities.filter((activity) => activity.id !== activityId) }
               : subject
           )
         }));

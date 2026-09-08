@@ -102,9 +102,10 @@ Por padrao o provedor esta desativado, entao o app continua funcionando com regr
 - Navegacao mobile com botao central de acao rapida.
 - `/faculdade` com disciplinas e cadastro rapido.
 - `/faculdade/[id]` com detalhes, faltas, notas, simulador e atividades.
-- Faltas em registros individuais com modo simples/completo, historico editavel e desfazer.
+- Faltas em registros individuais com modo rapido/completo, data passada, atalhos de aulas recentes, historico editavel e desfazer.
+- Personalizacao de disciplina com professor, sala, semestre, cor e regras academicas.
 - Notas, media, PF necessaria e simulador.
-- Atividades academicas por prazo.
+- Atividades academicas por prazo com busca, filtros, presets, edicao direta e exclusao.
 - `/tarefas` com criacao, prioridade, tempo estimado, concluir e adiar.
 - `/lembretes` com criacao, central e dispensar.
 - `/calendario` com aulas, prazos, tarefas e lembretes.

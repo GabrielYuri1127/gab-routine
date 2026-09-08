@@ -10,6 +10,7 @@ export interface RoutineDataContextValue {
   data: RoutineData;
   hydrated: boolean;
   addSubject: (subject: Subject) => void;
+  updateSubject: (subjectId: string, patch: Partial<Subject>) => void;
   addTask: (task: Omit<Task, "id" | "userId" | "status"> & Partial<Pick<Task, "status">>) => void;
   updateTask: (taskId: string, patch: Partial<Task>) => void;
   completeTask: (taskId: string) => void;
@@ -23,6 +24,7 @@ export interface RoutineDataContextValue {
   addGrade: (subjectId: string, grade: Grade) => void;
   addActivity: (subjectId: string, activity: AcademicActivity) => void;
   updateActivity: (subjectId: string, activityId: string, patch: Partial<AcademicActivity>) => void;
+  removeActivity: (subjectId: string, activityId: string) => void;
 }
 
 export const RoutineDataContext = createContext<RoutineDataContextValue | null>(null);

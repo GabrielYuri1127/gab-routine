@@ -6,6 +6,7 @@ import { ArrowLeft, MapPin, UserRound } from "lucide-react";
 import { ActivityPanel } from "@/features/academic/components/activity-panel";
 import { AttendanceQuickActions } from "@/features/academic/components/attendance-quick-actions";
 import { GradePanel } from "@/features/academic/components/grade-panel";
+import { SubjectSettingsPanel } from "@/features/academic/components/subject-settings-panel";
 import { getSubjectScheduleLabel } from "@/features/academic/data/mock";
 import { useRoutineData } from "@/features/data/routine-store";
 import { calculateAttendanceSummary } from "@/lib/academic-rules/attendance";
@@ -71,6 +72,7 @@ export function SubjectDetailView({ subjectId }: { subjectId: string }) {
         </div>
       </header>
 
+      <SubjectSettingsPanel subject={subject} />
       <AttendanceQuickActions subject={subject} />
       <GradePanel subject={subject} />
       <ActivityPanel subject={subject} />
