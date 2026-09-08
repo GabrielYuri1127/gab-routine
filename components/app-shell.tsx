@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, BookOpen, CalendarDays, CheckSquare, Home, MoreHorizontal } from "lucide-react";
+import { Bell, BookOpen, CalendarDays, CheckSquare, Home, MoreHorizontal, Settings } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { MobileAddMenu } from "@/components/mobile-add-menu";
@@ -19,10 +19,11 @@ const primaryNav = [
 const secondaryNav = [
   { label: "Calendario", href: "/calendario", icon: CalendarDays },
   { label: "Tarefas", href: "/tarefas", icon: CheckSquare },
-  { label: "Lembretes", href: "/lembretes", icon: Bell }
+  { label: "Lembretes", href: "/lembretes", icon: Bell },
+  { label: "Configuracoes", href: "/configuracoes", icon: Settings }
 ];
 
-const futureModules = ["Estudos", "Projetos", "Habitos", "Assistente", "Configuracoes"];
+const futureModules = ["Estudos", "Projetos", "Habitos", "Assistente"];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();

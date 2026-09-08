@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, Bot, CalendarDays, CheckCircle2, CheckSquare, Database, Smartphone } from "lucide-react";
+import { Bell, Bot, CalendarDays, CheckCircle2, CheckSquare, Database, Settings, Smartphone } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 
@@ -9,11 +9,13 @@ const implemented = [
   "Faltas com registros individuais",
   "Notas e simulador",
   "Atividades por prazo",
+  "Compromissos editaveis no calendario",
   "Preset UFAM",
   "PWA base",
   "Tarefas com persistencia local",
   "Lembretes dentro do app",
   "Calendario mensal",
+  "Backup e preferencias locais",
   "Login Supabase preparado"
 ];
 
@@ -27,7 +29,8 @@ const links = [
   { href: "/faculdade", title: "Abrir Faculdade", icon: Database },
   { href: "/tarefas", title: "Abrir Tarefas", icon: CheckSquare },
   { href: "/lembretes", title: "Abrir Lembretes", icon: Bell },
-  { href: "/calendario", title: "Abrir Calendario", icon: CalendarDays }
+  { href: "/calendario", title: "Abrir Calendario", icon: CalendarDays },
+  { href: "/configuracoes", title: "Configuracoes e backup", icon: Settings }
 ];
 
 export default function MorePage() {

@@ -1,20 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, BookOpen, CalendarDays, ChevronLeft, ChevronRight, ListTodo } from "lucide-react";
+import { Bell, BookOpen, CalendarDays, ChevronLeft, ChevronRight, ListTodo, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EventForm } from "@/features/calendar/components/event-form";
 import { formatShortDate, getMonthGrid, getTodayInAppTimeZone, getWeekdayFromDate, parseDateKey, toDateKey } from "@/lib/date";
 import { getReminderDateKey, getReminderTime } from "@/lib/reminders/schedule";
 import { getTaskDate } from "@/lib/tasks/prioritization";
 import { cn } from "@/lib/utils";
 import { useRoutineData } from "@/features/data/routine-store";
 import type { Subject } from "@/types/academic";
-import type { Reminder, Task } from "@/types/domain";
+import type { Event, Reminder, Task } from "@/types/domain";
 
-type CalendarItemType = "class" | "activity" | "task" | "reminder";
+type CalendarItemType = "class" | "activity" | "task" | "reminder" | "event";
 
 interface CalendarItem {
   id: string;
@@ -22,6 +23,7 @@ interface CalendarItem {
   time?: string;
   type: CalendarItemType;
   href: string;
+  event?: Event;
 }
 
 const dayLabels = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"];
@@ -30,26 +32,36 @@ const itemTone: Record<CalendarItemType, "mint" | "gold" | "coral" | "sky"> = {
   class: "mint",
   activity: "gold",
   task: "coral",
-  reminder: "sky"
+  reminder: "sky",
+  event: "gold"
 };
 
 const itemLabel: Record<CalendarItemType, string> = {
   class: "aula",
   activity: "prazo",
   task: "tarefa",
-  reminder: "lembrete"
+  reminder: "lembrete",
+  event: "compromisso"
 };
 
+const eventCategories: { value: Event["category"]; label: string }[] = [
+  { value: "appointment", label: "Compromisso" },
+  { value: "study", label: "Estudo" },
+  { value: "work", label: "Trabalho" },
+  { value: "deadline", label: "Prazo" },
+  { value: "personal", label: "Pessoal" }
+];
+
 export function CalendarView() {
-  const { data } = useRoutineData();
+  const { data, removeEvent, updateEvent } = useRoutineData();
   const today = getTodayInAppTimeZone();
   const [selectedDate, setSelectedDate] = useState(today);
   const [visibleMonth, setVisibleMonth] = useState(() => parseDateKey(today));
 
   const monthDays = useMemo(() => getMonthGrid(visibleMonth), [visibleMonth]);
   const selectedItems = useMemo(
-    () => buildCalendarItems(selectedDate, data.subjects, data.tasks, data.reminders),
-    [data.reminders, data.subjects, data.tasks, selectedDate]
+    () => buildCalendarItems(selectedDate, data.subjects, data.tasks, data.reminders, data.events),
+    [data.events, data.reminders, data.subjects, data.tasks, selectedDate]
   );
 
   const monthLabel = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(visibleMonth);
@@ -99,7 +111,7 @@ export function CalendarView() {
         <div className="mt-1 grid grid-cols-7 gap-1 sm:gap-2">
           {monthDays.map((date) => {
             const dateKey = toDateKey(date);
-            const dayItems = buildCalendarItems(dateKey, data.subjects, data.tasks, data.reminders);
+            const dayItems = buildCalendarItems(dateKey, data.subjects, data.tasks, data.reminders, data.events);
             const inMonth = date.getMonth() === visibleMonth.getMonth();
             const selected = dateKey === selectedDate;
 
@@ -124,6 +136,7 @@ export function CalendarView() {
                         "h-1.5 w-1.5 shrink-0 rounded-full",
                         item.type === "class" && "bg-mint",
                         item.type === "activity" && "bg-gold",
+                        item.type === "event" && "bg-gold",
                         item.type === "task" && "bg-coral",
                         item.type === "reminder" && "bg-sky",
                         selected && "bg-white"
@@ -138,6 +151,8 @@ export function CalendarView() {
         </div>
       </section>
 
+      <EventForm defaultDate={selectedDate} />
+
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-ink">{formatShortDate(selectedDate)}</h2>
@@ -150,20 +165,91 @@ export function CalendarView() {
           </div>
         ) : (
           <div className="rounded-lg border border-line bg-white shadow-sm">
-            {selectedItems.map((item) => (
-              <Link
-                className="grid grid-cols-[44px_1fr_auto] items-center gap-3 border-b border-line px-4 py-3 last:border-b-0"
-                href={item.href}
-                key={item.id}
-              >
-                <ItemIcon type={item.type} />
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-ink">{item.title}</span>
-                  <span className="block truncate text-xs text-slate-500">{item.time ?? "Dia todo"}</span>
-                </span>
-                <Badge tone={itemTone[item.type]}>{itemLabel[item.type]}</Badge>
-              </Link>
-            ))}
+            {selectedItems.map((item) =>
+              item.event ? (
+                <article className="border-b border-line px-4 py-3 last:border-b-0" key={item.id}>
+                  <div className="grid grid-cols-[44px_1fr_auto] items-center gap-3">
+                    <ItemIcon type={item.type} />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-ink">{item.title}</span>
+                      <span className="block truncate text-xs text-slate-500">{item.time ?? "Dia todo"}</span>
+                    </span>
+                    <Badge tone={itemTone[item.type]}>{itemLabel[item.type]}</Badge>
+                  </div>
+                  <details className="mt-3 rounded-lg border border-dashed border-line p-3">
+                    <summary className="cursor-pointer text-sm font-medium text-slate-600">Editar compromisso</summary>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_150px_120px_120px_150px]">
+                      <label className="text-xs text-slate-500">
+                        Titulo
+                        <input
+                          className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                          onChange={(event) => updateEvent(item.event!.id, { title: event.target.value })}
+                          value={item.event.title}
+                        />
+                      </label>
+                      <label className="text-xs text-slate-500">
+                        Data
+                        <input
+                          className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                          onChange={(event) => updateEvent(item.event!.id, { date: event.target.value })}
+                          type="date"
+                          value={item.event.date}
+                        />
+                      </label>
+                      <label className="text-xs text-slate-500">
+                        Inicio
+                        <input
+                          className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                          onChange={(event) => updateEvent(item.event!.id, { startsAt: event.target.value || undefined })}
+                          type="time"
+                          value={item.event.startsAt ?? ""}
+                        />
+                      </label>
+                      <label className="text-xs text-slate-500">
+                        Fim
+                        <input
+                          className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                          onChange={(event) => updateEvent(item.event!.id, { endsAt: event.target.value || undefined })}
+                          type="time"
+                          value={item.event.endsAt ?? ""}
+                        />
+                      </label>
+                      <label className="text-xs text-slate-500">
+                        Tipo
+                        <select
+                          className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                          onChange={(event) => updateEvent(item.event!.id, { category: event.target.value as Event["category"] })}
+                          value={item.event.category}
+                        >
+                          {eventCategories.map((category) => (
+                            <option key={category.value} value={category.value}>
+                              {category.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    <Button className="mt-3" onClick={() => removeEvent(item.event!.id)} size="sm" variant="danger">
+                      <Trash2 aria-hidden className="h-4 w-4" />
+                      Excluir
+                    </Button>
+                  </details>
+                </article>
+              ) : (
+                <Link
+                  className="grid grid-cols-[44px_1fr_auto] items-center gap-3 border-b border-line px-4 py-3 last:border-b-0"
+                  href={item.href}
+                  key={item.id}
+                >
+                  <ItemIcon type={item.type} />
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-ink">{item.title}</span>
+                    <span className="block truncate text-xs text-slate-500">{item.time ?? "Dia todo"}</span>
+                  </span>
+                  <Badge tone={itemTone[item.type]}>{itemLabel[item.type]}</Badge>
+                </Link>
+              )
+            )}
           </div>
         )}
       </section>
@@ -171,7 +257,7 @@ export function CalendarView() {
   );
 }
 
-function buildCalendarItems(dateKey: string, subjects: Subject[], tasks: Task[], reminders: Reminder[]): CalendarItem[] {
+function buildCalendarItems(dateKey: string, subjects: Subject[], tasks: Task[], reminders: Reminder[], events: Event[]): CalendarItem[] {
   const weekday = getWeekdayFromDate(parseDateKey(dateKey));
   const classes = subjects.flatMap((subject) =>
     subject.schedules
@@ -217,7 +303,18 @@ function buildCalendarItems(dateKey: string, subjects: Subject[], tasks: Task[],
       href: "/lembretes"
     }));
 
-  return [...classes, ...activities, ...visibleTasks, ...visibleReminders].sort((a, b) =>
+  const visibleEvents = events
+    .filter((event) => event.date === dateKey)
+    .map((event) => ({
+      id: event.id,
+      title: event.title,
+      time: event.startsAt,
+      type: "event" as const,
+      href: "/calendario",
+      event
+    }));
+
+  return [...classes, ...activities, ...visibleTasks, ...visibleReminders, ...visibleEvents].sort((a, b) =>
     (a.time ?? "23:59").localeCompare(b.time ?? "23:59")
   );
 }

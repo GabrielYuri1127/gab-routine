@@ -1,12 +1,15 @@
 "use client";
 
-import { Palette, Save } from "lucide-react";
+import { Palette, Plus, Save, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useRoutineData } from "@/features/data/routine-store";
-import type { GradingMethod, Subject } from "@/types/academic";
+import { createId, useRoutineData } from "@/features/data/routine-store";
+import { weekdayLabels } from "@/lib/date";
+import type { GradingMethod, Subject, Weekday } from "@/types/academic";
+
+const weekdayOptions: Weekday[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
 export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
   const { updateSubject } = useRoutineData();
@@ -23,6 +26,10 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
   const [directApprovalGrade, setDirectApprovalGrade] = useState(String(subject.rules.directApprovalGrade));
   const [minimumFinalGrade, setMinimumFinalGrade] = useState(String(subject.rules.minimumFinalGrade));
   const [gradingMethod, setGradingMethod] = useState<GradingMethod>(subject.rules.gradingMethod);
+  const [newWeekday, setNewWeekday] = useState<Weekday>("monday");
+  const [newStartTime, setNewStartTime] = useState("08:00");
+  const [newEndTime, setNewEndTime] = useState("10:00");
+  const [newClassesQuantity, setNewClassesQuantity] = useState("2");
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -40,6 +47,11 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
     setMinimumFinalGrade(String(subject.rules.minimumFinalGrade));
     setGradingMethod(subject.rules.gradingMethod);
   }, [subject]);
+
+  function flashSaved() {
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 1600);
+  }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -61,8 +73,38 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
         gradingMethod
       }
     });
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 1600);
+    flashSaved();
+  }
+
+  function addSchedule() {
+    const startTime = newStartTime || "08:00";
+    updateSubject(subject.id, {
+      schedules: [
+        ...subject.schedules,
+        {
+          classesQuantity: Number(newClassesQuantity) || 1,
+          endTime: newEndTime || startTime,
+          id: createId("schedule"),
+          startTime,
+          subjectId: subject.id,
+          weekday: newWeekday
+        }
+      ]
+    });
+    flashSaved();
+  }
+
+  function updateSchedule(scheduleId: string, patch: Partial<Subject["schedules"][number]>) {
+    updateSubject(subject.id, {
+      schedules: subject.schedules.map((schedule) => (schedule.id === scheduleId ? { ...schedule, ...patch } : schedule))
+    });
+  }
+
+  function removeSchedule(scheduleId: string) {
+    updateSubject(subject.id, {
+      schedules: subject.schedules.filter((schedule) => schedule.id !== scheduleId)
+    });
+    flashSaved();
   }
 
   return (
@@ -116,6 +158,115 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
               <option value="custom">Customizado</option>
             </select>
           </label>
+
+          <div className="rounded-lg border border-dashed border-line p-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-ink">Horarios de aula</h3>
+              <Badge tone="neutral">{subject.schedules.length} encontros</Badge>
+            </div>
+
+            <div className="space-y-2">
+              {subject.schedules.length === 0 ? <p className="text-sm text-slate-500">Nenhum horario cadastrado.</p> : null}
+              {subject.schedules.map((schedule) => (
+                <div className="grid gap-2 rounded-lg border border-line p-2 sm:grid-cols-[1fr_120px_120px_96px_44px]" key={schedule.id}>
+                  <label>
+                    <span className="text-xs font-medium text-slate-500">Dia</span>
+                    <select
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm outline-none focus:border-ink"
+                      onChange={(event) => updateSchedule(schedule.id, { weekday: event.target.value as Weekday })}
+                      value={schedule.weekday}
+                    >
+                      {weekdayOptions.map((weekday) => (
+                        <option key={weekday} value={weekday}>
+                          {weekdayLabels[weekday]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    <span className="text-xs font-medium text-slate-500">Inicio</span>
+                    <input
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm outline-none focus:border-ink"
+                      onChange={(event) => updateSchedule(schedule.id, { startTime: event.target.value })}
+                      type="time"
+                      value={schedule.startTime}
+                    />
+                  </label>
+                  <label>
+                    <span className="text-xs font-medium text-slate-500">Fim</span>
+                    <input
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm outline-none focus:border-ink"
+                      onChange={(event) => updateSchedule(schedule.id, { endTime: event.target.value })}
+                      type="time"
+                      value={schedule.endTime}
+                    />
+                  </label>
+                  <label>
+                    <span className="text-xs font-medium text-slate-500">Aulas</span>
+                    <input
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm outline-none focus:border-ink"
+                      min={1}
+                      onChange={(event) => updateSchedule(schedule.id, { classesQuantity: Number(event.target.value) || 1 })}
+                      type="number"
+                      value={schedule.classesQuantity}
+                    />
+                  </label>
+                  <Button aria-label="Excluir horario" className="self-end" onClick={() => removeSchedule(schedule.id)} size="icon" variant="ghost">
+                    <Trash2 aria-hidden className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-3 grid gap-2 rounded-lg bg-slate-50 p-2 sm:grid-cols-[1fr_120px_120px_96px_auto]">
+              <label>
+                <span className="text-xs font-medium text-slate-500">Novo dia</span>
+                <select
+                  className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm outline-none focus:border-ink"
+                  onChange={(event) => setNewWeekday(event.target.value as Weekday)}
+                  value={newWeekday}
+                >
+                  {weekdayOptions.map((weekday) => (
+                    <option key={weekday} value={weekday}>
+                      {weekdayLabels[weekday]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span className="text-xs font-medium text-slate-500">Inicio</span>
+                <input
+                  className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm outline-none focus:border-ink"
+                  onChange={(event) => setNewStartTime(event.target.value)}
+                  type="time"
+                  value={newStartTime}
+                />
+              </label>
+              <label>
+                <span className="text-xs font-medium text-slate-500">Fim</span>
+                <input
+                  className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm outline-none focus:border-ink"
+                  onChange={(event) => setNewEndTime(event.target.value)}
+                  type="time"
+                  value={newEndTime}
+                />
+              </label>
+              <label>
+                <span className="text-xs font-medium text-slate-500">Aulas</span>
+                <input
+                  className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm outline-none focus:border-ink"
+                  min={1}
+                  onChange={(event) => setNewClassesQuantity(event.target.value)}
+                  type="number"
+                  value={newClassesQuantity}
+                />
+              </label>
+              <Button className="self-end" onClick={addSchedule} variant="secondary">
+                <Plus aria-hidden className="h-4 w-4" />
+                Adicionar
+              </Button>
+            </div>
+          </div>
 
           <Button type="submit">
             <Save aria-hidden className="h-4 w-4" />

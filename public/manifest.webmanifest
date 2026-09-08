@@ -2,7 +2,7 @@
   "name": "Gab routine",
   "short_name": "Gab routine",
   "id": "/",
-  "description": "Secretario pessoal e academico para rotina, faculdade e lembretes.",
+  "description": "Secretario pessoal e academico para rotina, faculdade, compromissos e lembretes.",
   "start_url": "/",
   "scope": "/",
   "launch_handler": {
@@ -56,6 +56,13 @@
       "short_name": "Lembrete",
       "description": "Criar um lembrete rapidamente",
       "url": "/quick/reminder",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Novo compromisso",
+      "short_name": "Agenda",
+      "description": "Criar um compromisso rapidamente",
+      "url": "/quick/event",
       "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
     }
   ]

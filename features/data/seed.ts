@@ -1,16 +1,17 @@
 import { mockSubjects } from "@/features/academic/data/mock";
 import { addDays, getTodayInAppTimeZone, toDateKey } from "@/lib/date";
-import type { NotificationPreference, Reminder, Task } from "@/types/domain";
+import type { Event, NotificationPreference, Reminder, Task } from "@/types/domain";
 import type { Subject } from "@/types/academic";
 
 export const LOCAL_USER_ID = "local-user";
 
 export interface RoutineData {
-  version: 2;
+  version: 3;
   userId: string;
   subjects: Subject[];
   tasks: Task[];
   reminders: Reminder[];
+  events: Event[];
   notificationPreference: NotificationPreference;
 }
 
@@ -20,7 +21,7 @@ export function buildSeedData(today = getTodayInAppTimeZone()): RoutineData {
   const nextWeek = toDateKey(addDays(todayDate, 7));
 
   return {
-    version: 2,
+    version: 3,
     userId: LOCAL_USER_ID,
     subjects: mockSubjects,
     tasks: [
@@ -87,6 +88,17 @@ export function buildSeedData(today = getTodayInAppTimeZone()): RoutineData {
         remindAt: `${today}T21:30:00`,
         sourceType: "custom",
         status: "scheduled"
+      }
+    ],
+    events: [
+      {
+        id: "resolver-pendencias",
+        userId: LOCAL_USER_ID,
+        title: "Resolver pendencias",
+        date: today,
+        startsAt: "16:00",
+        endsAt: "17:00",
+        category: "appointment"
       }
     ],
     notificationPreference: {

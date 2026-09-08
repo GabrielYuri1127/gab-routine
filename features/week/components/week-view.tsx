@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, BookOpen, CalendarDays, CheckSquare } from "lucide-react";
+import { Bell, BookOpen, CalendarClock, CalendarDays, CheckSquare } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { formatShortDate, getWeekDates, getWeekdayFromDate, toDateKey, weekdayLabels } from "@/lib/date";
@@ -36,12 +36,13 @@ export function WeekView() {
           const reminders = data.reminders.filter(
             (reminder) => reminder.status === "scheduled" && getReminderDateKey(reminder) === dateKey
           );
+          const events = data.events.filter((event) => event.date === dateKey);
           const activities = data.subjects.flatMap((subject) =>
             subject.activities
               .filter((activity) => activity.status !== "submitted" && activity.status !== "corrected" && activity.dueDate === dateKey)
               .map((activity) => ({ subject, activity }))
           );
-          const total = classes.length + tasks.length + reminders.length + activities.length;
+          const total = classes.length + tasks.length + reminders.length + activities.length + events.length;
 
           return (
             <div className="rounded-lg border border-line bg-white p-4 shadow-sm" key={dateKey}>
@@ -89,6 +90,25 @@ export function WeekView() {
                           {activity.title}
                         </span>
                         <span className="block truncate text-xs text-slate-500">{subject.name}</span>
+                      </span>
+                    </Link>
+                  ))}
+
+                  {events.map((event) => (
+                    <Link
+                      className="grid grid-cols-[58px_1fr] gap-3 rounded-lg border border-line px-3 py-2 transition hover:bg-slate-50"
+                      href="/calendario"
+                      key={event.id}
+                    >
+                      <span className="text-sm font-semibold text-ink">{event.startsAt ?? "--:--"}</span>
+                      <span className="min-w-0">
+                        <span className="flex items-center gap-2 truncate text-sm font-medium text-slate-700">
+                          <CalendarClock aria-hidden className="h-4 w-4 text-gold" />
+                          {event.title}
+                        </span>
+                        <span className="block truncate text-xs text-slate-500">
+                          {event.endsAt ? `Ate ${event.endsAt}` : "Compromisso"}
+                        </span>
                       </span>
                     </Link>
                   ))}

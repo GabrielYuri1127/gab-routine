@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, BookOpen, CheckCircle2, Clock, NotebookTabs } from "lucide-react";
+import { Bell, BookOpen, CalendarDays, CheckCircle2, Clock, NotebookTabs } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,9 @@ import { getReminderDateKey, getReminderTime } from "@/lib/reminders/schedule";
 import { getTaskDate, prioritizeTasks } from "@/lib/tasks/prioritization";
 import { useRoutineData } from "@/features/data/routine-store";
 
-type TodayBlock = DayBlock | { id: string; title: string; time: string; type: "task" | "reminder"; subjectId?: string };
+type TodayBlock =
+  | DayBlock
+  | { displayTime?: string; id: string; title: string; time: string; type: "event" | "task" | "reminder"; subjectId?: string };
 
 export function TodayOverview() {
   const { data, completeTask } = useRoutineData();
@@ -43,9 +45,20 @@ export function TodayOverview() {
         time: getReminderTime(reminder),
         type: "reminder"
       }));
+    const eventBlocks: TodayBlock[] = data.events
+      .filter((event) => event.date === today)
+      .map((event) => ({
+        displayTime: event.startsAt ?? "Dia todo",
+        id: event.id,
+        title: event.title,
+        time: event.startsAt ?? "23:59",
+        type: "event"
+      }));
 
-    return [...classBlocks, ...extraTodayBlocks, ...taskBlocks, ...reminderBlocks].sort((a, b) => a.time.localeCompare(b.time));
-  }, [data.reminders, data.subjects, data.tasks, now, today]);
+    return [...classBlocks, ...extraTodayBlocks, ...taskBlocks, ...reminderBlocks, ...eventBlocks].sort((a, b) =>
+      a.time.localeCompare(b.time)
+    );
+  }, [data.events, data.reminders, data.subjects, data.tasks, now, today]);
 
   const nextBlock = useMemo(() => {
     if (!now) {
@@ -117,7 +130,7 @@ export function TodayOverview() {
           {todayBlocks.length === 0 ? <div className="px-4 py-3 text-sm text-slate-500">Dia livre na agenda.</div> : null}
           {todayBlocks.map((block) => (
             <div className="grid grid-cols-[64px_1fr_auto] items-center gap-3 border-b border-line px-4 py-3 last:border-b-0" key={block.id}>
-              <span className="text-sm font-semibold text-ink">{block.time}</span>
+              <span className="text-sm font-semibold text-ink">{"displayTime" in block ? block.displayTime ?? block.time : block.time}</span>
               <span className="min-w-0 truncate text-sm text-slate-700">{block.title}</span>
               <Badge tone={getBlockTone(block.type)}>{getBlockLabel(block.type)}</Badge>
             </div>
@@ -165,6 +178,30 @@ export function TodayOverview() {
           </div>
         ) : null}
       </section>
+
+      {data.events.some((event) => event.date === today) ? (
+        <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <CalendarDays aria-hidden className="h-4 w-4 text-gold" />
+              <h2 className="text-lg font-semibold text-ink">Compromissos</h2>
+            </div>
+            <Link className="text-sm font-medium text-mint" href="/calendario">
+              Editar
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {data.events
+              .filter((event) => event.date === today)
+              .map((event) => (
+                <div className="flex items-center justify-between gap-3" key={event.id}>
+                  <p className="min-w-0 truncate text-sm text-slate-700">{event.title}</p>
+                  <span className="shrink-0 text-xs font-medium text-gold">{event.startsAt ?? "Dia todo"}</span>
+                </div>
+              ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
@@ -243,6 +280,10 @@ function getBlockTone(type: TodayBlock["type"]): "mint" | "sky" | "gold" | "cora
     return "coral";
   }
 
+  if (type === "event") {
+    return "gold";
+  }
+
   return "gold";
 }
 
@@ -261,6 +302,10 @@ function getBlockLabel(type: TodayBlock["type"]) {
 
   if (type === "reminder") {
     return "lembrete";
+  }
+
+  if (type === "event") {
+    return "compromisso";
   }
 
   return "fixo";

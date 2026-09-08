@@ -49,7 +49,7 @@ export interface Event {
   date: string;
   startsAt?: string;
   endsAt?: string;
-  category: "class" | "task" | "study" | "appointment" | "deadline";
+  category: "class" | "task" | "study" | "appointment" | "deadline" | "work" | "personal";
   sourceId?: string;
 }
 

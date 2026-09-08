@@ -6,6 +6,7 @@ import { buildSeedData, LOCAL_USER_ID, type RoutineData } from "@/features/data/
 import {
   createId,
   loadRoutineData,
+  normalizeRoutineData,
   RoutineDataContext,
   saveRoutineData,
   type RoutineDataContextValue
@@ -34,6 +35,12 @@ export function RoutineDataProvider({ children }: { children: ReactNode }) {
     () => ({
       data,
       hydrated,
+      replaceData: (newData) => {
+        updateData(() => normalizeRoutineData(newData));
+      },
+      resetData: () => {
+        updateData(() => buildSeedData());
+      },
       addSubject: (subject: Subject) => {
         updateData((current) => ({
           ...current,
@@ -96,6 +103,12 @@ export function RoutineDataProvider({ children }: { children: ReactNode }) {
           )
         }));
       },
+      removeTask: (taskId) => {
+        updateData((current) => ({
+          ...current,
+          tasks: current.tasks.filter((task) => task.id !== taskId)
+        }));
+      },
       addReminder: (reminder) => {
         updateData((current) => ({
           ...current,
@@ -124,6 +137,46 @@ export function RoutineDataProvider({ children }: { children: ReactNode }) {
           reminders: current.reminders.map((reminder) =>
             reminder.id === reminderId ? { ...reminder, status: "dismissed" } : reminder
           )
+        }));
+      },
+      removeReminder: (reminderId) => {
+        updateData((current) => ({
+          ...current,
+          reminders: current.reminders.filter((reminder) => reminder.id !== reminderId)
+        }));
+      },
+      addEvent: (event) => {
+        updateData((current) => ({
+          ...current,
+          events: [
+            {
+              id: createId("event"),
+              userId: LOCAL_USER_ID,
+              ...event
+            },
+            ...current.events
+          ]
+        }));
+      },
+      updateEvent: (eventId, patch) => {
+        updateData((current) => ({
+          ...current,
+          events: current.events.map((event) => (event.id === eventId ? { ...event, ...patch } : event))
+        }));
+      },
+      removeEvent: (eventId) => {
+        updateData((current) => ({
+          ...current,
+          events: current.events.filter((event) => event.id !== eventId)
+        }));
+      },
+      updateNotificationPreference: (patch) => {
+        updateData((current) => ({
+          ...current,
+          notificationPreference: {
+            ...current.notificationPreference,
+            ...patch
+          }
         }));
       },
       addAttendanceRecord: (subjectId, record) => {

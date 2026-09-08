@@ -108,14 +108,14 @@ create table if not exists public.tasks (
 );
 
 create table if not exists public.events (
-  id uuid primary key default gen_random_uuid(),
+  id text primary key default gen_random_uuid()::text,
   user_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
   date date not null,
   starts_at time,
   ends_at time,
   category text not null,
-  source_id uuid
+  source_id text
 );
 
 create table if not exists public.reminders (
@@ -142,7 +142,7 @@ create table if not exists public.notification_schedules (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   source_type text not null,
-  source_id uuid not null,
+  source_id text not null,
   scheduled_for timestamptz not null,
   status text not null default 'pending'
 );

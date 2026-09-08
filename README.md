@@ -1,6 +1,6 @@
 # Gab routine
 
-Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, faltas, notas, atividades, tarefas e lembretes. A base atual entrega Fase 1 completa e Fase 2 inicial com persistencia local, calendario mensal, telas de tarefas/lembretes e login Supabase preparado.
+Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, faltas, notas, atividades, tarefas, compromissos e lembretes. A base atual entrega Fase 1 completa e Fase 2 com persistencia local, calendario mensal, telas editaveis, backup local e login Supabase preparado.
 
 ## Stack
 
@@ -69,7 +69,7 @@ O app ja inclui:
 - icone normal e maskable em SVG
 - `public/sw.js` com cache basico e estrutura inicial para push
 - registro do service worker em producao
-- shortcuts para falta, nota, tarefa e lembrete
+- shortcuts para falta, nota, tarefa, lembrete e compromisso
 
 No Android, instale pelo Chrome/Edge usando "Adicionar a tela inicial" depois do deploy em HTTPS. O manifesto usa `standalone`, `theme_color`, `background_color`, `id`, `display_override`, shortcuts e icone maskable.
 
@@ -98,17 +98,18 @@ Por padrao o provedor esta desativado, entao o app continua funcionando com regr
 
 ## Entregue
 
-- Home Hoje com proximo item, agenda do dia, pendencias, lembretes e resumo da faculdade.
+- Home Hoje com proximo item, agenda do dia, compromissos, pendencias, lembretes e resumo da faculdade.
 - Navegacao mobile com botao central de acao rapida.
 - `/faculdade` com disciplinas e cadastro rapido.
 - `/faculdade/[id]` com detalhes, faltas, notas, simulador e atividades.
 - Faltas em registros individuais com modo rapido/completo, data passada, atalhos de aulas recentes, historico editavel e desfazer.
-- Personalizacao de disciplina com professor, sala, semestre, cor e regras academicas.
+- Personalizacao de disciplina com professor, sala, semestre, cor, horarios e regras academicas.
 - Notas, media, PF necessaria e simulador.
 - Atividades academicas por prazo com busca, filtros, presets, edicao direta e exclusao.
-- `/tarefas` com criacao, prioridade, tempo estimado, concluir e adiar.
-- `/lembretes` com criacao, central e dispensar.
-- `/calendario` com aulas, prazos, tarefas e lembretes.
+- `/tarefas` com criacao, prioridade, tempo estimado, edicao, conclusao, exclusao e adiamento.
+- `/lembretes` com criacao, central, edicao, exclusao e dispensar.
+- `/calendario` com aulas, prazos, tarefas, lembretes e compromissos editaveis.
+- `/configuracoes` com preferencias de lembrete, exportacao, importacao e restauracao de dados locais.
 - `/login` com Supabase Auth real quando configurado.
 - Persistencia local via `localStorage`.
 - Calculos academicos reutilizaveis em `lib/academic-rules`.

@@ -32,7 +32,7 @@ export function MobileAddMenu() {
     const dailyOptions: QuickOption[] = [
       { label: "Tarefa", href: "/quick/task", helper: "Criar agora", icon: CheckSquare },
       { label: "Lembrete", href: "/quick/reminder", helper: "Criar agora", icon: Bell },
-      { label: "Compromisso", helper: "Fase 3", disabled: true, icon: CalendarPlus },
+      { label: "Compromisso", href: "/quick/event", helper: "Agenda", icon: CalendarPlus },
       { label: "Sessao de estudo", helper: "Fase 5", disabled: true, icon: Timer }
     ];
 
