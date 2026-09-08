@@ -1,15 +1,15 @@
 import Link from "next/link";
 
+import { TaskForm } from "@/features/tasks/components/task-form";
+
 export default function QuickTaskPage() {
   return (
     <div className="space-y-5">
       <header>
-        <p className="text-sm font-medium text-slate-500">Fase 2</p>
+        <p className="text-sm font-medium text-mint">Atalho rapido</p>
         <h1 className="mt-1 text-2xl font-semibold text-ink">Nova tarefa</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          O atalho ja existe para a PWA, mas tarefas com persistencia entram na proxima fase junto com Supabase.
-        </p>
       </header>
+      <TaskForm afterCreateHref="/" compact />
       <Link className="flex h-11 w-full items-center justify-center rounded-lg border border-line bg-white text-sm font-medium text-ink" href="/">
         Voltar para Hoje
       </Link>

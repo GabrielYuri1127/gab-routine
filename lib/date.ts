@@ -31,36 +31,57 @@ export function getTodayInAppTimeZone(date = new Date()) {
   }).format(date);
 }
 
-export function getCurrentWeekday(date = new Date()): Weekday {
-  const weekdayIndex = Number(
-    new Intl.DateTimeFormat("en-US", {
-      timeZone: APP_TIME_ZONE,
-      weekday: "short"
-    })
-      .formatToParts(date)
-      .find((part) => part.type === "weekday")?.value
-  );
-
-  if (!Number.isNaN(weekdayIndex)) {
-    return weekdayOrder[weekdayIndex] ?? "monday";
-  }
-
-  const name = new Intl.DateTimeFormat("en-US", {
+export function toDateKey(date: Date) {
+  return new Intl.DateTimeFormat("en-CA", {
     timeZone: APP_TIME_ZONE,
-    weekday: "long"
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
   }).format(date);
+}
 
-  const byName: Record<string, Weekday> = {
-    Sunday: "sunday",
-    Monday: "monday",
-    Tuesday: "tuesday",
-    Wednesday: "wednesday",
-    Thursday: "thursday",
-    Friday: "friday",
-    Saturday: "saturday"
-  };
+export function addDays(date: Date, days: number) {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
 
-  return byName[name] ?? "monday";
+export function parseDateKey(dateKey: string) {
+  return new Date(`${dateKey}T00:00:00`);
+}
+
+export function isSameDateKey(a?: string, b?: string) {
+  return Boolean(a && b && a === b);
+}
+
+export function getWeekDates(date = new Date()) {
+  const current = new Date(date);
+  const day = current.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const monday = addDays(current, mondayOffset);
+
+  return Array.from({ length: 7 }, (_, index) => addDays(monday, index));
+}
+
+export function getMonthGrid(date = new Date()) {
+  const first = new Date(date.getFullYear(), date.getMonth(), 1);
+  const firstWeekday = first.getDay();
+  const mondayOffset = firstWeekday === 0 ? -6 : 1 - firstWeekday;
+  const start = addDays(first, mondayOffset);
+
+  return Array.from({ length: 42 }, (_, index) => addDays(start, index));
+}
+
+export function formatShortDate(dateKey: string) {
+  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(parseDateKey(dateKey));
+}
+
+export function getWeekdayFromDate(date: Date): Weekday {
+  return weekdayOrder[date.getDay()] ?? "monday";
+}
+
+export function getCurrentWeekday(date = new Date()): Weekday {
+  return getWeekdayFromDate(parseDateKey(getTodayInAppTimeZone(date)));
 }
 
 export function formatLongDate(date = new Date()) {

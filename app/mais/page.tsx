@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, Bot, CheckCircle2, Database, Smartphone } from "lucide-react";
+import { Bell, Bot, CalendarDays, CheckCircle2, CheckSquare, Database, Smartphone } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 
@@ -10,14 +10,24 @@ const implemented = [
   "Notas e simulador",
   "Atividades por prazo",
   "Preset UFAM",
-  "PWA base"
+  "PWA base",
+  "Tarefas com persistencia local",
+  "Lembretes dentro do app",
+  "Calendario mensal",
+  "Login Supabase preparado"
 ];
 
 const next = [
-  { icon: Database, title: "Supabase e login", phase: "Fase 2" },
   { icon: Bell, title: "Push completo e central", phase: "Fase 3" },
   { icon: Bot, title: "IA e linguagem natural", phase: "Fase 4" },
   { icon: Smartphone, title: "Widget Android", phase: "Fase 6" }
+];
+
+const links = [
+  { href: "/faculdade", title: "Abrir Faculdade", icon: Database },
+  { href: "/tarefas", title: "Abrir Tarefas", icon: CheckSquare },
+  { href: "/lembretes", title: "Abrir Lembretes", icon: Bell },
+  { href: "/calendario", title: "Abrir Calendario", icon: CalendarDays }
 ];
 
 export default function MorePage() {
@@ -32,7 +42,7 @@ export default function MorePage() {
       </header>
 
       <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
-        <h2 className="text-lg font-semibold text-ink">Implementado na Fase 1</h2>
+        <h2 className="text-lg font-semibold text-ink">Implementado</h2>
         <div className="mt-3 space-y-2">
           {implemented.map((item) => (
             <div className="flex items-center gap-2 text-sm text-slate-700" key={item}>
@@ -59,8 +69,25 @@ export default function MorePage() {
         })}
       </section>
 
-      <Link className="block rounded-lg border border-line bg-white p-4 text-sm font-medium text-ink shadow-sm" href="/faculdade">
-        Abrir Faculdade
+      <section className="grid gap-3 sm:grid-cols-2">
+        {links.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <Link
+              className="flex items-center gap-3 rounded-lg border border-line bg-white p-4 text-sm font-medium text-ink shadow-sm"
+              href={item.href}
+              key={item.href}
+            >
+              <Icon aria-hidden className="h-4 w-4 text-mint" />
+              {item.title}
+            </Link>
+          );
+        })}
+      </section>
+
+      <Link className="block rounded-lg border border-line bg-white p-4 text-sm font-medium text-ink shadow-sm" href="/login">
+        Conta e Supabase
       </Link>
     </div>
   );

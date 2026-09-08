@@ -4,6 +4,7 @@ node_modules/
 .test-build/
 dist/
 coverage/
+work/
 *.tsbuildinfo
 .github_known_hosts
 .env

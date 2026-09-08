@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useRoutineData } from "@/features/data/routine-store";
 import { calculateAttendanceSummary } from "@/lib/academic-rules/attendance";
 import { getTodayInAppTimeZone } from "@/lib/date";
 import type { AttendanceRecord, Subject } from "@/types/academic";
@@ -18,7 +19,8 @@ const statusLabels: Record<AttendanceRecord["status"], string> = {
 };
 
 export function AttendanceQuickActions({ subject }: { subject: Subject }) {
-  const [records, setRecords] = useState<AttendanceRecord[]>(subject.attendance);
+  const { addAttendanceRecord, removeAttendanceRecord, updateAttendanceRecord } = useRoutineData();
+  const records = subject.attendance;
   const [mode, setMode] = useState<"simple" | "complete">("simple");
   const [toast, setToast] = useState<{ message: string; recordId: string } | null>(null);
   const summary = useMemo(
@@ -35,7 +37,7 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
       status
     };
 
-    setRecords((current) => [record, ...current]);
+    addAttendanceRecord(subject.id, record);
     setToast({
       recordId: record.id,
       message:
@@ -46,7 +48,7 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
   }
 
   function undo(recordId: string) {
-    setRecords((current) => current.filter((record) => record.id !== recordId));
+    removeAttendanceRecord(subject.id, recordId);
     setToast(null);
   }
 
@@ -146,9 +148,7 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
                     min={0}
                     onChange={(event) => {
                       const quantity = Number(event.target.value);
-                      setRecords((current) =>
-                        current.map((item) => (item.id === record.id ? { ...item, quantity } : item))
-                      );
+                      updateAttendanceRecord(subject.id, record.id, { quantity });
                     }}
                     type="number"
                     value={record.quantity}
@@ -160,9 +160,7 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
                     className="mt-1 h-9 w-full rounded-lg border border-line bg-white px-2 text-sm text-ink"
                     onChange={(event) => {
                       const status = event.target.value as AttendanceRecord["status"];
-                      setRecords((current) =>
-                        current.map((item) => (item.id === record.id ? { ...item, status } : item))
-                      );
+                      updateAttendanceRecord(subject.id, record.id, { status });
                     }}
                     value={record.status}
                   >

@@ -1,15 +1,13 @@
 "use client";
 
-import { useState } from "react";
-
 import { SubjectCard } from "@/features/academic/components/subject-card";
 import { SubjectCreateForm } from "@/features/academic/components/subject-create-form";
-import { mockSubjects } from "@/features/academic/data/mock";
+import { useRoutineData } from "@/features/data/routine-store";
 import { createUfamRules } from "@/lib/academic-rules/ufam";
 import type { Subject } from "@/types/academic";
 
 export function AcademicDashboard() {
-  const [subjects, setSubjects] = useState<Subject[]>(mockSubjects);
+  const { data, addSubject } = useRoutineData();
 
   return (
     <div className="space-y-5">
@@ -41,12 +39,12 @@ export function AcademicDashboard() {
             activities: []
           };
 
-          setSubjects((current) => [subject, ...current]);
+          addSubject(subject);
         }}
       />
 
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-label="Disciplinas">
-        {subjects.map((subject) => (
+        {data.subjects.map((subject) => (
           <SubjectCard key={subject.id} subject={subject} />
         ))}
       </section>

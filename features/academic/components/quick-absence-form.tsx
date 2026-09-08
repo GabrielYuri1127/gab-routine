@@ -2,23 +2,30 @@
 
 import Link from "next/link";
 import { ArrowRight, RotateCcw } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useRoutineData } from "@/features/data/routine-store";
 import { calculateAttendanceSummary } from "@/lib/academic-rules/attendance";
 import { getTodayInAppTimeZone } from "@/lib/date";
-import { mockSubjects } from "@/features/academic/data/mock";
-import type { AttendanceRecord, Subject } from "@/types/academic";
+import type { AttendanceRecord } from "@/types/academic";
 
 export function QuickAbsenceForm() {
-  const [subjects, setSubjects] = useState<Subject[]>(mockSubjects);
-  const [subjectId, setSubjectId] = useState(mockSubjects[0]?.id ?? "");
+  const { data, addAttendanceRecord, removeAttendanceRecord } = useRoutineData();
+  const subjects = data.subjects;
+  const [subjectId, setSubjectId] = useState(subjects[0]?.id ?? "");
   const [toast, setToast] = useState<{ subjectName: string; quantity: number; recordId: string } | null>(null);
   const selectedSubject = subjects.find((subject) => subject.id === subjectId) ?? subjects[0];
   const summary = useMemo(
     () => selectedSubject ? calculateAttendanceSummary(selectedSubject.attendance, selectedSubject.rules, selectedSubject.name) : null,
     [selectedSubject]
   );
+
+  useEffect(() => {
+    if (subjects.length > 0 && !subjects.some((subject) => subject.id === subjectId)) {
+      setSubjectId(subjects[0].id);
+    }
+  }, [subjectId, subjects]);
 
   function registerAbsence(quantity: number) {
     if (!selectedSubject) {
@@ -33,11 +40,7 @@ export function QuickAbsenceForm() {
       status: "absence"
     };
 
-    setSubjects((current) =>
-      current.map((subject) =>
-        subject.id === selectedSubject.id ? { ...subject, attendance: [record, ...subject.attendance] } : subject
-      )
-    );
+    addAttendanceRecord(selectedSubject.id, record);
     setToast({ subjectName: selectedSubject.name, quantity, recordId: record.id });
   }
 
@@ -46,12 +49,10 @@ export function QuickAbsenceForm() {
       return;
     }
 
-    setSubjects((current) =>
-      current.map((subject) => ({
-        ...subject,
-        attendance: subject.attendance.filter((record) => record.id !== toast.recordId)
-      }))
-    );
+    const subject = subjects.find((item) => item.name === toast.subjectName);
+    if (subject) {
+      removeAttendanceRecord(subject.id, toast.recordId);
+    }
     setToast(null);
   }
 

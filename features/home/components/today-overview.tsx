@@ -7,27 +7,45 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { calculateAttendanceSummary } from "@/lib/academic-rules/attendance";
 import { calculateGradeAverage } from "@/lib/academic-rules/grades";
-import { formatLongDate, getCurrentWeekday } from "@/lib/date";
-import { extraTodayBlocks, getClassBlocksForWeekday, getPendingActivities, mockSubjects } from "@/features/academic/data/mock";
+import { formatLongDate, formatShortDate, getCurrentWeekday, getTodayInAppTimeZone } from "@/lib/date";
+import { extraTodayBlocks, getClassBlocksForWeekday, getPendingActivities, type DayBlock } from "@/features/academic/data/mock";
+import { getReminderDateKey, getReminderTime } from "@/lib/reminders/schedule";
+import { getTaskDate, prioritizeTasks } from "@/lib/tasks/prioritization";
+import { useRoutineData } from "@/features/data/routine-store";
 
-const seedTasks = [
-  { id: "finalizar-relatorio", title: "Finalizar relatorio", done: false, priority: "urgent" },
-  { id: "revisar-redes", title: "Revisar Redes", done: false, priority: "high" },
-  { id: "organizar-amanha", title: "Organizar amanha", done: false, priority: "medium" }
-];
+type TodayBlock = DayBlock | { id: string; title: string; time: string; type: "task" | "reminder"; subjectId?: string };
 
 export function TodayOverview() {
+  const { data, completeTask } = useRoutineData();
   const [now, setNow] = useState<Date | null>(null);
-  const [tasks, setTasks] = useState(seedTasks);
 
   useEffect(() => {
     setNow(new Date());
   }, []);
 
-  const todayBlocks = useMemo(() => {
+  const today = now ? getTodayInAppTimeZone(now) : getTodayInAppTimeZone();
+  const todayBlocks = useMemo<TodayBlock[]>(() => {
     const weekday = now ? getCurrentWeekday(now) : "monday";
-    return [...getClassBlocksForWeekday(weekday), ...extraTodayBlocks].sort((a, b) => a.time.localeCompare(b.time));
-  }, [now]);
+    const classBlocks = getClassBlocksForWeekday(weekday, data.subjects);
+    const taskBlocks: TodayBlock[] = data.tasks
+      .filter((task) => task.status !== "done" && getTaskDate(task) === today && task.time)
+      .map((task) => ({
+        id: task.id,
+        title: task.title,
+        time: task.time ?? "23:59",
+        type: "task"
+      }));
+    const reminderBlocks: TodayBlock[] = data.reminders
+      .filter((reminder) => reminder.status === "scheduled" && getReminderDateKey(reminder) === today)
+      .map((reminder) => ({
+        id: reminder.id,
+        title: reminder.title,
+        time: getReminderTime(reminder),
+        type: "reminder"
+      }));
+
+    return [...classBlocks, ...extraTodayBlocks, ...taskBlocks, ...reminderBlocks].sort((a, b) => a.time.localeCompare(b.time));
+  }, [data.reminders, data.subjects, data.tasks, now, today]);
 
   const nextBlock = useMemo(() => {
     if (!now) {
@@ -44,8 +62,14 @@ export function TodayOverview() {
     return todayBlocks.find((block) => block.time >= currentTime) ?? null;
   }, [now, todayBlocks]);
 
-  const sortedTasks = [...tasks].sort((a, b) => Number(a.done) - Number(b.done));
-  const pendingActivities = getPendingActivities().slice(0, 3);
+  const sortedTasks = prioritizeTasks(
+    data.tasks.filter((task) => task.status !== "cancelled" && (getTaskDate(task) === today || task.priority === "urgent")),
+    today
+  ).slice(0, 5);
+  const pendingActivities = getPendingActivities(data.subjects).slice(0, 3);
+  const todayReminders = data.reminders.filter(
+    (reminder) => reminder.status === "scheduled" && getReminderDateKey(reminder) === today
+  );
 
   return (
     <div className="space-y-5">
@@ -55,14 +79,13 @@ export function TodayOverview() {
           <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Gab routine</h1>
           <p className="mt-1 text-sm text-slate-500">{now ? formatLongDate(now) : "Carregando data..."}</p>
         </div>
-        <button
-          aria-label="Centro de notificacoes sera ativado na Fase 3"
-          className="flex h-11 w-11 items-center justify-center rounded-lg border border-line bg-white text-slate-400"
-          disabled
-          type="button"
+        <Link
+          aria-label="Abrir lembretes"
+          className="flex h-11 w-11 items-center justify-center rounded-lg border border-line bg-white text-slate-600 shadow-sm"
+          href="/lembretes"
         >
           <Bell aria-hidden className="h-5 w-5" />
-        </button>
+        </Link>
       </header>
 
       <section className="rounded-lg bg-ink p-4 text-white shadow-soft">
@@ -76,9 +99,7 @@ export function TodayOverview() {
               <p className="text-3xl font-semibold">{nextBlock.time}</p>
               <p className="mt-1 text-base text-white/85">{nextBlock.title}</p>
             </div>
-            <Badge tone={nextBlock.type === "class" ? "mint" : nextBlock.type === "study" ? "sky" : "gold"}>
-              {nextBlock.type === "class" ? "Aula" : nextBlock.type === "study" ? "Estudo" : "Rotina"}
-            </Badge>
+            <Badge tone={getBlockTone(nextBlock.type)}>{getBlockLabel(nextBlock.type)}</Badge>
           </div>
         ) : (
           <p className="text-sm text-white/80">Nada restante hoje. Bom momento para planejar amanha.</p>
@@ -93,40 +114,56 @@ export function TodayOverview() {
           </Link>
         </div>
         <div className="rounded-lg border border-line bg-white shadow-sm">
+          {todayBlocks.length === 0 ? <div className="px-4 py-3 text-sm text-slate-500">Dia livre na agenda.</div> : null}
           {todayBlocks.map((block) => (
             <div className="grid grid-cols-[64px_1fr_auto] items-center gap-3 border-b border-line px-4 py-3 last:border-b-0" key={block.id}>
               <span className="text-sm font-semibold text-ink">{block.time}</span>
               <span className="min-w-0 truncate text-sm text-slate-700">{block.title}</span>
-              <Badge tone={block.type === "class" ? "mint" : block.type === "study" ? "sky" : "gold"}>
-                {block.type === "class" ? "aula" : block.type === "study" ? "estudo" : "fixo"}
-              </Badge>
+              <Badge tone={getBlockTone(block.type)}>{getBlockLabel(block.type)}</Badge>
             </div>
           ))}
         </div>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-ink">Pendentes</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-ink">Pendentes</h2>
+          <Link className="text-sm font-medium text-mint" href="/tarefas">
+            Ver tarefas
+          </Link>
+        </div>
         <div className="rounded-lg border border-line bg-white shadow-sm">
+          {sortedTasks.length === 0 ? <div className="px-4 py-3 text-sm text-slate-500">Sem tarefas urgentes ou de hoje.</div> : null}
           {sortedTasks.map((task) => (
             <label className="flex min-h-12 items-center gap-3 border-b border-line px-4 py-3 last:border-b-0" key={task.id}>
               <input
-                checked={task.done}
+                checked={task.status === "done"}
                 className="h-5 w-5 rounded border-line text-ink"
-                onChange={(event) =>
-                  setTasks((current) =>
-                    current.map((item) => (item.id === task.id ? { ...item, done: event.target.checked } : item))
-                  )
-                }
+                onChange={() => completeTask(task.id)}
                 type="checkbox"
               />
-              <span className={`min-w-0 flex-1 text-sm ${task.done ? "text-slate-400 line-through" : "text-slate-700"}`}>
+              <span className={`min-w-0 flex-1 text-sm ${task.status === "done" ? "text-slate-400 line-through" : "text-slate-700"}`}>
                 {task.title}
               </span>
               {task.priority === "urgent" ? <Badge tone="coral">urgente</Badge> : null}
             </label>
           ))}
         </div>
+
+        {todayReminders.length ? (
+          <div className="rounded-lg border border-line bg-white shadow-sm">
+            {todayReminders.map((reminder) => (
+              <Link
+                className="flex min-h-12 items-center justify-between gap-3 border-b border-line px-4 py-3 text-sm last:border-b-0"
+                href="/lembretes"
+                key={reminder.id}
+              >
+                <span className="min-w-0 truncate text-slate-700">{reminder.title}</span>
+                <span className="shrink-0 text-xs font-medium text-sky">{getReminderTime(reminder)}</span>
+              </Link>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       <section className="space-y-3">
@@ -137,7 +174,7 @@ export function TodayOverview() {
           </Link>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-          {mockSubjects.slice(0, 2).map((subject) => {
+          {data.subjects.slice(0, 2).map((subject) => {
             const attendance = calculateAttendanceSummary(subject.attendance, subject.rules, subject.name);
             const average = calculateGradeAverage(subject.grades, subject.rules.gradingMethod);
             const pendingCount = subject.activities.filter(
@@ -167,6 +204,7 @@ export function TodayOverview() {
           <h2 className="text-lg font-semibold text-ink">Prazos proximos</h2>
         </div>
         <div className="space-y-2">
+          {pendingActivities.length === 0 ? <p className="text-sm text-slate-500">Sem prazos pendentes.</p> : null}
           {pendingActivities.map((activity) => (
             <div className="flex items-center justify-between gap-3" key={activity.id}>
               <p className="min-w-0 truncate text-sm text-slate-700">{activity.title}</p>
@@ -192,6 +230,38 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function formatShortDate(date: string) {
-  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(new Date(`${date}T00:00:00`));
+function getBlockTone(type: TodayBlock["type"]): "mint" | "sky" | "gold" | "coral" {
+  if (type === "class") {
+    return "mint";
+  }
+
+  if (type === "study" || type === "reminder") {
+    return "sky";
+  }
+
+  if (type === "task") {
+    return "coral";
+  }
+
+  return "gold";
+}
+
+function getBlockLabel(type: TodayBlock["type"]) {
+  if (type === "class") {
+    return "aula";
+  }
+
+  if (type === "study") {
+    return "estudo";
+  }
+
+  if (type === "task") {
+    return "tarefa";
+  }
+
+  if (type === "reminder") {
+    return "lembrete";
+  }
+
+  return "fixo";
 }

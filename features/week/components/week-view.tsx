@@ -1,41 +1,60 @@
+"use client";
+
 import Link from "next/link";
+import { Bell, BookOpen, CalendarDays, CheckSquare } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { weekdayLabels } from "@/lib/date";
-import { mockSubjects } from "@/features/academic/data/mock";
-import type { Weekday } from "@/types/academic";
-
-const weekdays: Weekday[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+import { formatShortDate, getWeekDates, getWeekdayFromDate, toDateKey, weekdayLabels } from "@/lib/date";
+import { getReminderDateKey, getReminderTime } from "@/lib/reminders/schedule";
+import { getTaskDate } from "@/lib/tasks/prioritization";
+import { useRoutineData } from "@/features/data/routine-store";
 
 export function WeekView() {
+  const { data } = useRoutineData();
+  const weekDates = getWeekDates();
+
   return (
     <div className="space-y-5">
       <header>
         <p className="text-sm font-medium text-mint">Semana</p>
-        <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Aulas do semestre</h1>
+        <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Aulas e rotina</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          Nesta fase, a semana ja mostra aulas geradas pelos horarios das disciplinas. Tarefas, estudos e
-          compromissos entram quando a persistencia for ativada.
+          Visao semanal com aulas, tarefas, lembretes e prazos academicos.
         </p>
       </header>
 
       <section className="grid gap-3 lg:grid-cols-2" aria-label="Semana">
-        {weekdays.map((weekday) => {
-          const classes = mockSubjects.flatMap((subject) =>
+        {weekDates.map((date) => {
+          const dateKey = toDateKey(date);
+          const weekday = getWeekdayFromDate(date);
+          const classes = data.subjects.flatMap((subject) =>
             subject.schedules
               .filter((schedule) => schedule.weekday === weekday)
               .map((schedule) => ({ subject, schedule }))
           );
+          const tasks = data.tasks.filter((task) => task.status !== "done" && getTaskDate(task) === dateKey);
+          const reminders = data.reminders.filter(
+            (reminder) => reminder.status === "scheduled" && getReminderDateKey(reminder) === dateKey
+          );
+          const activities = data.subjects.flatMap((subject) =>
+            subject.activities
+              .filter((activity) => activity.status !== "submitted" && activity.status !== "corrected" && activity.dueDate === dateKey)
+              .map((activity) => ({ subject, activity }))
+          );
+          const total = classes.length + tasks.length + reminders.length + activities.length;
 
           return (
-            <div className="rounded-lg border border-line bg-white p-4 shadow-sm" key={weekday}>
+            <div className="rounded-lg border border-line bg-white p-4 shadow-sm" key={dateKey}>
               <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 className="text-sm font-semibold uppercase text-ink">{weekdayLabels[weekday]}</h2>
-                <Badge tone={classes.length ? "mint" : "neutral"}>{classes.length} aulas</Badge>
+                <div>
+                  <h2 className="text-sm font-semibold uppercase text-ink">{weekdayLabels[weekday]}</h2>
+                  <p className="text-xs text-slate-500">{formatShortDate(dateKey)}</p>
+                </div>
+                <Badge tone={total ? "mint" : "neutral"}>{total} itens</Badge>
               </div>
 
-              {classes.length === 0 ? (
-                <p className="text-sm text-slate-500">Sem aulas cadastradas.</p>
+              {total === 0 ? (
+                <p className="text-sm text-slate-500">Nada cadastrado.</p>
               ) : (
                 <div className="space-y-2">
                   {classes.map(({ subject, schedule }) => (
@@ -46,10 +65,64 @@ export function WeekView() {
                     >
                       <span className="text-sm font-semibold text-ink">{schedule.startTime}</span>
                       <span className="min-w-0">
-                        <span className="block truncate text-sm font-medium text-slate-700">{subject.name}</span>
-                        <span className="block truncate text-xs text-slate-500">
-                          {subject.room ?? "Sala nao informada"} • {schedule.classesQuantity} aulas
+                        <span className="flex items-center gap-2 truncate text-sm font-medium text-slate-700">
+                          <BookOpen aria-hidden className="h-4 w-4 text-mint" />
+                          {subject.name}
                         </span>
+                        <span className="block truncate text-xs text-slate-500">
+                          {subject.room ?? "Sala nao informada"} - {schedule.classesQuantity} aulas
+                        </span>
+                      </span>
+                    </Link>
+                  ))}
+
+                  {activities.map(({ subject, activity }) => (
+                    <Link
+                      className="grid grid-cols-[58px_1fr] gap-3 rounded-lg border border-line px-3 py-2 transition hover:bg-slate-50"
+                      href={`/faculdade/${subject.id}`}
+                      key={activity.id}
+                    >
+                      <span className="text-sm font-semibold text-ink">{activity.time ?? "--:--"}</span>
+                      <span className="min-w-0">
+                        <span className="flex items-center gap-2 truncate text-sm font-medium text-slate-700">
+                          <CalendarDays aria-hidden className="h-4 w-4 text-gold" />
+                          {activity.title}
+                        </span>
+                        <span className="block truncate text-xs text-slate-500">{subject.name}</span>
+                      </span>
+                    </Link>
+                  ))}
+
+                  {tasks.map((task) => (
+                    <Link
+                      className="grid grid-cols-[58px_1fr] gap-3 rounded-lg border border-line px-3 py-2 transition hover:bg-slate-50"
+                      href="/tarefas"
+                      key={task.id}
+                    >
+                      <span className="text-sm font-semibold text-ink">{task.time ?? "--:--"}</span>
+                      <span className="min-w-0">
+                        <span className="flex items-center gap-2 truncate text-sm font-medium text-slate-700">
+                          <CheckSquare aria-hidden className="h-4 w-4 text-coral" />
+                          {task.title}
+                        </span>
+                        <span className="block truncate text-xs text-slate-500">{task.category ?? "Tarefa"}</span>
+                      </span>
+                    </Link>
+                  ))}
+
+                  {reminders.map((reminder) => (
+                    <Link
+                      className="grid grid-cols-[58px_1fr] gap-3 rounded-lg border border-line px-3 py-2 transition hover:bg-slate-50"
+                      href="/lembretes"
+                      key={reminder.id}
+                    >
+                      <span className="text-sm font-semibold text-ink">{getReminderTime(reminder)}</span>
+                      <span className="min-w-0">
+                        <span className="flex items-center gap-2 truncate text-sm font-medium text-slate-700">
+                          <Bell aria-hidden className="h-4 w-4 text-sky" />
+                          {reminder.title}
+                        </span>
+                        <span className="block truncate text-xs text-slate-500">Lembrete</span>
                       </span>
                     </Link>
                   ))}

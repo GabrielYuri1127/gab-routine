@@ -91,7 +91,7 @@ create table if not exists public.academic_activities (
 );
 
 create table if not exists public.tasks (
-  id uuid primary key default gen_random_uuid(),
+  id text primary key default gen_random_uuid()::text,
   user_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
   description text,
@@ -100,6 +100,9 @@ create table if not exists public.tasks (
   date date,
   time time,
   due_date date,
+  estimated_minutes integer,
+  completed_at timestamptz,
+  snoozed_until timestamptz,
   status text not null default 'open',
   created_at timestamptz not null default now()
 );
@@ -116,10 +119,12 @@ create table if not exists public.events (
 );
 
 create table if not exists public.reminders (
-  id uuid primary key default gen_random_uuid(),
+  id text primary key default gen_random_uuid()::text,
   user_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
   remind_at timestamptz not null,
+  source_type text,
+  source_id text,
   status text not null default 'scheduled',
   created_at timestamptz not null default now()
 );

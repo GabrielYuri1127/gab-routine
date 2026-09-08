@@ -47,14 +47,14 @@
     {
       "name": "Nova tarefa",
       "short_name": "Tarefa",
-      "description": "Preparado para a Fase 2",
+      "description": "Criar uma tarefa rapidamente",
       "url": "/quick/task",
       "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
     },
     {
       "name": "Criar lembrete",
       "short_name": "Lembrete",
-      "description": "Preparado para a Fase 2",
+      "description": "Criar um lembrete rapidamente",
       "url": "/quick/reminder",
       "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
     }

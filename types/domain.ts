@@ -36,6 +36,9 @@ export interface Task {
   date?: string;
   time?: string;
   dueDate?: string;
+  estimatedMinutes?: number;
+  completedAt?: string;
+  snoozedUntil?: string;
   status: TaskStatus;
 }
 
@@ -55,6 +58,8 @@ export interface Reminder {
   userId: string;
   title: string;
   remindAt: string;
+  sourceType?: "task" | "activity" | "event" | "study" | "custom";
+  sourceId?: string;
   status: "scheduled" | "sent" | "dismissed";
 }
 

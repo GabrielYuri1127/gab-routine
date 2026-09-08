@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { ArrowRight, Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useRoutineData } from "@/features/data/routine-store";
 import { calculateGradeAverage } from "@/lib/academic-rules/grades";
-import { mockSubjects } from "@/features/academic/data/mock";
-import type { Grade, Subject } from "@/types/academic";
+import type { Grade } from "@/types/academic";
 
 export function QuickGradeForm() {
-  const [subjects, setSubjects] = useState<Subject[]>(mockSubjects);
-  const [subjectId, setSubjectId] = useState(mockSubjects[0]?.id ?? "");
+  const { data, addGrade } = useRoutineData();
+  const subjects = data.subjects;
+  const [subjectId, setSubjectId] = useState(subjects[0]?.id ?? "");
   const [name, setName] = useState("");
   const [score, setScore] = useState("");
   const [maxScore, setMaxScore] = useState("10");
@@ -20,6 +21,12 @@ export function QuickGradeForm() {
     () => selectedSubject ? calculateGradeAverage(selectedSubject.grades, selectedSubject.rules.gradingMethod) : null,
     [selectedSubject]
   );
+
+  useEffect(() => {
+    if (subjects.length > 0 && !subjects.some((subject) => subject.id === subjectId)) {
+      setSubjectId(subjects[0].id);
+    }
+  }, [subjectId, subjects]);
 
   return (
     <div className="space-y-5">
@@ -46,9 +53,7 @@ export function QuickGradeForm() {
             type: "activity"
           };
 
-          setSubjects((current) =>
-            current.map((subject) => (subject.id === selectedSubject.id ? { ...subject, grades: [grade, ...subject.grades] } : subject))
-          );
+          addGrade(selectedSubject.id, grade);
           setName("");
           setScore("");
           setMaxScore("10");

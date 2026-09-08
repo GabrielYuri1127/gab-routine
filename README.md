@@ -1,19 +1,19 @@
 # Gab routine
 
-Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, faltas, notas e atividades. A Fase 1 entrega uma base Next.js funcional com PWA, modulo Faculdade e regras academicas UFAM centralizadas.
+Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, faltas, notas, atividades, tarefas e lembretes. A base atual entrega Fase 1 completa e Fase 2 inicial com persistencia local, calendario mensal, telas de tarefas/lembretes e login Supabase preparado.
 
 ## Stack
 
 - Next.js App Router
 - TypeScript
 - Tailwind CSS
-- Componentes locais inspirados em shadcn/ui, sem adicionar biblioteca pesada nesta fase
+- Componentes locais inspirados em shadcn/ui
 - Lucide Icons
 - Zod
-- Supabase preparado para Fase 2
-- PWA com manifest e service worker base
+- Supabase free preparado para autenticacao e persistencia em nuvem
+- PWA com manifest, service worker e icone maskable para Android
 
-## Como rodar
+## Como Rodar
 
 ```bash
 npm install
@@ -31,7 +31,7 @@ npm test
 npm run build
 ```
 
-## Variaveis de ambiente
+## Variaveis De Ambiente
 
 Copie `.env.example` para `.env.local` quando for ativar Supabase, IA ou push:
 
@@ -39,21 +39,31 @@ Copie `.env.example` para `.env.local` quando for ativar Supabase, IA ou push:
 cp .env.example .env.local
 ```
 
-Nenhuma chave deve ir para o frontend sem o prefixo correto. Chaves privadas de IA, VAPID e service role ficam somente no servidor.
+Para login Supabase no app:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```
+
+Chaves privadas de IA, VAPID e service role ficam somente no servidor.
 
 ## Supabase
 
-Supabase entra na Fase 2 para autenticacao e persistencia. O arquivo `supabase/schema.sql` ja prepara as tabelas principais e habilita RLS por `user_id`.
+O arquivo `supabase/schema.sql` prepara as tabelas principais e habilita RLS por `user_id`.
 
-Opcao recomendada para uso pessoal gratuito:
+Uso pessoal gratuito recomendado:
 
-- Autenticacao por email e senha.
-- Plano gratuito do Supabase.
-- RLS obrigatorio em todas as tabelas pessoais.
+- Crie um projeto no plano gratuito do Supabase.
+- Rode `supabase/schema.sql` no SQL Editor.
+- Ative autenticacao por email e senha.
+- Configure as variaveis `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 
-## PWA
+Sem essas variaveis, o app continua funcionando em modo local com `localStorage`.
 
-A Fase 1 inclui:
+## PWA Android
+
+O app ja inclui:
 
 - `public/manifest.webmanifest`
 - icone normal e maskable em SVG
@@ -61,11 +71,11 @@ A Fase 1 inclui:
 - registro do service worker em producao
 - shortcuts para falta, nota, tarefa e lembrete
 
-No Android, instale pelo Chrome/Edge usando "Adicionar a tela inicial" depois do deploy em HTTPS. O manifesto ja usa `standalone`, `theme_color`, `background_color`, `id`, `display_override`, shortcuts e icone maskable.
+No Android, instale pelo Chrome/Edge usando "Adicionar a tela inicial" depois do deploy em HTTPS. O manifesto usa `standalone`, `theme_color`, `background_color`, `id`, `display_override`, shortcuts e icone maskable.
 
 ## Notificacoes
 
-As preferencias e offsets padrao estao em `services/notifications/defaults.ts`. Push completo, VAPID, subscriptions e central de notificacoes entram na Fase 3.
+As preferencias padrao ficam em `services/notifications/defaults.ts`. A central de lembretes ja existe dentro do app; push completo com VAPID e subscriptions entra na Fase 3.
 
 ## IA
 
@@ -79,20 +89,27 @@ A arquitetura inicial fica em:
 
 Por padrao o provedor esta desativado, entao o app continua funcionando com regras internas. A IA nunca deve registrar falta, alterar nota, excluir dados ou aplicar planejamento sem confirmacao.
 
-## Deploy gratuito na Vercel
+## Deploy Gratuito Na Vercel
 
 1. Suba o projeto para um repositorio Git.
 2. Importe na Vercel.
-3. Configure as variaveis de ambiente gratuitas quando Supabase/IA/push forem ativados.
+3. Configure as variaveis gratuitas quando Supabase/IA/push forem ativados.
 4. Use o build padrao: `npm run build`.
 
-## Fase 1 entregue
+## Entregue
 
-- Home Hoje com proximo item, agenda do dia, pendencias e resumo da faculdade.
+- Home Hoje com proximo item, agenda do dia, pendencias, lembretes e resumo da faculdade.
 - Navegacao mobile com botao central de acao rapida.
 - `/faculdade` com disciplinas e cadastro rapido.
 - `/faculdade/[id]` com detalhes, faltas, notas, simulador e atividades.
 - Faltas em registros individuais com modo simples/completo, historico editavel e desfazer.
+- Notas, media, PF necessaria e simulador.
+- Atividades academicas por prazo.
+- `/tarefas` com criacao, prioridade, tempo estimado, concluir e adiar.
+- `/lembretes` com criacao, central e dispensar.
+- `/calendario` com aulas, prazos, tarefas e lembretes.
+- `/login` com Supabase Auth real quando configurado.
+- Persistencia local via `localStorage`.
 - Calculos academicos reutilizaveis em `lib/academic-rules`.
 - Preset UFAM em `lib/academic-rules/ufam.ts`.
 - PWA base e docs para widget Android futuro.

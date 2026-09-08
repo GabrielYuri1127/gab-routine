@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useRoutineData } from "@/features/data/routine-store";
 import {
   calculateGradeAverage,
   calculateRequiredFinalExamGrade,
@@ -14,7 +15,8 @@ import {
 import type { Grade, Subject } from "@/types/academic";
 
 export function GradePanel({ subject }: { subject: Subject }) {
-  const [grades, setGrades] = useState<Grade[]>(subject.grades);
+  const { addGrade } = useRoutineData();
+  const grades = subject.grades;
   const [name, setName] = useState("");
   const [score, setScore] = useState("");
   const [maxScore, setMaxScore] = useState("10");
@@ -75,7 +77,7 @@ export function GradePanel({ subject }: { subject: Subject }) {
             type
           };
 
-          setGrades((current) => [grade, ...current]);
+          addGrade(subject.id, grade);
           setName("");
           setScore("");
           setMaxScore("10");
@@ -145,6 +147,7 @@ export function GradePanel({ subject }: { subject: Subject }) {
                 <option value="activity">Atividade</option>
                 <option value="exam">Prova</option>
                 <option value="work">Trabalho</option>
+                <option value="project">Projeto</option>
                 <option value="mee">MEE</option>
                 <option value="pf">PF</option>
                 <option value="other">Outro</option>

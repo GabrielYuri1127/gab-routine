@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useRoutineData } from "@/features/data/routine-store";
 import { getDeadlineUrgency } from "@/lib/academic-rules/deadlines";
 import type { AcademicActivity, ActivityStatus, ActivityType, Subject } from "@/types/academic";
 
@@ -31,7 +32,8 @@ const typeLabels: Record<ActivityType, string> = {
 };
 
 export function ActivityPanel({ subject }: { subject: Subject }) {
-  const [activities, setActivities] = useState<AcademicActivity[]>(subject.activities);
+  const { addActivity, updateActivity } = useRoutineData();
+  const activities = subject.activities;
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [time, setTime] = useState("23:59");
@@ -68,7 +70,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
             maxScore: maxScore ? Number(maxScore) : undefined
           };
 
-          setActivities((current) => [activity, ...current]);
+          addActivity(subject.id, activity);
           setTitle("");
           setDueDate("");
           setTime("23:59");
@@ -163,9 +165,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
                   className="h-9 rounded-lg border border-line bg-white px-2 text-sm text-ink"
                   onChange={(event) => {
                     const status = event.target.value as ActivityStatus;
-                    setActivities((current) =>
-                      current.map((item) => (item.id === activity.id ? { ...item, status } : item))
-                    );
+                    updateActivity(subject.id, activity.id, { status });
                   }}
                   value={activity.status}
                 >
@@ -178,9 +178,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
                 {activity.status !== "submitted" && activity.status !== "corrected" ? (
                   <Button
                     onClick={() =>
-                      setActivities((current) =>
-                        current.map((item) => (item.id === activity.id ? { ...item, status: "submitted" } : item))
-                      )
+                      updateActivity(subject.id, activity.id, { status: "submitted" })
                     }
                     size="sm"
                     variant="secondary"
