@@ -1,0 +1,62 @@
+{
+  "name": "Gab routine",
+  "short_name": "Gab routine",
+  "id": "/",
+  "description": "Secretario pessoal e academico para rotina, faculdade e lembretes.",
+  "start_url": "/",
+  "scope": "/",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "display_override": ["standalone", "minimal-ui"],
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#15161a",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "education", "utilities"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Registrar falta",
+      "short_name": "Falta",
+      "description": "Registrar faltas rapidamente",
+      "url": "/quick/absence",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Adicionar nota",
+      "short_name": "Nota",
+      "description": "Adicionar uma nota de disciplina",
+      "url": "/quick/grade",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Nova tarefa",
+      "short_name": "Tarefa",
+      "description": "Preparado para a Fase 2",
+      "url": "/quick/task",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Criar lembrete",
+      "short_name": "Lembrete",
+      "description": "Preparado para a Fase 2",
+      "url": "/quick/reminder",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}

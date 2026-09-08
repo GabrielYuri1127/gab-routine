@@ -1,0 +1,32 @@
+{
+  "name": "gab-routine",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node --preserve-symlinks --preserve-symlinks-main ./node_modules/next/dist/bin/next dev",
+    "build": "node --preserve-symlinks --preserve-symlinks-main ./node_modules/next/dist/bin/next build",
+    "start": "node --preserve-symlinks --preserve-symlinks-main ./node_modules/next/dist/bin/next start",
+    "typecheck": "node --preserve-symlinks --preserve-symlinks-main ./node_modules/typescript/lib/tsc.js --noEmit",
+    "lint": "node --preserve-symlinks --preserve-symlinks-main scripts/lint.mjs",
+    "test": "node --preserve-symlinks --preserve-symlinks-main ./node_modules/typescript/lib/tsc.js -p tsconfig.test.json && node --preserve-symlinks --preserve-symlinks-main --test .test-build/__tests__"
+  },
+  "dependencies": {
+    "@next/swc-win32-x64-msvc": "16.3.4",
+    "@supabase/supabase-js": "2.45.4",
+    "clsx": "2.1.1",
+    "lucide-react": "0.468.0",
+    "next": "16.3.4",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "20.16.10",
+    "@types/react": "18.3.11",
+    "@types/react-dom": "18.3.1",
+    "autoprefixer": "10.4.20",
+    "postcss": "8.4.47",
+    "tailwindcss": "3.4.13",
+    "typescript": "5.6.2"
+  }
+}

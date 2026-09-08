@@ -1,0 +1,14 @@
+.next/
+node_modules/
+.npm-cache/
+.test-build/
+dist/
+coverage/
+*.tsbuildinfo
+.github_known_hosts
+.env
+.env*.local
+!.env.example
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
