@@ -11,7 +11,6 @@
     "test": "node --preserve-symlinks --preserve-symlinks-main ./node_modules/typescript/lib/tsc.js -p tsconfig.test.json && node --preserve-symlinks --preserve-symlinks-main --test .test-build/__tests__"
   },
   "dependencies": {
-    "@next/swc-win32-x64-msvc": "16.3.4",
     "@supabase/supabase-js": "2.45.4",
     "clsx": "2.1.1",
     "lucide-react": "0.468.0",
