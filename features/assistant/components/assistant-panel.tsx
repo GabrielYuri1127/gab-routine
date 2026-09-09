@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bot, Send, Sparkles } from "lucide-react";
+import { Bot, Loader2, Send, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,11 @@ const promptSuggestions = [
 export function AssistantPanel() {
   const { data } = useRoutineData();
   const today = getTodayInAppTimeZone();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [model, setModel] = useState("");
   const [question, setQuestion] = useState("");
+  const [source, setSource] = useState<"ai" | "rules">("rules");
   const starterResponse = useMemo(
     () =>
       buildRoutineAssistantResponse({
@@ -37,23 +41,61 @@ export function AssistantPanel() {
 
   const currentResponse = response ?? starterResponse;
 
-  function ask(nextQuestion: string) {
+  async function ask(nextQuestion: string) {
     const cleanQuestion = nextQuestion.trim();
     if (!cleanQuestion) {
       return;
     }
 
-    setResponse(
-      buildRoutineAssistantResponse({
-        events: data.events,
-        question: cleanQuestion,
-        reminders: data.reminders,
-        subjects: data.subjects,
-        tasks: data.tasks,
-        today
-      })
-    );
+    const localResponse = buildRoutineAssistantResponse({
+      events: data.events,
+      question: cleanQuestion,
+      reminders: data.reminders,
+      subjects: data.subjects,
+      tasks: data.tasks,
+      today
+    });
+
+    setError("");
+    setLoading(true);
+    setModel("");
     setQuestion("");
+
+    try {
+      const result = await fetch("/api/assistant", {
+        body: JSON.stringify({
+          events: data.events,
+          question: cleanQuestion,
+          reminders: data.reminders,
+          subjects: data.subjects,
+          tasks: data.tasks,
+          today
+        }),
+        headers: {
+          "Content-Type": "application/json"
+        },
+        method: "POST"
+      });
+
+      if (!result.ok) {
+        throw new Error("Assistant request failed");
+      }
+
+      const payload = (await result.json()) as AssistantApiResponse;
+      setResponse(payload.response ?? localResponse);
+      setSource(payload.source ?? "rules");
+      setModel(payload.model ?? "");
+
+      if (payload.error) {
+        setError("Usei a resposta local porque a IA online nao respondeu.");
+      }
+    } catch {
+      setResponse(localResponse);
+      setSource("rules");
+      setError("Usei a resposta local porque a IA online nao respondeu.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -69,7 +111,7 @@ export function AssistantPanel() {
             <Bot aria-hidden className="h-5 w-5 text-mint" />
             <h2 className="text-lg font-semibold text-ink">Assistente</h2>
           </span>
-          <Badge tone="sky">IA local</Badge>
+          <Badge tone={source === "ai" ? "mint" : "sky"}>{source === "ai" ? "IA API" : "IA local"}</Badge>
         </div>
 
         <form className="space-y-3" onSubmit={handleSubmit}>
@@ -82,9 +124,9 @@ export function AssistantPanel() {
               value={question}
             />
           </label>
-          <Button className="w-full" type="submit">
-            <Send aria-hidden className="h-4 w-4" />
-            Perguntar
+          <Button className="w-full" disabled={loading} type="submit">
+            {loading ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <Send aria-hidden className="h-4 w-4" />}
+            {loading ? "Pensando" : "Perguntar"}
           </Button>
         </form>
 
@@ -92,6 +134,7 @@ export function AssistantPanel() {
           {promptSuggestions.map((suggestion) => (
             <button
               className="rounded-lg border border-line px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-ink"
+              disabled={loading}
               key={suggestion}
               onClick={() => ask(suggestion)}
               type="button"
@@ -106,11 +149,12 @@ export function AssistantPanel() {
         <div className="mb-3 flex items-center justify-between gap-3">
           <span className="flex items-center gap-2 text-sm font-medium text-white/75">
             <Sparkles aria-hidden className="h-4 w-4" />
-            Resposta
+            {model ? `Resposta com ${model}` : "Resposta"}
           </span>
           <Badge tone="neutral">{intentLabels[currentResponse.intent]}</Badge>
         </div>
         <p className="text-base leading-7 text-white/90">{currentResponse.answer}</p>
+        {error ? <p className="mt-3 text-sm text-white/65">{error}</p> : null}
       </section>
 
       <section className="grid gap-3 sm:grid-cols-3">
@@ -164,3 +208,10 @@ const intentLabels: Record<RoutineAssistantResponse["intent"], string> = {
   now: "agora",
   summary: "resumo"
 };
+
+interface AssistantApiResponse {
+  error?: string;
+  model?: string;
+  response?: RoutineAssistantResponse;
+  source?: "ai" | "rules";
+}

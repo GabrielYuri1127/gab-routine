@@ -87,7 +87,9 @@ A arquitetura inicial fica em:
 - `lib/ai/structured-output.ts`
 - `services/ai/`
 
-Por padrao o provedor esta desativado, entao o app continua funcionando com regras internas. A rota `/assistente` ja responde perguntas sobre prioridades, faltas, medias e prazos usando os dados locais. A IA nunca deve registrar falta, alterar nota, excluir dados ou aplicar planejamento sem confirmacao.
+Por padrao o provedor esta desativado, entao o app continua funcionando com regras internas. A rota `/assistente` ja responde perguntas sobre prioridades, faltas, medias e prazos usando os dados locais. Quando `AI_PROVIDER=openai` e `AI_API_KEY` estiverem configurados no servidor, `/api/assistant` usa IA real sem expor a chave no navegador. A IA nunca deve registrar falta, alterar nota, excluir dados ou aplicar planejamento sem confirmacao.
+
+Veja `docs/ai-setup.md` antes de configurar a IA na Vercel.
 
 ## Deploy Gratuito Na Vercel
 
