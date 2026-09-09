@@ -140,6 +140,7 @@ O material apresentavel fica em `portfolio/`, com case study, ferramentas do pro
 - `/lembretes` com criacao, central, edicao, exclusao e dispensar.
 - `/calendario` com aulas, prazos, tarefas, lembretes e compromissos editaveis.
 - `/configuracoes` com preferencias de lembrete, exportacao, importacao e restauracao de dados locais.
+- `/configuracoes` com status de publicacao separando pendencias atuais e melhorias futuras.
 - `/configuracoes` com conexao Google Classroom e importacao para Faculdade.
 - `/tutorial` com guia de uso para compartilhar com amigos e familiares.
 - Perfil personalizavel com nome do app, usuario, cor, padroes academicos, modulos e estilo da IA.

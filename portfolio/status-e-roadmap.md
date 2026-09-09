@@ -20,6 +20,7 @@ O GAB ROUTINE ja tem uma versao funcional para uso pessoal, testes com outras pe
 - Assistente com logica local.
 - Preparacao de IA online.
 - Personalizacao do app.
+- Painel de status separando o que falta resolver agora e o que e melhoria futura.
 - Tutorial interno.
 - Backup local.
 - PWA instalavel no Android.

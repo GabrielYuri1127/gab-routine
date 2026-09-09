@@ -5,6 +5,7 @@ Use este checklist antes de compartilhar o GAB ROUTINE com amigos, familiares ou
 ## Antes De Compartilhar
 
 - Abrir `/configuracoes`.
+- Conferir o painel `Status de publicacao`.
 - Conferir nome do app, nome do usuario e cor principal.
 - Exportar um backup se o navegador ja tiver dados importantes.
 - Usar `Restaurar perfil padrao` se quiser enviar o app limpo.
