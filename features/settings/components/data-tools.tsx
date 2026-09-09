@@ -45,7 +45,7 @@ export function DataTools() {
   }
 
   function restoreExamples() {
-    if (!window.confirm("Restaurar os dados de exemplo do Gab routine neste navegador?")) {
+    if (!window.confirm("Restaurar os dados de exemplo do GAB ROUTINE neste navegador?")) {
       return;
     }
 

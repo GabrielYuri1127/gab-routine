@@ -6,13 +6,13 @@ import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Gab routine",
+  title: "GAB ROUTINE",
   description: "Secretario pessoal e academico para rotina, faculdade e lembretes.",
-  applicationName: "Gab routine",
+  applicationName: "GAB ROUTINE",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "Gab routine",
+    title: "GAB ROUTINE",
     statusBarStyle: "default"
   }
 };

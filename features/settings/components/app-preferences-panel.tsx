@@ -55,7 +55,7 @@ export function AppPreferencesPanel() {
           <input
             className={inputClass}
             onChange={(event) => updateAppPreference({ appName: event.target.value })}
-            placeholder="Gab routine"
+            placeholder="GAB ROUTINE"
             value={preferences.appName}
           />
         </label>

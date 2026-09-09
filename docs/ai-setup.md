@@ -1,4 +1,4 @@
-# IA No Gab Routine
+# IA No GAB ROUTINE
 
 O app funciona sem chave externa usando a IA local por regras. Para ativar resposta por API no deploy:
 

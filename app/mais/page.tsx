@@ -56,7 +56,7 @@ export default function MorePage() {
     <div className="space-y-5">
       <header>
         <p className="text-sm font-medium text-mint">Mais</p>
-        <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Estado do Gab routine</h1>
+        <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Estado do GAB ROUTINE</h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
           Esta tela evita botoes falsos: o que existe aparece como pronto, e o restante fica marcado por fase.
         </p>

@@ -1,4 +1,4 @@
-# Gab routine
+# GAB ROUTINE
 
 Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, faltas, notas, atividades, tarefas, compromissos e lembretes. A base atual entrega Fase 1 completa e Fase 2 com persistencia local, calendario mensal, telas editaveis, backup local e login Supabase preparado.
 

@@ -40,7 +40,7 @@ self.addEventListener("fetch", (event) => {
 
 self.addEventListener("push", (event) => {
   const fallback = {
-    title: "Gab routine",
+    title: "GAB ROUTINE",
     body: "Voce tem um lembrete pendente."
   };
   const data = event.data ? event.data.json() : fallback;

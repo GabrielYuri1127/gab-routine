@@ -20,7 +20,7 @@ type TodayBlock =
 export function TodayOverview() {
   const { data, completeTask } = useRoutineData();
   const [now, setNow] = useState<Date | null>(null);
-  const appName = data.appPreference.appName.trim() || "Gab routine";
+  const appName = data.appPreference.appName.trim() || "GAB ROUTINE";
   const firstName = data.appPreference.displayName.trim().split(/\s+/)[0] || "";
 
   useEffect(() => {

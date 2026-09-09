@@ -27,7 +27,7 @@ export async function askAssistant(question: string, context: Omit<RoutineAssist
         {
           role: "system",
           content: `${NATURAL_LANGUAGE_SYSTEM_PROMPT}
-Voce melhora a resposta do assistente pessoal Gab routine.
+Voce melhora a resposta do assistente pessoal GAB ROUTINE.
 Use somente os numeros, nomes, datas e links ja calculados pelo sistema.
 Mantenha a resposta curta, mas com raciocinio visivel e sem parecer modelo pronto.
 Nao remova avisos de dados faltantes.`
@@ -92,7 +92,7 @@ export async function askAssistantFallback(question: string, context?: Omit<Rout
     return {
       source: "rules" as const,
       answer:
-        "A IA ainda nao esta configurada. Por enquanto, o Gab routine usa regras internas para mostrar proximos itens, faltas, medias e prazos."
+        "A IA ainda nao esta configurada. Por enquanto, o GAB ROUTINE usa regras internas para mostrar proximos itens, faltas, medias e prazos."
     };
   }
 
