@@ -87,7 +87,7 @@ A arquitetura inicial fica em:
 - `lib/ai/structured-output.ts`
 - `services/ai/`
 
-Por padrao o provedor esta desativado, entao o app continua funcionando com regras internas. A IA nunca deve registrar falta, alterar nota, excluir dados ou aplicar planejamento sem confirmacao.
+Por padrao o provedor esta desativado, entao o app continua funcionando com regras internas. A rota `/assistente` ja responde perguntas sobre prioridades, faltas, medias e prazos usando os dados locais. A IA nunca deve registrar falta, alterar nota, excluir dados ou aplicar planejamento sem confirmacao.
 
 ## Deploy Gratuito Na Vercel
 
@@ -99,6 +99,7 @@ Por padrao o provedor esta desativado, entao o app continua funcionando com regr
 ## Entregue
 
 - Home Hoje com proximo item, agenda do dia, compromissos, pendencias, lembretes e resumo da faculdade.
+- `/assistente` com IA local para perguntas sobre o que fazer agora, faltas, notas e prazos.
 - Navegacao mobile com botao central de acao rapida.
 - `/faculdade` com disciplinas e cadastro rapido.
 - `/faculdade/[id]` com detalhes, faltas, notas, simulador e atividades.

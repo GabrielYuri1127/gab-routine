@@ -10,6 +10,7 @@ const implemented = [
   "Notas e simulador",
   "Atividades por prazo",
   "Compromissos editaveis no calendario",
+  "Assistente de IA local para rotina",
   "Preset UFAM",
   "PWA base",
   "Tarefas com persistencia local",
@@ -21,7 +22,7 @@ const implemented = [
 
 const next = [
   { icon: Bell, title: "Push completo e central", phase: "Fase 3" },
-  { icon: Bot, title: "IA e linguagem natural", phase: "Fase 4" },
+  { icon: Bot, title: "IA por API e comandos com confirmacao", phase: "Fase 4" },
   { icon: Smartphone, title: "Widget Android", phase: "Fase 6" }
 ];
 
@@ -30,6 +31,7 @@ const links = [
   { href: "/tarefas", title: "Abrir Tarefas", icon: CheckSquare },
   { href: "/lembretes", title: "Abrir Lembretes", icon: Bell },
   { href: "/calendario", title: "Abrir Calendario", icon: CalendarDays },
+  { href: "/assistente", title: "Abrir Assistente", icon: Bot },
   { href: "/configuracoes", title: "Configuracoes e backup", icon: Settings }
 ];
 
