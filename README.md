@@ -105,9 +105,17 @@ Veja `docs/ai-setup.md` antes de configurar a IA na Vercel.
 
 A tela `/configuracoes` tem um painel para conectar o Google Classroom e importar cursos ativos como disciplinas, com trabalhos datados virando atividades. Veja `docs/google-classroom.md` para configurar o OAuth no Google Cloud e na Vercel.
 
+## Publicacao
+
+Veja `docs/vercel-deploy.md` para publicar na Vercel e `docs/checklist-publicacao.md` para conferir o app antes de compartilhar.
+
 ## Tutorial E Personalizacao
 
 A rota `/tutorial` mostra o caminho inicial para configurar o app, cadastrar disciplinas, registrar dados antigos e instalar no Android. Em `/configuracoes`, o perfil do app permite trocar nome, pessoa usuaria, cor principal, estilo da IA, semestre padrao, carga horaria e modulos visiveis.
+
+## Portfolio
+
+O material apresentavel fica em `portfolio/`, com case study, ferramentas do projeto, roteiro de apresentacao e roadmap.
 
 ## Deploy Gratuito Na Vercel
 

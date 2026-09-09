@@ -7,6 +7,7 @@ Esta pasta guarda o material apresentavel do GAB ROUTINE: ideia, problema, soluc
 - `case-study.md`: texto principal para apresentar o projeto.
 - `ferramentas-do-projeto.md`: tecnologias e servicos usados no produto.
 - `roteiro-de-apresentacao.md`: guia rapido para mostrar o app em portfolio, entrevista ou postagem.
+- `status-e-roadmap.md`: estado atual, proximos passos e limites do escopo.
 
 ## Resumo Curto
 
