@@ -11,7 +11,7 @@ import type { Grade } from "@/types/academic";
 
 export function QuickGradeForm() {
   const { data, addGrade } = useRoutineData();
-  const subjects = data.subjects;
+  const subjects = data.subjects.filter((subject) => subject.status !== "archived");
   const [subjectId, setSubjectId] = useState(subjects[0]?.id ?? "");
   const [name, setName] = useState("");
   const [score, setScore] = useState("");

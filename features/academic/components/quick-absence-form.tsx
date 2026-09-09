@@ -14,7 +14,7 @@ import type { AttendanceRecord } from "@/types/academic";
 
 export function QuickAbsenceForm() {
   const { data, addAttendanceRecord, removeAttendanceRecord } = useRoutineData();
-  const subjects = data.subjects;
+  const subjects = data.subjects.filter((subject) => subject.status === "active");
   const today = getTodayInAppTimeZone();
   const [subjectId, setSubjectId] = useState(subjects[0]?.id ?? "");
   const [date, setDate] = useState(today);

@@ -259,7 +259,9 @@ export function CalendarView() {
 
 function buildCalendarItems(dateKey: string, subjects: Subject[], tasks: Task[], reminders: Reminder[], events: Event[]): CalendarItem[] {
   const weekday = getWeekdayFromDate(parseDateKey(dateKey));
-  const classes = subjects.flatMap((subject) =>
+  const visibleSubjects = subjects.filter((subject) => subject.status !== "archived");
+  const activeSubjects = visibleSubjects.filter((subject) => subject.status === "active");
+  const classes = activeSubjects.flatMap((subject) =>
     subject.schedules
       .filter((schedule) => schedule.weekday === weekday)
       .map((schedule) => ({
@@ -271,7 +273,7 @@ function buildCalendarItems(dateKey: string, subjects: Subject[], tasks: Task[],
       }))
   );
 
-  const activities = subjects.flatMap((subject) =>
+  const activities = visibleSubjects.flatMap((subject) =>
     subject.activities
       .filter((activity) => activity.dueDate === dateKey)
       .map((activity) => ({

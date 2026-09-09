@@ -1,6 +1,6 @@
 "use client";
 
-import { Calculator, Plus } from "lucide-react";
+import { Calculator, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import {
 import type { Grade, Subject } from "@/types/academic";
 
 export function GradePanel({ subject }: { subject: Subject }) {
-  const { addGrade } = useRoutineData();
+  const { addGrade, removeGrade, updateGrade } = useRoutineData();
   const grades = subject.grades;
   const [name, setName] = useState("");
   const [score, setScore] = useState("");
@@ -190,15 +190,105 @@ export function GradePanel({ subject }: { subject: Subject }) {
           <h3 className="text-sm font-semibold text-ink">Historico de notas</h3>
         </div>
         <div className="divide-y divide-line">
+          {grades.length === 0 ? <p className="px-4 py-5 text-sm text-slate-500">Nenhuma nota cadastrada ainda.</p> : null}
           {grades.map((grade) => (
-            <div className="flex items-center justify-between gap-3 px-4 py-3" key={grade.id}>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-ink">{grade.name}</p>
-                <p className="text-xs text-slate-500">{grade.type ?? "nota"} {grade.weight ? `• peso ${grade.weight}` : ""}</p>
+            <div className="px-4 py-3" key={grade.id}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-ink">{grade.name}</p>
+                  <p className="text-xs text-slate-500">
+                    {grade.type ?? "nota"} {grade.weight ? `- peso ${grade.weight}` : ""}
+                  </p>
+                </div>
+                <p className="text-sm font-semibold text-ink">
+                  {grade.score.toString().replace(".", ",")} / {grade.maxScore.toString().replace(".", ",")}
+                </p>
               </div>
-              <p className="text-sm font-semibold text-ink">
-                {grade.score.toString().replace(".", ",")} / {grade.maxScore.toString().replace(".", ",")}
-              </p>
+
+              <details className="mt-3 rounded-lg border border-dashed border-line p-3">
+                <summary className="cursor-pointer text-sm font-medium text-slate-600">Editar nota</summary>
+                <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_100px_100px_100px]">
+                  <label className="text-xs text-slate-500">
+                    Nome
+                    <input
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      onChange={(event) => updateGrade(subject.id, grade.id, { name: event.target.value })}
+                      value={grade.name}
+                    />
+                  </label>
+                  <label className="text-xs text-slate-500">
+                    Nota
+                    <input
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      min={0}
+                      onChange={(event) => updateGrade(subject.id, grade.id, { score: Number(event.target.value) })}
+                      step="0.1"
+                      type="number"
+                      value={grade.score}
+                    />
+                  </label>
+                  <label className="text-xs text-slate-500">
+                    Maxima
+                    <input
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      min={0.1}
+                      onChange={(event) => updateGrade(subject.id, grade.id, { maxScore: Number(event.target.value) || 10 })}
+                      step="0.1"
+                      type="number"
+                      value={grade.maxScore}
+                    />
+                  </label>
+                  <label className="text-xs text-slate-500">
+                    Peso
+                    <input
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      min={0}
+                      onChange={(event) => updateGrade(subject.id, grade.id, { weight: event.target.value ? Number(event.target.value) : undefined })}
+                      step="0.1"
+                      type="number"
+                      value={grade.weight ?? ""}
+                    />
+                  </label>
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-[150px_150px_1fr_auto]">
+                  <label className="text-xs text-slate-500">
+                    Tipo
+                    <select
+                      className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm text-ink outline-none focus:border-ink"
+                      onChange={(event) => updateGrade(subject.id, grade.id, { type: event.target.value as Grade["type"] })}
+                      value={grade.type ?? "activity"}
+                    >
+                      <option value="activity">Atividade</option>
+                      <option value="exam">Prova</option>
+                      <option value="work">Trabalho</option>
+                      <option value="project">Projeto</option>
+                      <option value="mee">MEE</option>
+                      <option value="pf">PF</option>
+                      <option value="other">Outro</option>
+                    </select>
+                  </label>
+                  <label className="text-xs text-slate-500">
+                    Data
+                    <input
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      onChange={(event) => updateGrade(subject.id, grade.id, { date: event.target.value || undefined })}
+                      type="date"
+                      value={grade.date ?? ""}
+                    />
+                  </label>
+                  <label className="text-xs text-slate-500">
+                    Observacao
+                    <input
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      onChange={(event) => updateGrade(subject.id, grade.id, { notes: event.target.value || undefined })}
+                      value={grade.notes ?? ""}
+                    />
+                  </label>
+                  <Button aria-label="Excluir nota" className="self-end" onClick={() => removeGrade(subject.id, grade.id)} size="icon" variant="ghost">
+                    <Trash2 aria-hidden className="h-4 w-4" />
+                  </Button>
+                </div>
+              </details>
             </div>
           ))}
         </div>

@@ -103,11 +103,12 @@ Veja `docs/ai-setup.md` antes de configurar a IA na Vercel.
 - Home Hoje com proximo item, agenda do dia, compromissos, pendencias, lembretes e resumo da faculdade.
 - `/assistente` com IA local para perguntas sobre o que fazer agora, faltas, notas e prazos.
 - Navegacao mobile com botao central de acao rapida.
-- `/faculdade` com disciplinas e cadastro rapido.
-- `/faculdade/[id]` com detalhes, faltas, notas, simulador e atividades.
+- `/faculdade` com busca, filtros por status, cards com atalhos e cadastro detalhado.
+- `/faculdade/[id]` com detalhes, acoes rapidas, faltas, notas, simulador, atividades e gerenciamento.
 - Faltas em registros individuais com modo rapido/completo, data passada, atalhos de aulas recentes, historico editavel e desfazer.
-- Personalizacao de disciplina com professor, sala, semestre, cor, horarios e regras academicas.
-- Notas, media, PF necessaria e simulador.
+- Personalizacao de disciplina com professor, sala, semestre, status, observacoes, cor, horarios e regras academicas.
+- Acoes de disciplina para pausar, concluir, arquivar, reativar, copiar configuracao e excluir.
+- Notas editaveis com nome, valor, maxima, peso, tipo, data, observacao e exclusao.
 - Atividades academicas por prazo com busca, filtros, presets, edicao direta e exclusao.
 - `/tarefas` com criacao, prioridade, tempo estimado, edicao, conclusao, exclusao e adiamento.
 - `/lembretes` com criacao, central, edicao, exclusao e dispensar.

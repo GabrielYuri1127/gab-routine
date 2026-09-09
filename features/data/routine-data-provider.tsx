@@ -53,6 +53,12 @@ export function RoutineDataProvider({ children }: { children: ReactNode }) {
           subjects: current.subjects.map((subject) => (subject.id === subjectId ? { ...subject, ...patch } : subject))
         }));
       },
+      removeSubject: (subjectId) => {
+        updateData((current) => ({
+          ...current,
+          subjects: current.subjects.filter((subject) => subject.id !== subjectId)
+        }));
+      },
       addTask: (task) => {
         updateData((current) => ({
           ...current,
@@ -217,6 +223,32 @@ export function RoutineDataProvider({ children }: { children: ReactNode }) {
           ...current,
           subjects: current.subjects.map((subject) =>
             subject.id === subjectId ? { ...subject, grades: [grade, ...subject.grades] } : subject
+          )
+        }));
+      },
+      updateGrade: (subjectId, gradeId, patch) => {
+        updateData((current) => ({
+          ...current,
+          subjects: current.subjects.map((subject) =>
+            subject.id === subjectId
+              ? {
+                  ...subject,
+                  grades: subject.grades.map((grade) => (grade.id === gradeId ? { ...grade, ...patch } : grade))
+                }
+              : subject
+          )
+        }));
+      },
+      removeGrade: (subjectId, gradeId) => {
+        updateData((current) => ({
+          ...current,
+          subjects: current.subjects.map((subject) =>
+            subject.id === subjectId
+              ? {
+                  ...subject,
+                  grades: subject.grades.filter((grade) => grade.id !== gradeId)
+                }
+              : subject
           )
         }));
       },

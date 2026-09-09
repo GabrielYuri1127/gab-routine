@@ -1,24 +1,35 @@
 "use client";
 
-import { Palette, Plus, Save, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Archive, CheckCircle2, Copy, Palette, PauseCircle, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createId, useRoutineData } from "@/features/data/routine-store";
 import { weekdayLabels } from "@/lib/date";
-import type { GradingMethod, Subject, Weekday } from "@/types/academic";
+import type { GradingMethod, Subject, SubjectStatus, Weekday } from "@/types/academic";
 
 const weekdayOptions: Weekday[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
+const statusLabels: Record<SubjectStatus, string> = {
+  active: "Ativa",
+  archived: "Arquivada",
+  completed: "Concluida",
+  paused: "Pausada"
+};
+
 export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
-  const { updateSubject } = useRoutineData();
+  const router = useRouter();
+  const { addSubject, removeSubject, updateSubject } = useRoutineData();
   const [name, setName] = useState(subject.name);
   const [code, setCode] = useState(subject.code ?? "");
   const [professor, setProfessor] = useState(subject.professor ?? "");
   const [room, setRoom] = useState(subject.room ?? "");
   const [semester, setSemester] = useState(subject.semester);
   const [color, setColor] = useState(subject.color);
+  const [status, setStatus] = useState<SubjectStatus>(subject.status);
+  const [observations, setObservations] = useState(subject.observations ?? "");
   const [workloadHours, setWorkloadHours] = useState(String(subject.workloadHours));
   const [minimumAttendance, setMinimumAttendance] = useState(String(subject.rules.minimumAttendance));
   const [totalExpectedClasses, setTotalExpectedClasses] = useState(String(subject.rules.totalExpectedClasses));
@@ -39,6 +50,8 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
     setRoom(subject.room ?? "");
     setSemester(subject.semester);
     setColor(subject.color);
+    setStatus(subject.status);
+    setObservations(subject.observations ?? "");
     setWorkloadHours(String(subject.workloadHours));
     setMinimumAttendance(String(subject.rules.minimumAttendance));
     setTotalExpectedClasses(String(subject.rules.totalExpectedClasses));
@@ -62,6 +75,8 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
       room: room.trim() || undefined,
       semester: semester.trim() || subject.semester,
       color,
+      observations: observations.trim() || undefined,
+      status,
       workloadHours: Number(workloadHours) || subject.workloadHours,
       rules: {
         ...subject.rules,
@@ -74,6 +89,40 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
       }
     });
     flashSaved();
+  }
+
+  function setSubjectStatus(nextStatus: SubjectStatus) {
+    setStatus(nextStatus);
+    updateSubject(subject.id, { status: nextStatus });
+    flashSaved();
+  }
+
+  function duplicateSubject() {
+    const nextId = createId("subject");
+    addSubject({
+      ...subject,
+      id: nextId,
+      activities: [],
+      attendance: [],
+      grades: [],
+      name: `${subject.name} copia`,
+      schedules: subject.schedules.map((schedule) => ({
+        ...schedule,
+        id: createId("schedule"),
+        subjectId: nextId
+      })),
+      status: "active"
+    });
+    router.push(`/faculdade/${nextId}`);
+  }
+
+  function deleteSubject() {
+    if (!window.confirm(`Excluir ${subject.name} e todos os registros dela neste navegador?`)) {
+      return;
+    }
+
+    removeSubject(subject.id);
+    router.push("/faculdade");
   }
 
   function addSchedule() {
@@ -108,7 +157,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
   }
 
   return (
-    <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
+    <section className="rounded-lg border border-line bg-white p-4 shadow-sm" id="editar">
       <details>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
           <span className="flex items-center gap-2">
@@ -126,6 +175,20 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
             <TextField label="Sala" onChange={setRoom} value={room} />
             <TextField label="Semestre" onChange={setSemester} value={semester} />
             <label>
+              <span className="text-sm font-medium text-slate-700">Status</span>
+              <select
+                className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
+                onChange={(event) => setStatus(event.target.value as SubjectStatus)}
+                value={status}
+              >
+                {Object.entries(statusLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
               <span className="text-sm font-medium text-slate-700">Cor</span>
               <input
                 className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-2 text-sm outline-none focus:border-ink"
@@ -135,6 +198,16 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
               />
             </label>
           </div>
+
+          <label className="block">
+            <span className="text-sm font-medium text-slate-700">Observacoes</span>
+            <textarea
+              className="mt-1 min-h-24 w-full resize-y rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-ink"
+              onChange={(event) => setObservations(event.target.value)}
+              placeholder="Links, criterios, combinados com professor, conteudos importantes"
+              value={observations}
+            />
+          </label>
 
           <div className="grid gap-3 sm:grid-cols-3">
             <NumberField label="Carga horaria" onChange={setWorkloadHours} value={workloadHours} />
@@ -264,6 +337,38 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
               <Button className="self-end" onClick={addSchedule} variant="secondary">
                 <Plus aria-hidden className="h-4 w-4" />
                 Adicionar
+              </Button>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-dashed border-line p-3">
+            <h3 className="text-sm font-semibold text-ink">Acoes da disciplina</h3>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <Button onClick={() => setSubjectStatus("paused")} variant="secondary">
+                <PauseCircle aria-hidden className="h-4 w-4" />
+                Pausar
+              </Button>
+              <Button onClick={() => setSubjectStatus("completed")} variant="secondary">
+                <CheckCircle2 aria-hidden className="h-4 w-4" />
+                Concluir
+              </Button>
+              <Button onClick={() => setSubjectStatus("archived")} variant="secondary">
+                <Archive aria-hidden className="h-4 w-4" />
+                Arquivar
+              </Button>
+              <Button onClick={() => setSubjectStatus("active")} variant="secondary">
+                <RotateCcw aria-hidden className="h-4 w-4" />
+                Ativar
+              </Button>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <Button onClick={duplicateSubject} variant="secondary">
+                <Copy aria-hidden className="h-4 w-4" />
+                Copiar configuracao
+              </Button>
+              <Button onClick={deleteSubject} variant="danger">
+                <Trash2 aria-hidden className="h-4 w-4" />
+                Excluir disciplina
               </Button>
             </div>
           </div>

@@ -3,18 +3,43 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import type { Subject } from "@/types/academic";
+import { weekdayLabels } from "@/lib/date";
+import type { Weekday } from "@/types/academic";
 
-interface SubjectCreateFormProps {
-  onCreate: (subject: Pick<Subject, "name" | "professor" | "color"> & { scheduleText: string }) => void;
+export interface SubjectCreateDraft {
+  code?: string;
+  color: string;
+  firstSchedule?: {
+    classesQuantity: number;
+    endTime: string;
+    startTime: string;
+    weekday: Weekday;
+  };
+  name: string;
+  professor?: string;
+  room?: string;
+  semester: string;
+  workloadHours: number;
 }
 
-const colors = ["#0f9f7a", "#2b7fff", "#e35d45", "#b7791f"];
+interface SubjectCreateFormProps {
+  onCreate: (subject: SubjectCreateDraft) => void;
+}
+
+const colors = ["#0f9f7a", "#2b7fff", "#e35d45", "#b7791f", "#7c3aed", "#0891b2"];
+const weekdays: Weekday[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
 export function SubjectCreateForm({ onCreate }: SubjectCreateFormProps) {
   const [name, setName] = useState("");
+  const [code, setCode] = useState("");
   const [professor, setProfessor] = useState("");
-  const [scheduleText, setScheduleText] = useState("");
+  const [room, setRoom] = useState("");
+  const [semester, setSemester] = useState("2026/1");
+  const [workloadHours, setWorkloadHours] = useState("60");
+  const [weekday, setWeekday] = useState<Weekday>("monday");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [classesQuantity, setClassesQuantity] = useState("2");
   const [color, setColor] = useState(colors[0]);
 
   return (
@@ -26,16 +51,40 @@ export function SubjectCreateForm({ onCreate }: SubjectCreateFormProps) {
           return;
         }
 
-        onCreate({ name: name.trim(), professor: professor.trim(), scheduleText: scheduleText.trim(), color });
+        onCreate({
+          code: code.trim() || undefined,
+          color,
+          firstSchedule:
+            startTime && endTime
+              ? {
+                  classesQuantity: Number(classesQuantity) || 1,
+                  endTime,
+                  startTime,
+                  weekday
+                }
+              : undefined,
+          name: name.trim(),
+          professor: professor.trim() || undefined,
+          room: room.trim() || undefined,
+          semester: semester.trim() || "2026/1",
+          workloadHours: Number(workloadHours) || 60
+        });
         setName("");
+        setCode("");
         setProfessor("");
-        setScheduleText("");
+        setRoom("");
+        setSemester("2026/1");
+        setWorkloadHours("60");
+        setWeekday("monday");
+        setStartTime("");
+        setEndTime("");
+        setClassesQuantity("2");
         setColor(colors[0]);
       }}
     >
       <div>
         <h2 className="text-base font-semibold text-ink">Nova disciplina</h2>
-        <p className="mt-1 text-sm text-slate-500">Cadastro rapido, so com o essencial.</p>
+        <p className="mt-1 text-sm text-slate-500">Cadastre o essencial agora e ajuste tudo depois.</p>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -61,18 +110,97 @@ export function SubjectCreateForm({ onCreate }: SubjectCreateFormProps) {
         </label>
 
         <label>
-          <span className="text-sm font-medium text-slate-700">Dias e horarios</span>
+          <span className="text-sm font-medium text-slate-700">Sala</span>
           <input
             className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none transition focus:border-ink"
-            onChange={(event) => setScheduleText(event.target.value)}
-            placeholder="Seg e Qua, 08:00"
-            value={scheduleText}
+            onChange={(event) => setRoom(event.target.value)}
+            placeholder="Bloco, sala ou link"
+            value={room}
           />
         </label>
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+      <details className="mt-4 rounded-lg border border-dashed border-line p-3">
+        <summary className="cursor-pointer text-sm font-medium text-slate-600">Mais opcoes</summary>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-4">
+          <label>
+            <span className="text-sm font-medium text-slate-700">Codigo</span>
+            <input
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none transition focus:border-ink"
+              onChange={(event) => setCode(event.target.value)}
+              placeholder="IEC..."
+              value={code}
+            />
+          </label>
+          <label>
+            <span className="text-sm font-medium text-slate-700">Semestre</span>
+            <input
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none transition focus:border-ink"
+              onChange={(event) => setSemester(event.target.value)}
+              value={semester}
+            />
+          </label>
+          <label>
+            <span className="text-sm font-medium text-slate-700">Carga horaria</span>
+            <input
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none transition focus:border-ink"
+              min={1}
+              onChange={(event) => setWorkloadHours(event.target.value)}
+              type="number"
+              value={workloadHours}
+            />
+          </label>
+          <label>
+            <span className="text-sm font-medium text-slate-700">Primeiro dia</span>
+            <select
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none transition focus:border-ink"
+              onChange={(event) => setWeekday(event.target.value as Weekday)}
+              value={weekday}
+            >
+              {weekdays.map((option) => (
+                <option key={option} value={option}>
+                  {weekdayLabels[option]}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <label>
+            <span className="text-sm font-medium text-slate-700">Inicio</span>
+            <input
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none transition focus:border-ink"
+              onChange={(event) => setStartTime(event.target.value)}
+              type="time"
+              value={startTime}
+            />
+          </label>
+          <label>
+            <span className="text-sm font-medium text-slate-700">Fim</span>
+            <input
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none transition focus:border-ink"
+              onChange={(event) => setEndTime(event.target.value)}
+              type="time"
+              value={endTime}
+            />
+          </label>
+          <label>
+            <span className="text-sm font-medium text-slate-700">Aulas</span>
+            <input
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none transition focus:border-ink"
+              min={1}
+              onChange={(event) => setClassesQuantity(event.target.value)}
+              type="number"
+              value={classesQuantity}
+            />
+          </label>
+        </div>
+      </details>
+
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
           {colors.map((option) => (
             <button
               aria-label={`Usar cor ${option}`}
@@ -84,7 +212,7 @@ export function SubjectCreateForm({ onCreate }: SubjectCreateFormProps) {
             />
           ))}
         </div>
-        <Button type="submit">Criar</Button>
+        <Button type="submit">Criar disciplina</Button>
       </div>
     </form>
   );

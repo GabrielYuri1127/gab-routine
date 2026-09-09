@@ -46,24 +46,28 @@ const pendingStatuses = new Set<AcademicActivity["status"]>(["not_started", "in_
 
 export function buildRoutineAssistantResponse(input: RoutineAssistantInput): RoutineAssistantResponse {
   const intent = detectIntent(input.question);
+  const safeInput = {
+    ...input,
+    subjects: input.subjects.filter((subject) => subject.status !== "archived")
+  };
 
   if (intent === "attendance") {
-    return buildAttendanceAnswer(input);
+    return buildAttendanceAnswer(safeInput);
   }
 
   if (intent === "grades") {
-    return buildGradeAnswer(input);
+    return buildGradeAnswer(safeInput);
   }
 
   if (intent === "deadlines") {
-    return buildDeadlineAnswer(input);
+    return buildDeadlineAnswer(safeInput);
   }
 
   if (intent === "now") {
-    return buildNowAnswer(input);
+    return buildNowAnswer(safeInput);
   }
 
-  return buildSummaryAnswer(input);
+  return buildSummaryAnswer(safeInput);
 }
 
 function detectIntent(question: string): AssistantIntent {
@@ -101,7 +105,10 @@ function buildNowAnswer(input: RoutineAssistantInput): RoutineAssistantResponse 
   const todayActivities = getPendingActivities(input.subjects)
     .filter(({ activity }) => activity.dueDate === input.today)
     .sort(sortPendingActivity);
-  const todayClasses = getTodayClasses(input.subjects, input.today);
+  const todayClasses = getTodayClasses(
+    input.subjects.filter((subject) => subject.status === "active"),
+    input.today
+  );
   const firstTask = todayTasks[0];
   const firstEvent = todayEvents[0];
   const firstActivity = todayActivities[0];

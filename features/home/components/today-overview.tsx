@@ -26,9 +26,11 @@ export function TodayOverview() {
   }, []);
 
   const today = now ? getTodayInAppTimeZone(now) : getTodayInAppTimeZone();
+  const visibleSubjects = useMemo(() => data.subjects.filter((subject) => subject.status !== "archived"), [data.subjects]);
+  const activeSubjects = useMemo(() => visibleSubjects.filter((subject) => subject.status === "active"), [visibleSubjects]);
   const todayBlocks = useMemo<TodayBlock[]>(() => {
     const weekday = now ? getCurrentWeekday(now) : "monday";
-    const classBlocks = getClassBlocksForWeekday(weekday, data.subjects);
+    const classBlocks = getClassBlocksForWeekday(weekday, activeSubjects);
     const taskBlocks: TodayBlock[] = data.tasks
       .filter((task) => task.status !== "done" && getTaskDate(task) === today && task.time)
       .map((task) => ({
@@ -58,7 +60,7 @@ export function TodayOverview() {
     return [...classBlocks, ...extraTodayBlocks, ...taskBlocks, ...reminderBlocks, ...eventBlocks].sort((a, b) =>
       a.time.localeCompare(b.time)
     );
-  }, [data.events, data.reminders, data.subjects, data.tasks, now, today]);
+  }, [activeSubjects, data.events, data.reminders, data.tasks, now, today]);
 
   const nextBlock = useMemo(() => {
     if (!now) {
@@ -79,7 +81,7 @@ export function TodayOverview() {
     data.tasks.filter((task) => task.status !== "cancelled" && (getTaskDate(task) === today || task.priority === "urgent")),
     today
   ).slice(0, 5);
-  const pendingActivities = getPendingActivities(data.subjects).slice(0, 3);
+  const pendingActivities = getPendingActivities(visibleSubjects).slice(0, 3);
   const todayReminders = data.reminders.filter(
     (reminder) => reminder.status === "scheduled" && getReminderDateKey(reminder) === today
   );
@@ -211,7 +213,7 @@ export function TodayOverview() {
           </Link>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-          {data.subjects.slice(0, 2).map((subject) => {
+          {visibleSubjects.slice(0, 2).map((subject) => {
             const attendance = calculateAttendanceSummary(subject.attendance, subject.rules, subject.name);
             const average = calculateGradeAverage(subject.grades, subject.rules.gradingMethod);
             const pendingCount = subject.activities.filter(

@@ -12,6 +12,8 @@ import { useRoutineData } from "@/features/data/routine-store";
 export function WeekView() {
   const { data } = useRoutineData();
   const weekDates = getWeekDates();
+  const visibleSubjects = data.subjects.filter((subject) => subject.status !== "archived");
+  const activeSubjects = visibleSubjects.filter((subject) => subject.status === "active");
 
   return (
     <div className="space-y-5">
@@ -27,7 +29,7 @@ export function WeekView() {
         {weekDates.map((date) => {
           const dateKey = toDateKey(date);
           const weekday = getWeekdayFromDate(date);
-          const classes = data.subjects.flatMap((subject) =>
+          const classes = activeSubjects.flatMap((subject) =>
             subject.schedules
               .filter((schedule) => schedule.weekday === weekday)
               .map((schedule) => ({ subject, schedule }))
@@ -37,7 +39,7 @@ export function WeekView() {
             (reminder) => reminder.status === "scheduled" && getReminderDateKey(reminder) === dateKey
           );
           const events = data.events.filter((event) => event.date === dateKey);
-          const activities = data.subjects.flatMap((subject) =>
+          const activities = visibleSubjects.flatMap((subject) =>
             subject.activities
               .filter((activity) => activity.status !== "submitted" && activity.status !== "corrected" && activity.dueDate === dateKey)
               .map((activity) => ({ subject, activity }))

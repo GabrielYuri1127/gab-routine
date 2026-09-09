@@ -14,6 +14,7 @@ export interface RoutineDataContextValue {
   resetData: () => void;
   addSubject: (subject: Subject) => void;
   updateSubject: (subjectId: string, patch: Partial<Subject>) => void;
+  removeSubject: (subjectId: string) => void;
   addTask: (task: Omit<Task, "id" | "userId" | "status"> & Partial<Pick<Task, "status">>) => void;
   updateTask: (taskId: string, patch: Partial<Task>) => void;
   completeTask: (taskId: string) => void;
@@ -31,6 +32,8 @@ export interface RoutineDataContextValue {
   updateAttendanceRecord: (subjectId: string, recordId: string, patch: Partial<AttendanceRecord>) => void;
   removeAttendanceRecord: (subjectId: string, recordId: string) => void;
   addGrade: (subjectId: string, grade: Grade) => void;
+  updateGrade: (subjectId: string, gradeId: string, patch: Partial<Grade>) => void;
+  removeGrade: (subjectId: string, gradeId: string) => void;
   addActivity: (subjectId: string, activity: AcademicActivity) => void;
   updateActivity: (subjectId: string, activityId: string, patch: Partial<AcademicActivity>) => void;
   removeActivity: (subjectId: string, activityId: string) => void;
