@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ClassroomImportPanel } from "@/features/classroom/components/classroom-import-panel";
 import { DataTools } from "@/features/settings/components/data-tools";
 
 export default function SettingsPage() {
@@ -14,6 +15,7 @@ export default function SettingsPage() {
       </header>
 
       <DataTools />
+      <ClassroomImportPanel />
 
       <Link className="flex h-11 w-full items-center justify-center rounded-lg border border-line bg-white text-sm font-medium text-ink" href="/mais">
         Voltar para Mais

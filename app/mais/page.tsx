@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, Bot, CalendarDays, CheckCircle2, CheckSquare, Database, Settings, Smartphone } from "lucide-react";
+import { Bell, Bot, CalendarDays, CheckCircle2, CheckSquare, Database, GraduationCap, Settings, Smartphone } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 
@@ -17,7 +17,8 @@ const implemented = [
   "Lembretes dentro do app",
   "Calendario mensal",
   "Backup e preferencias locais",
-  "Login Supabase preparado"
+  "Login Supabase preparado",
+  "Importacao Google Classroom preparada"
 ];
 
 const next = [
@@ -32,6 +33,7 @@ const links = [
   { href: "/lembretes", title: "Abrir Lembretes", icon: Bell },
   { href: "/calendario", title: "Abrir Calendario", icon: CalendarDays },
   { href: "/assistente", title: "Abrir Assistente", icon: Bot },
+  { href: "/configuracoes", title: "Google Classroom", icon: GraduationCap },
   { href: "/configuracoes", title: "Configuracoes e backup", icon: Settings }
 ];
 

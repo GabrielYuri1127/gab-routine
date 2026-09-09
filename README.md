@@ -12,6 +12,7 @@ Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, fa
 - Zod
 - Supabase free preparado para autenticacao e persistencia em nuvem
 - PWA com manifest, service worker e icone maskable para Android
+- Google Classroom preparado via OAuth somente leitura
 
 ## Como Rodar
 
@@ -47,6 +48,14 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
 Chaves privadas de IA, VAPID e service role ficam somente no servidor.
+
+Para importar turmas e atividades do Google Classroom:
+
+```bash
+GOOGLE_CLASSROOM_CLIENT_ID=
+GOOGLE_CLASSROOM_CLIENT_SECRET=
+GOOGLE_CLASSROOM_REDIRECT_URI=http://localhost:3000/api/classroom/callback
+```
 
 ## Supabase
 
@@ -91,6 +100,10 @@ Por padrao o provedor esta desativado, entao o app continua funcionando com regr
 
 Veja `docs/ai-setup.md` antes de configurar a IA na Vercel.
 
+## Google Classroom
+
+A tela `/configuracoes` tem um painel para conectar o Google Classroom e importar cursos ativos como disciplinas, com trabalhos datados virando atividades. Veja `docs/google-classroom.md` para configurar o OAuth no Google Cloud e na Vercel.
+
 ## Deploy Gratuito Na Vercel
 
 1. Suba o projeto para um repositorio Git.
@@ -114,6 +127,7 @@ Veja `docs/ai-setup.md` antes de configurar a IA na Vercel.
 - `/lembretes` com criacao, central, edicao, exclusao e dispensar.
 - `/calendario` com aulas, prazos, tarefas, lembretes e compromissos editaveis.
 - `/configuracoes` com preferencias de lembrete, exportacao, importacao e restauracao de dados locais.
+- `/configuracoes` com conexao Google Classroom e importacao para Faculdade.
 - `/login` com Supabase Auth real quando configurado.
 - Persistencia local via `localStorage`.
 - Calculos academicos reutilizaveis em `lib/academic-rules`.
