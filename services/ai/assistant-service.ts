@@ -29,17 +29,38 @@ export async function askAssistant(question: string, context: Omit<RoutineAssist
           content: `${NATURAL_LANGUAGE_SYSTEM_PROMPT}
 Voce melhora a resposta do assistente pessoal Gab routine.
 Use somente os numeros, nomes, datas e links ja calculados pelo sistema.
-Responda em JSON valido com: {"answer":"texto curto","suggestions":["item 1","item 2","item 3"]}.`
+Mantenha a resposta curta, mas com raciocinio visivel e sem parecer modelo pronto.
+Nao remova avisos de dados faltantes.`
         },
         {
           role: "user",
           content: JSON.stringify({
             calculatedResponse: localResponse,
+            answerStyle: context.appPreference?.assistantAnswerStyle ?? "balanced",
+            userName: context.appPreference?.displayName ?? "",
             question
           })
         }
       ],
-      responseFormat: "json",
+      responseFormat: {
+        name: "gab_routine_assistant_response",
+        schema: {
+          additionalProperties: false,
+          properties: {
+            answer: { maxLength: 900, type: "string" },
+            suggestions: {
+              items: { maxLength: 120, type: "string" },
+              maxItems: 3,
+              minItems: 1,
+              type: "array"
+            }
+          },
+          required: ["answer", "suggestions"],
+          type: "object"
+        },
+        strict: true,
+        type: "json_schema"
+      },
       temperature: 0.2
     });
     const polished = parsePolishedResponse(completion.content);

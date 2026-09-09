@@ -20,6 +20,8 @@ type TodayBlock =
 export function TodayOverview() {
   const { data, completeTask } = useRoutineData();
   const [now, setNow] = useState<Date | null>(null);
+  const appName = data.appPreference.appName.trim() || "Gab routine";
+  const firstName = data.appPreference.displayName.trim().split(/\s+/)[0] || "";
 
   useEffect(() => {
     setNow(new Date());
@@ -90,8 +92,8 @@ export function TodayOverview() {
     <div className="space-y-5">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-mint">Bom dia</p>
-          <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Gab routine</h1>
+          <p className="text-sm font-medium text-mint">{firstName ? `Bom dia, ${firstName}` : "Bom dia"}</p>
+          <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">{appName}</h1>
           <p className="mt-1 text-sm text-slate-500">{now ? formatLongDate(now) : "Carregando data..."}</p>
         </div>
         <Link
@@ -103,7 +105,7 @@ export function TodayOverview() {
         </Link>
       </header>
 
-      <section className="rounded-lg bg-ink p-4 text-white shadow-soft">
+      <section className="rounded-lg bg-ink p-4 text-white shadow-soft" style={{ borderTop: `4px solid ${data.appPreference.accentColor}` }}>
         <div className="mb-3 flex items-center justify-between">
           <p className="text-sm font-medium text-white/70">Proximo</p>
           <Clock aria-hidden className="h-4 w-4 text-white/70" />

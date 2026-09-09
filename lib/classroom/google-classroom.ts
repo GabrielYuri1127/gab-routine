@@ -1,7 +1,17 @@
 import type { ActivityType } from "@/types/academic";
-import type { ClassroomCourse, ClassroomCourseWork, ClassroomDate, ClassroomImportPayload, ClassroomTime } from "@/types/classroom";
+import type {
+  ClassroomAccount,
+  ClassroomCourse,
+  ClassroomCourseWork,
+  ClassroomDate,
+  ClassroomImportPayload,
+  ClassroomTime
+} from "@/types/classroom";
 
 export const CLASSROOM_SCOPES = [
+  "openid",
+  "email",
+  "profile",
   "https://www.googleapis.com/auth/classroom.courses.readonly",
   "https://www.googleapis.com/auth/classroom.coursework.me.readonly"
 ] as const;
@@ -9,6 +19,7 @@ export const CLASSROOM_SCOPES = [
 const CLASSROOM_API_ORIGIN = "https://classroom.googleapis.com/v1";
 const GOOGLE_OAUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
+const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 
 interface ClassroomTokenResponse {
   access_token: string;
@@ -46,6 +57,7 @@ export function buildClassroomAuthUrl(state: string, requestUrl: string, env: Cl
   const authUrl = new URL(GOOGLE_OAUTH_URL);
   authUrl.searchParams.set("client_id", clientId);
   authUrl.searchParams.set("include_granted_scopes", "true");
+  authUrl.searchParams.set("prompt", "select_account");
   authUrl.searchParams.set("redirect_uri", getClassroomRedirectUri(requestUrl, env));
   authUrl.searchParams.set("response_type", "code");
   authUrl.searchParams.set("scope", CLASSROOM_SCOPES.join(" "));
@@ -85,7 +97,42 @@ export async function exchangeClassroomCode(code: string, requestUrl: string, en
   return payload as ClassroomTokenResponse;
 }
 
-export async function fetchClassroomImport(accessToken: string): Promise<ClassroomImportPayload> {
+export async function fetchGoogleUserInfo(accessToken: string): Promise<ClassroomAccount | undefined> {
+  const response = await fetch(GOOGLE_USERINFO_URL, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+
+  if (!response.ok) {
+    return undefined;
+  }
+
+  const payload = (await response.json().catch(() => null)) as
+    | {
+        email?: string;
+        hd?: string;
+        name?: string;
+        picture?: string;
+        sub?: string;
+      }
+    | null;
+
+  if (!payload?.sub && !payload?.email) {
+    return undefined;
+  }
+
+  return {
+    connectedAt: new Date().toISOString(),
+    email: payload.email,
+    hostedDomain: payload.hd,
+    id: payload.sub ?? payload.email ?? crypto.randomUUID(),
+    name: payload.name,
+    picture: payload.picture
+  };
+}
+
+export async function fetchClassroomImport(accessToken: string, account?: ClassroomAccount): Promise<ClassroomImportPayload> {
   const coursesUrl = new URL(`${CLASSROOM_API_ORIGIN}/courses`);
   coursesUrl.searchParams.set("courseStates", "ACTIVE");
   coursesUrl.searchParams.set("pageSize", "30");
@@ -99,8 +146,10 @@ export async function fetchClassroomImport(accessToken: string): Promise<Classro
   );
 
   return {
+    account,
     courses: importItems,
-    fetchedAt: new Date().toISOString()
+    fetchedAt: new Date().toISOString(),
+    importId: crypto.randomUUID()
   };
 }
 

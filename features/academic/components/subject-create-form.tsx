@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useRoutineData } from "@/features/data/routine-store";
 import { weekdayLabels } from "@/lib/date";
 import type { Weekday } from "@/types/academic";
 
@@ -30,16 +31,18 @@ const colors = ["#0f9f7a", "#2b7fff", "#e35d45", "#b7791f", "#7c3aed", "#0891b2"
 const weekdays: Weekday[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
 export function SubjectCreateForm({ onCreate }: SubjectCreateFormProps) {
+  const { data } = useRoutineData();
+  const preferences = data.appPreference;
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [professor, setProfessor] = useState("");
   const [room, setRoom] = useState("");
-  const [semester, setSemester] = useState("2026/1");
-  const [workloadHours, setWorkloadHours] = useState("60");
+  const [semester, setSemester] = useState(preferences.defaultSemester);
+  const [workloadHours, setWorkloadHours] = useState(String(preferences.defaultWorkloadHours));
   const [weekday, setWeekday] = useState<Weekday>("monday");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
-  const [classesQuantity, setClassesQuantity] = useState("2");
+  const [classesQuantity, setClassesQuantity] = useState(String(preferences.defaultClassesQuantity));
   const [color, setColor] = useState(colors[0]);
 
   return (
@@ -66,19 +69,19 @@ export function SubjectCreateForm({ onCreate }: SubjectCreateFormProps) {
           name: name.trim(),
           professor: professor.trim() || undefined,
           room: room.trim() || undefined,
-          semester: semester.trim() || "2026/1",
-          workloadHours: Number(workloadHours) || 60
+          semester: semester.trim() || preferences.defaultSemester,
+          workloadHours: Number(workloadHours) || preferences.defaultWorkloadHours
         });
         setName("");
         setCode("");
         setProfessor("");
         setRoom("");
-        setSemester("2026/1");
-        setWorkloadHours("60");
+        setSemester(preferences.defaultSemester);
+        setWorkloadHours(String(preferences.defaultWorkloadHours));
         setWeekday("monday");
         setStartTime("");
         setEndTime("");
-        setClassesQuantity("2");
+        setClassesQuantity(String(preferences.defaultClassesQuantity));
         setColor(colors[0]);
       }}
     >

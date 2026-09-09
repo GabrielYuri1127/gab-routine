@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { ClassroomImportPanel } from "@/features/classroom/components/classroom-import-panel";
+import { AppPreferencesPanel } from "@/features/settings/components/app-preferences-panel";
 import { DataTools } from "@/features/settings/components/data-tools";
 
 export default function SettingsPage() {
@@ -14,6 +15,7 @@ export default function SettingsPage() {
         </p>
       </header>
 
+      <AppPreferencesPanel />
       <DataTools />
       <ClassroomImportPanel />
 

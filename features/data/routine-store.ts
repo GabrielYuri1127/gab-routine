@@ -1,11 +1,15 @@
 import { createContext, useContext } from "react";
 
 import type { AcademicActivity, AttendanceRecord, Grade, Subject } from "@/types/academic";
-import type { Event, NotificationPreference, Reminder, Task } from "@/types/domain";
-import { buildSeedData, LOCAL_USER_ID, type RoutineData } from "@/features/data/seed";
+import type { AppPreference, EnabledModules, Event, NotificationPreference, Reminder, Task } from "@/types/domain";
+import { buildSeedData, DEFAULT_APP_PREFERENCE, LOCAL_USER_ID, type RoutineData } from "@/features/data/seed";
 
-export const STORAGE_KEY = "gab-routine:data:v3";
-const LEGACY_STORAGE_KEYS = ["gab-routine:data:v2"];
+export const STORAGE_KEY = "gab-routine:data:v4";
+const LEGACY_STORAGE_KEYS = ["gab-routine:data:v3", "gab-routine:data:v2"];
+
+export type AppPreferencePatch = Partial<Omit<AppPreference, "enabledModules">> & {
+  enabledModules?: Partial<EnabledModules>;
+};
 
 export interface RoutineDataContextValue {
   data: RoutineData;
@@ -27,6 +31,7 @@ export interface RoutineDataContextValue {
   addEvent: (event: Omit<Event, "id" | "userId">) => void;
   updateEvent: (eventId: string, patch: Partial<Event>) => void;
   removeEvent: (eventId: string) => void;
+  updateAppPreference: (patch: AppPreferencePatch) => void;
   updateNotificationPreference: (patch: Partial<NotificationPreference>) => void;
   addAttendanceRecord: (subjectId: string, record: AttendanceRecord) => void;
   updateAttendanceRecord: (subjectId: string, recordId: string, patch: Partial<AttendanceRecord>) => void;
@@ -87,13 +92,31 @@ export function normalizeRoutineData(value: unknown): RoutineData {
   return {
     ...seed,
     ...parsed,
-    version: 3,
+    version: 4,
     userId: parsed.userId ?? LOCAL_USER_ID,
+    appPreference: normalizeAppPreference(parsed.appPreference),
     subjects: Array.isArray(parsed.subjects) ? parsed.subjects : seed.subjects,
     tasks: Array.isArray(parsed.tasks) ? parsed.tasks : seed.tasks,
     reminders: Array.isArray(parsed.reminders) ? parsed.reminders : seed.reminders,
     events: Array.isArray(parsed.events) ? parsed.events : seed.events,
     notificationPreference: parsed.notificationPreference ?? seed.notificationPreference
+  };
+}
+
+export function normalizeAppPreference(value: unknown): AppPreference {
+  if (!value || typeof value !== "object") {
+    return DEFAULT_APP_PREFERENCE;
+  }
+
+  const parsed = value as Partial<AppPreference>;
+  return {
+    ...DEFAULT_APP_PREFERENCE,
+    ...parsed,
+    enabledModules: {
+      ...DEFAULT_APP_PREFERENCE.enabledModules,
+      ...(parsed.enabledModules ?? {})
+    },
+    userId: parsed.userId ?? LOCAL_USER_ID
   };
 }
 

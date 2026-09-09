@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  buildClassroomAuthUrl,
+  CLASSROOM_SCOPES,
   mapClassroomCourseWorkType,
   toDateKeyFromClassroomDueDate,
   toTimeFromClassroomDueTime
@@ -19,5 +21,17 @@ describe("Google Classroom mapping", () => {
     assert.equal(mapClassroomCourseWorkType("SHORT_ANSWER_QUESTION"), "exercise");
     assert.equal(mapClassroomCourseWorkType("MATERIAL"), "other");
     assert.equal(mapClassroomCourseWorkType("UNKNOWN"), "activity");
+  });
+
+  it("asks Google to show the account chooser", () => {
+    const authUrl = buildClassroomAuthUrl("state-1", "https://gab-routine.vercel.app/configuracoes", {
+      GOOGLE_CLASSROOM_CLIENT_ID: "client-id",
+      GOOGLE_CLASSROOM_CLIENT_SECRET: "client-secret",
+      GOOGLE_CLASSROOM_REDIRECT_URI: "https://gab-routine.vercel.app/api/classroom/callback"
+    });
+
+    assert.equal(authUrl.searchParams.get("prompt"), "select_account");
+    assert.equal(CLASSROOM_SCOPES.includes("openid"), true);
+    assert.equal(CLASSROOM_SCOPES.includes("email"), true);
   });
 });

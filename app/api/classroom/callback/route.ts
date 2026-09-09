@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { exchangeClassroomCode, fetchClassroomImport } from "@/lib/classroom/google-classroom";
+import { exchangeClassroomCode, fetchClassroomImport, fetchGoogleUserInfo } from "@/lib/classroom/google-classroom";
 
 const CLASSROOM_IMPORT_STORAGE_KEY = "gab-routine:classroom:last-import";
 const CLASSROOM_STATE_COOKIE = "gab_classroom_oauth_state";
@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const token = await exchangeClassroomCode(code, request.url);
-    const classroomImport = await fetchClassroomImport(token.access_token);
+    const account = await fetchGoogleUserInfo(token.access_token);
+    const classroomImport = await fetchClassroomImport(token.access_token, account);
     const response = new NextResponse(renderImportBridge(classroomImport), {
       headers: {
         "Content-Type": "text/html; charset=utf-8"
@@ -50,7 +51,20 @@ function renderImportBridge(payload: unknown) {
   </head>
   <body>
     <script>
-      localStorage.setItem(${JSON.stringify(CLASSROOM_IMPORT_STORAGE_KEY)}, ${JSON.stringify(serializedPayload)});
+      const storageKey = ${JSON.stringify(CLASSROOM_IMPORT_STORAGE_KEY)};
+      const importsKey = "gab-routine:classroom:imports";
+      const nextImport = JSON.parse(${JSON.stringify(serializedPayload)});
+      const accountKey = nextImport.account?.id || nextImport.account?.email || nextImport.importId;
+      let currentImports = [];
+      try {
+        const storedImports = JSON.parse(localStorage.getItem(importsKey) || "[]");
+        currentImports = Array.isArray(storedImports) ? storedImports : [];
+      } catch {}
+      const mergedImports = [nextImport].concat(
+        currentImports.filter((item) => (item.account?.id || item.account?.email || item.importId) !== accountKey)
+      ).slice(0, 8);
+      localStorage.setItem(storageKey, JSON.stringify(nextImport));
+      localStorage.setItem(importsKey, JSON.stringify(mergedImports));
       window.location.replace("/configuracoes?classroom=import-ready");
     </script>
     <p>Google Classroom conectado. Voltando para as configuracoes...</p>

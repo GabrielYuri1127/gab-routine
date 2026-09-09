@@ -10,6 +10,15 @@ export interface ClassroomTime {
   seconds?: number;
 }
 
+export interface ClassroomAccount {
+  connectedAt: string;
+  email?: string;
+  hostedDomain?: string;
+  id: string;
+  name?: string;
+  picture?: string;
+}
+
 export interface ClassroomCourse {
   alternateLink?: string;
   courseState?: string;
@@ -39,6 +48,8 @@ export interface ClassroomImportItem {
 }
 
 export interface ClassroomImportPayload {
+  account?: ClassroomAccount;
   courses: ClassroomImportItem[];
   fetchedAt: string;
+  importId: string;
 }

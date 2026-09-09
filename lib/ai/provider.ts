@@ -9,7 +9,7 @@ export interface AIProviderRequest {
   messages: AIMessage[];
   maxOutputTokens?: number;
   temperature?: number;
-  responseFormat?: "json";
+  responseFormat?: "json" | JsonSchemaResponseFormat;
 }
 
 export interface AIProviderResponse {
@@ -20,6 +20,13 @@ export interface AIProviderResponse {
 export interface AIProvider {
   name: AIProviderName;
   complete(request: AIProviderRequest): Promise<AIProviderResponse>;
+}
+
+export interface JsonSchemaResponseFormat {
+  name: string;
+  schema: Record<string, unknown>;
+  strict?: boolean;
+  type: "json_schema";
 }
 
 export class DisabledAIProvider implements AIProvider {
@@ -59,7 +66,7 @@ export class OpenAIResponsesProvider implements AIProvider {
         model: this.model,
         store: false,
         temperature: request.temperature ?? 0.2,
-        text: request.responseFormat === "json" ? { format: { type: "json_object" } } : undefined
+        text: request.responseFormat ? { format: buildTextFormat(request.responseFormat) } : undefined
       }),
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
@@ -80,6 +87,19 @@ export class OpenAIResponsesProvider implements AIProvider {
       model: payload.model ?? this.model
     };
   }
+}
+
+function buildTextFormat(format: AIProviderRequest["responseFormat"]) {
+  if (!format || format === "json") {
+    return { type: "json_object" };
+  }
+
+  return {
+    name: format.name,
+    schema: format.schema,
+    strict: format.strict ?? true,
+    type: "json_schema"
+  };
 }
 
 export function getConfiguredAIProvider(): AIProvider {

@@ -1,13 +1,35 @@
 import { mockSubjects } from "@/features/academic/data/mock";
 import { addDays, getTodayInAppTimeZone, toDateKey } from "@/lib/date";
-import type { Event, NotificationPreference, Reminder, Task } from "@/types/domain";
+import type { AppPreference, Event, NotificationPreference, Reminder, Task } from "@/types/domain";
 import type { Subject } from "@/types/academic";
 
 export const LOCAL_USER_ID = "local-user";
 
+export const DEFAULT_APP_PREFERENCE: AppPreference = {
+  id: "local-app-preferences",
+  userId: LOCAL_USER_ID,
+  accentColor: "#0f9f7a",
+  appName: "Gab routine",
+  assistantAnswerStyle: "balanced",
+  defaultClassesQuantity: 2,
+  defaultSemester: "2026/1",
+  defaultWorkloadHours: 60,
+  displayName: "Gabriel",
+  enabledModules: {
+    assistant: true,
+    calendar: true,
+    classroom: true,
+    reminders: true,
+    tasks: true,
+    tutorial: true
+  },
+  profileLabel: "rotina pessoal"
+};
+
 export interface RoutineData {
-  version: 3;
+  version: 4;
   userId: string;
+  appPreference: AppPreference;
   subjects: Subject[];
   tasks: Task[];
   reminders: Reminder[];
@@ -21,8 +43,9 @@ export function buildSeedData(today = getTodayInAppTimeZone()): RoutineData {
   const nextWeek = toDateKey(addDays(todayDate, 7));
 
   return {
-    version: 3,
+    version: 4,
     userId: LOCAL_USER_ID,
+    appPreference: DEFAULT_APP_PREFERENCE,
     subjects: mockSubjects,
     tasks: [
       {

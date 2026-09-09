@@ -176,6 +176,19 @@ export function RoutineDataProvider({ children }: { children: ReactNode }) {
           events: current.events.filter((event) => event.id !== eventId)
         }));
       },
+      updateAppPreference: (patch) => {
+        updateData((current) => ({
+          ...current,
+          appPreference: {
+            ...current.appPreference,
+            ...patch,
+            enabledModules: {
+              ...current.appPreference.enabledModules,
+              ...(patch.enabledModules ?? {})
+            }
+          }
+        }));
+      },
       updateNotificationPreference: (patch) => {
         updateData((current) => ({
           ...current,

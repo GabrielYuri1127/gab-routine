@@ -6,6 +6,7 @@ import type { RoutineAssistantInput } from "@/lib/ai/routine-assistant";
 
 const assistantRequestSchema = z.object({
   events: z.array(z.unknown()).default([]),
+  appPreference: z.unknown().optional(),
   question: z.string().min(1).max(800),
   reminders: z.array(z.unknown()).default([]),
   subjects: z.array(z.unknown()).default([]),
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
 
   const result = await askAssistant(parsed.data.question, {
     events: parsed.data.events,
+    appPreference: parsed.data.appPreference,
     reminders: parsed.data.reminders,
     subjects: parsed.data.subjects,
     tasks: parsed.data.tasks,

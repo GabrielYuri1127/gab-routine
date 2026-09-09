@@ -14,7 +14,8 @@ const promptSuggestions = [
   "O que devo fazer agora?",
   "Como estao minhas faltas?",
   "Quais prazos vem primeiro?",
-  "Como estao minhas medias?"
+  "Como estao minhas medias?",
+  "O que esta atrasado?"
 ];
 
 export function AssistantPanel() {
@@ -24,18 +25,20 @@ export function AssistantPanel() {
   const [loading, setLoading] = useState(false);
   const [model, setModel] = useState("");
   const [question, setQuestion] = useState("");
+  const [lastQuestion, setLastQuestion] = useState("");
   const [source, setSource] = useState<"ai" | "rules">("rules");
   const starterResponse = useMemo(
     () =>
       buildRoutineAssistantResponse({
         events: data.events,
+        appPreference: data.appPreference,
         question: "resumo",
         reminders: data.reminders,
         subjects: data.subjects,
         tasks: data.tasks,
         today
       }),
-    [data.events, data.reminders, data.subjects, data.tasks, today]
+    [data.appPreference, data.events, data.reminders, data.subjects, data.tasks, today]
   );
   const [response, setResponse] = useState<RoutineAssistantResponse | null>(null);
 
@@ -49,6 +52,7 @@ export function AssistantPanel() {
 
     const localResponse = buildRoutineAssistantResponse({
       events: data.events,
+      appPreference: data.appPreference,
       question: cleanQuestion,
       reminders: data.reminders,
       subjects: data.subjects,
@@ -59,12 +63,14 @@ export function AssistantPanel() {
     setError("");
     setLoading(true);
     setModel("");
+    setLastQuestion(cleanQuestion);
     setQuestion("");
 
     try {
       const result = await fetch("/api/assistant", {
         body: JSON.stringify({
           events: data.events,
+          appPreference: data.appPreference,
           question: cleanQuestion,
           reminders: data.reminders,
           subjects: data.subjects,
@@ -153,6 +159,7 @@ export function AssistantPanel() {
           </span>
           <Badge tone="neutral">{intentLabels[currentResponse.intent]}</Badge>
         </div>
+        {lastQuestion ? <p className="mb-2 text-sm text-white/60">Pergunta: {lastQuestion}</p> : null}
         <p className="text-base leading-7 text-white/90">{currentResponse.answer}</p>
         {error ? <p className="mt-3 text-sm text-white/65">{error}</p> : null}
       </section>
@@ -194,6 +201,36 @@ export function AssistantPanel() {
                 {link.label}
               </Link>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-2">
+        <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-ink">Base da resposta</h2>
+          <div className="mt-3 space-y-2">
+            {currentResponse.evidence.map((item) => (
+              <div className="flex items-start gap-2 text-sm leading-6 text-slate-700" key={item}>
+                <span aria-hidden className="mt-2 h-2 w-2 shrink-0 rounded-full bg-sky" />
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-ink">Dados que ajudam</h2>
+          <div className="mt-3 space-y-2">
+            {currentResponse.dataGaps.length ? (
+              currentResponse.dataGaps.map((item) => (
+                <div className="flex items-start gap-2 text-sm leading-6 text-slate-700" key={item}>
+                  <span aria-hidden className="mt-2 h-2 w-2 shrink-0 rounded-full bg-gold" />
+                  {item}
+                </div>
+              ))
+            ) : (
+              <p className="text-sm leading-6 text-slate-600">Os dados principais para essa resposta ja estao cadastrados.</p>
+            )}
           </div>
         </div>
       </section>

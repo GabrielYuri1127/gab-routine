@@ -13,11 +13,11 @@ import {
   toDateKeyFromClassroomDueDate,
   toTimeFromClassroomDueTime
 } from "@/lib/classroom/google-classroom";
-import { cn } from "@/lib/utils";
-import type { AcademicActivity, Subject } from "@/types/academic";
-import type { ClassroomCourse, ClassroomCourseWork, ClassroomImportPayload } from "@/types/classroom";
+import type { AcademicActivity } from "@/types/academic";
+import type { ClassroomAccount, ClassroomCourse, ClassroomCourseWork, ClassroomImportPayload } from "@/types/classroom";
 
 const CLASSROOM_IMPORT_STORAGE_KEY = "gab-routine:classroom:last-import";
+const CLASSROOM_IMPORTS_STORAGE_KEY = "gab-routine:classroom:imports";
 
 interface ClassroomStatus {
   callbackPath: string;
@@ -36,7 +36,7 @@ const subjectColors = ["#0f9f7a", "#2b7fff", "#e35d45", "#b7791f", "#7c3aed", "#
 export function ClassroomImportPanel() {
   const { data, replaceData } = useRoutineData();
   const [status, setStatus] = useState<ClassroomStatus | null>(null);
-  const [payload, setPayload] = useState<ClassroomImportPayload | null>(null);
+  const [imports, setImports] = useState<ClassroomImportPayload[]>([]);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -55,18 +55,11 @@ export function ClassroomImportPanel() {
         }
       });
 
-    const storedImport = window.localStorage.getItem(CLASSROOM_IMPORT_STORAGE_KEY);
-    if (storedImport) {
-      try {
-        setPayload(JSON.parse(storedImport) as ClassroomImportPayload);
-      } catch {
-        window.localStorage.removeItem(CLASSROOM_IMPORT_STORAGE_KEY);
-      }
-    }
+    setImports(readStoredImports());
 
     const query = new URLSearchParams(window.location.search).get("classroom");
     if (query === "import-ready") {
-      setMessage("Google Classroom conectado. Revise a previa e importe quando estiver pronto.");
+      setMessage("Conta do Google Classroom conectada. Revise a previa e importe quando estiver pronto.");
       window.history.replaceState({}, "", window.location.pathname);
     } else if (query === "missing") {
       setMessage("Configure as chaves do Google Classroom antes de conectar.");
@@ -82,33 +75,47 @@ export function ClassroomImportPanel() {
   }, []);
 
   const totals = useMemo(() => {
-    const courses = payload?.courses.length ?? 0;
-    const courseWork = payload?.courses.reduce((total, item) => total + item.courseWork.length, 0) ?? 0;
-    const datedCourseWork =
-      payload?.courses.reduce(
-        (total, item) => total + item.courseWork.filter((work) => toDateKeyFromClassroomDueDate(work.dueDate)).length,
-        0
-      ) ?? 0;
+    const courses = imports.reduce((total, item) => total + item.courses.length, 0);
+    const courseWork = imports.reduce((total, item) => total + item.courses.reduce((sum, course) => sum + course.courseWork.length, 0), 0);
+    const datedCourseWork = imports.reduce(
+      (total, item) =>
+        total +
+        item.courses.reduce(
+          (sum, course) => sum + course.courseWork.filter((work) => toDateKeyFromClassroomDueDate(work.dueDate)).length,
+          0
+        ),
+      0
+    );
 
     return { courses, courseWork, datedCourseWork };
-  }, [payload]);
+  }, [imports]);
 
-  function clearPayload() {
+  function clearImport(target: ClassroomImportPayload) {
+    const nextImports = imports.filter((item) => getImportKey(item) !== getImportKey(target));
+    window.localStorage.setItem(CLASSROOM_IMPORTS_STORAGE_KEY, JSON.stringify(nextImports));
     window.localStorage.removeItem(CLASSROOM_IMPORT_STORAGE_KEY);
-    setPayload(null);
-    setMessage("Previa do Google Classroom removida.");
+    setImports(nextImports);
+    setMessage("Previa dessa conta removida.");
   }
 
-  function importIntoRoutine() {
-    if (!payload) {
-      return;
-    }
-
-    const result = mergeClassroomPayload(data, payload);
+  function importOne(target: ClassroomImportPayload) {
+    const result = mergeClassroomPayload(data, target);
     replaceData(result.data);
-    setMessage(
-      `Importei ${result.summary.subjects} disciplina(s) e ${result.summary.activities} atividade(s). ${result.summary.skipped} item(ns) ja existiam ou nao tinham data.`
-    );
+    setMessage(formatImportMessage(result.summary, getAccountLabel(target)));
+  }
+
+  function importAll() {
+    const total: ImportResult = { activities: 0, skipped: 0, subjects: 0 };
+    const mergedData = imports.reduce((currentData, item) => {
+      const result = mergeClassroomPayload(currentData, item);
+      total.activities += result.summary.activities;
+      total.skipped += result.summary.skipped;
+      total.subjects += result.summary.subjects;
+      return result.data;
+    }, data);
+
+    replaceData(mergedData);
+    setMessage(formatImportMessage(total, "todas as contas"));
   }
 
   return (
@@ -120,16 +127,16 @@ export function ClassroomImportPanel() {
             <h2 className="text-lg font-semibold text-ink">Google Classroom</h2>
           </div>
           <p className="text-sm leading-6 text-slate-600">
-            Traga turmas e trabalhos com prazo para dentro de Faculdade. O Gab routine usa somente leitura e nao altera nada no Google.
+            Conecte uma ou mais contas institucionais. Cada conta fica separada na previa e pode ser importada sem misturar origem.
           </p>
         </div>
         <Badge tone={status?.configured ? "mint" : "gold"}>{status?.configured ? "Pronto para conectar" : "Aguardando chaves"}</Badge>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <Mini label="Turmas na previa" value={totals.courses.toString()} />
-        <Mini label="Itens encontrados" value={totals.courseWork.toString()} />
-        <Mini label="Com prazo" value={totals.datedCourseWork.toString()} />
+        <Mini label="Contas" value={imports.length.toString()} />
+        <Mini label="Turmas" value={totals.courses.toString()} />
+        <Mini label="Itens com prazo" value={totals.datedCourseWork.toString()} />
       </div>
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -139,7 +146,7 @@ export function ClassroomImportPanel() {
             href="/api/classroom/connect"
           >
             <ExternalLink aria-hidden className="h-4 w-4" />
-            Conectar Google Classroom
+            Adicionar conta Classroom
           </a>
         ) : (
           <Button disabled>
@@ -148,55 +155,77 @@ export function ClassroomImportPanel() {
           </Button>
         )}
 
-        <Button disabled={!payload || totals.datedCourseWork === 0} onClick={importIntoRoutine} variant="secondary">
+        <Button disabled={imports.length < 2 || totals.datedCourseWork === 0} onClick={importAll} variant="secondary">
           <UploadCloud aria-hidden className="h-4 w-4" />
-          Importar para Faculdade
-        </Button>
-
-        <Button disabled={!payload} onClick={clearPayload} variant="ghost">
-          <Trash2 aria-hidden className="h-4 w-4" />
-          Limpar previa
+          Importar todas
         </Button>
       </div>
 
       {!status?.configured ? (
         <div className="mt-4 rounded-lg border border-dashed border-line bg-slate-50 p-3 text-sm leading-6 text-slate-600">
-          Use `GOOGLE_CLASSROOM_CLIENT_ID`, `GOOGLE_CLASSROOM_CLIENT_SECRET` e `GOOGLE_CLASSROOM_REDIRECT_URI` no ambiente do app.
+          Use <code>GOOGLE_CLASSROOM_CLIENT_ID</code>, <code>GOOGLE_CLASSROOM_CLIENT_SECRET</code> e{" "}
+          <code>GOOGLE_CLASSROOM_REDIRECT_URI</code> no ambiente do app.
         </div>
       ) : null}
 
-      {payload ? (
-        <div className="mt-4 space-y-2">
-          {payload.courses.slice(0, 5).map((item) => (
-            <div className="rounded-lg border border-line p-3" key={item.course.id}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-ink">{item.course.name}</p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {item.course.section || item.course.room || "Sem secao"} - {item.courseWork.length} item(ns)
-                  </p>
-                </div>
-                <Badge tone={item.courseWork.some((work) => toDateKeyFromClassroomDueDate(work.dueDate)) ? "sky" : "neutral"}>
-                  {item.courseWork.filter((work) => toDateKeyFromClassroomDueDate(work.dueDate)).length} com prazo
-                </Badge>
-              </div>
-            </div>
-          ))}
+      {imports.length ? (
+        <div className="mt-4 space-y-3">
+          {imports.map((item) => {
+            const accountTotals = getImportTotals(item);
 
-          {payload.courses.length > 5 ? (
-            <p className="text-xs text-slate-500">Mais {payload.courses.length - 5} turma(s) serao consideradas na importacao.</p>
-          ) : null}
+            return (
+              <div className="rounded-lg border border-line p-3" key={getImportKey(item)}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-ink">{getAccountLabel(item)}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {accountTotals.courses} turma(s), {accountTotals.courseWork} item(ns), {accountTotals.datedCourseWork} com prazo
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <Button disabled={accountTotals.datedCourseWork === 0} onClick={() => importOne(item)} size="sm" variant="secondary">
+                      Importar
+                    </Button>
+                    <Button aria-label="Remover previa" onClick={() => clearImport(item)} size="icon" variant="ghost">
+                      <Trash2 aria-hidden className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mt-3 space-y-2">
+                  {item.courses.slice(0, 4).map((courseItem) => (
+                    <div className="rounded-lg border border-line bg-slate-50 p-3" key={courseItem.course.id}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-ink">{courseItem.course.name}</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {courseItem.course.section || courseItem.course.room || "Sem secao"} - {courseItem.courseWork.length} item(ns)
+                          </p>
+                        </div>
+                        <Badge tone={courseItem.courseWork.some((work) => toDateKeyFromClassroomDueDate(work.dueDate)) ? "sky" : "neutral"}>
+                          {courseItem.courseWork.filter((work) => toDateKeyFromClassroomDueDate(work.dueDate)).length} com prazo
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                  {item.courses.length > 4 ? (
+                    <p className="text-xs text-slate-500">Mais {item.courses.length - 4} turma(s) dessa conta entram na importacao.</p>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="mt-4 flex items-center gap-2 rounded-lg border border-dashed border-line p-3 text-sm text-slate-500">
           <RefreshCw aria-hidden className="h-4 w-4" />
-          Nenhuma previa importada ainda.
+          Nenhuma conta importada ainda.
         </div>
       )}
 
       {message ? (
-        <p className={cn("mt-3 flex items-center gap-2 text-sm font-medium", message.startsWith("Importei") ? "text-mint" : "text-slate-600")}>
-          {message.startsWith("Importei") ? <CheckCircle2 aria-hidden className="h-4 w-4" /> : null}
+        <p className="mt-3 flex items-center gap-2 text-sm font-medium text-slate-600">
+          {message.startsWith("Importei") ? <CheckCircle2 aria-hidden className="h-4 w-4 text-mint" /> : null}
           {message}
         </p>
       ) : null}
@@ -204,21 +233,67 @@ export function ClassroomImportPanel() {
   );
 }
 
+function readStoredImports() {
+  const imports = parseImports(window.localStorage.getItem(CLASSROOM_IMPORTS_STORAGE_KEY));
+  const legacyImport = parseImport(window.localStorage.getItem(CLASSROOM_IMPORT_STORAGE_KEY));
+
+  if (!legacyImport) {
+    return imports;
+  }
+
+  const hasLegacy = imports.some((item) => getImportKey(item) === getImportKey(legacyImport));
+  return hasLegacy ? imports : [legacyImport, ...imports].slice(0, 8);
+}
+
+function parseImports(value: string | null) {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value) as ClassroomImportPayload[];
+    return Array.isArray(parsed) ? parsed.filter(isImportPayload) : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseImport(value: string | null) {
+  if (!value) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as ClassroomImportPayload;
+    return isImportPayload(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function isImportPayload(value: ClassroomImportPayload) {
+  return Boolean(value && Array.isArray(value.courses) && value.fetchedAt);
+}
+
 function mergeClassroomPayload(data: RoutineData, payload: ClassroomImportPayload) {
   const nextSubjects = [...data.subjects];
   const summary: ImportResult = { activities: 0, skipped: 0, subjects: 0 };
 
   payload.courses.forEach((item, index) => {
-    const marker = getCourseMarker(item.course);
+    const marker = getCourseMarker(item.course, payload.account);
+    const legacyMarker = `Google Classroom: ${item.course.id}`;
     const existingIndex = nextSubjects.findIndex(
-      (subject) => subject.observations?.includes(marker) || normalizeName(subject.name) === normalizeName(item.course.name)
+      (subject) =>
+        subject.observations?.includes(marker) ||
+        subject.observations?.includes(legacyMarker) ||
+        (!payload.account && normalizeName(subject.name) === normalizeName(item.course.name))
     );
     const existingSubject = existingIndex >= 0 ? nextSubjects[existingIndex] : undefined;
     const subjectId = existingSubject?.id ?? createId("classroom-subject");
     const activities = [...(existingSubject?.activities ?? [])];
 
     item.courseWork.forEach((work) => {
-      const activity = buildActivityFromCourseWork(work, subjectId, activities);
+      const activity = buildActivityFromCourseWork(work, subjectId, payload.account, activities);
       if (!activity) {
         summary.skipped += 1;
         return;
@@ -232,7 +307,7 @@ function mergeClassroomPayload(data: RoutineData, payload: ClassroomImportPayloa
       nextSubjects[existingIndex] = {
         ...existingSubject,
         code: existingSubject.code ?? item.course.section,
-        observations: mergeNotes(existingSubject.observations, buildCourseNotes(item.course)),
+        observations: mergeNotes(existingSubject.observations, buildCourseNotes(item.course, payload.account)),
         room: existingSubject.room ?? item.course.room,
         activities
       };
@@ -244,16 +319,16 @@ function mergeClassroomPayload(data: RoutineData, payload: ClassroomImportPayloa
       name: item.course.name,
       code: item.course.section,
       room: item.course.room,
-      semester: getCurrentSemester(),
-      workloadHours: 60,
+      semester: data.appPreference.defaultSemester,
+      workloadHours: data.appPreference.defaultWorkloadHours,
       color: subjectColors[index % subjectColors.length],
       status: "active",
-      rules: createUfamRules(),
+      rules: createUfamRules({ classesPerMeeting: data.appPreference.defaultClassesQuantity }),
       schedules: [],
       attendance: [],
       grades: [],
       activities,
-      observations: buildCourseNotes(item.course)
+      observations: buildCourseNotes(item.course, payload.account)
     });
     summary.subjects += 1;
   });
@@ -268,16 +343,24 @@ function mergeClassroomPayload(data: RoutineData, payload: ClassroomImportPayloa
   };
 }
 
-function buildActivityFromCourseWork(work: ClassroomCourseWork, subjectId: string, currentActivities: AcademicActivity[]) {
+function buildActivityFromCourseWork(
+  work: ClassroomCourseWork,
+  subjectId: string,
+  account: ClassroomAccount | undefined,
+  currentActivities: AcademicActivity[]
+) {
   const dueDate = toDateKeyFromClassroomDueDate(work.dueDate);
   if (!dueDate) {
     return undefined;
   }
 
-  const marker = getCourseWorkMarker(work);
+  const marker = getCourseWorkMarker(work, account);
+  const legacyMarker = `Google Classroom: ${work.courseId}/${work.id}`;
   const duplicated = currentActivities.some(
     (activity) =>
-      activity.notes?.includes(marker) || (normalizeName(activity.title) === normalizeName(work.title) && activity.dueDate === dueDate)
+      activity.notes?.includes(marker) ||
+      activity.notes?.includes(legacyMarker) ||
+      (normalizeName(activity.title) === normalizeName(work.title) && activity.dueDate === dueDate)
   );
 
   if (duplicated) {
@@ -298,9 +381,10 @@ function buildActivityFromCourseWork(work: ClassroomCourseWork, subjectId: strin
   } satisfies AcademicActivity;
 }
 
-function buildCourseNotes(course: ClassroomCourse) {
+function buildCourseNotes(course: ClassroomCourse, account?: ClassroomAccount) {
   return [
-    getCourseMarker(course),
+    getCourseMarker(course, account),
+    account?.email ? `Conta: ${account.email}` : "",
     course.descriptionHeading ? `Descricao: ${course.descriptionHeading}` : "",
     course.alternateLink ? `Link: ${course.alternateLink}` : ""
   ]
@@ -308,17 +392,44 @@ function buildCourseNotes(course: ClassroomCourse) {
     .join("\n");
 }
 
-function getCourseMarker(course: ClassroomCourse) {
-  return `Google Classroom: ${course.id}`;
+function getCourseMarker(course: ClassroomCourse, account?: ClassroomAccount) {
+  return `Google Classroom${account?.email ? ` (${account.email})` : ""}: ${course.id}`;
 }
 
-function getCourseWorkMarker(work: ClassroomCourseWork) {
-  return `Google Classroom: ${work.courseId}/${work.id}`;
+function getCourseWorkMarker(work: ClassroomCourseWork, account?: ClassroomAccount) {
+  return `Google Classroom${account?.email ? ` (${account.email})` : ""}: ${work.courseId}/${work.id}`;
 }
 
-function getCurrentSemester() {
-  const now = new Date();
-  return `${now.getFullYear()}/${now.getMonth() < 6 ? "1" : "2"}`;
+function getAccountLabel(payload: ClassroomImportPayload) {
+  const account = payload.account;
+  if (!account) {
+    return "Conta Google";
+  }
+
+  if (account.name && account.email) {
+    return `${account.name} - ${account.email}`;
+  }
+
+  return account.email ?? account.name ?? "Conta Google";
+}
+
+function getImportKey(payload: ClassroomImportPayload) {
+  return payload.account?.id ?? payload.account?.email ?? payload.importId ?? payload.fetchedAt;
+}
+
+function getImportTotals(payload: ClassroomImportPayload) {
+  const courses = payload.courses.length;
+  const courseWork = payload.courses.reduce((total, item) => total + item.courseWork.length, 0);
+  const datedCourseWork = payload.courses.reduce(
+    (total, item) => total + item.courseWork.filter((work) => toDateKeyFromClassroomDueDate(work.dueDate)).length,
+    0
+  );
+
+  return { courses, courseWork, datedCourseWork };
+}
+
+function formatImportMessage(summary: ImportResult, accountLabel: string) {
+  return `Importei ${summary.subjects} disciplina(s) e ${summary.activities} atividade(s) de ${accountLabel}. ${summary.skipped} item(ns) ja existiam ou nao tinham data.`;
 }
 
 function mergeNotes(current: string | undefined, next: string) {

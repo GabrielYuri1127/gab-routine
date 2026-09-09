@@ -13,6 +13,7 @@ Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, fa
 - Supabase free preparado para autenticacao e persistencia em nuvem
 - PWA com manifest, service worker e icone maskable para Android
 - Google Classroom preparado via OAuth somente leitura
+- Tutorial interno e perfil personalizavel para uso por outras pessoas
 
 ## Como Rodar
 
@@ -104,6 +105,10 @@ Veja `docs/ai-setup.md` antes de configurar a IA na Vercel.
 
 A tela `/configuracoes` tem um painel para conectar o Google Classroom e importar cursos ativos como disciplinas, com trabalhos datados virando atividades. Veja `docs/google-classroom.md` para configurar o OAuth no Google Cloud e na Vercel.
 
+## Tutorial E Personalizacao
+
+A rota `/tutorial` mostra o caminho inicial para configurar o app, cadastrar disciplinas, registrar dados antigos e instalar no Android. Em `/configuracoes`, o perfil do app permite trocar nome, pessoa usuaria, cor principal, estilo da IA, semestre padrao, carga horaria e modulos visiveis.
+
 ## Deploy Gratuito Na Vercel
 
 1. Suba o projeto para um repositorio Git.
@@ -128,6 +133,8 @@ A tela `/configuracoes` tem um painel para conectar o Google Classroom e importa
 - `/calendario` com aulas, prazos, tarefas, lembretes e compromissos editaveis.
 - `/configuracoes` com preferencias de lembrete, exportacao, importacao e restauracao de dados locais.
 - `/configuracoes` com conexao Google Classroom e importacao para Faculdade.
+- `/tutorial` com guia de uso para compartilhar com amigos e familiares.
+- Perfil personalizavel com nome do app, usuario, cor, padroes academicos, modulos e estilo da IA.
 - `/login` com Supabase Auth real quando configurado.
 - Persistencia local via `localStorage`.
 - Calculos academicos reutilizaveis em `lib/academic-rules`.

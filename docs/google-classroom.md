@@ -1,6 +1,6 @@
 # Google Classroom
 
-O Gab routine pode importar turmas e trabalhos do Google Classroom para a area Faculdade. A integracao usa OAuth e escopos somente de leitura.
+O Gab routine pode importar turmas e trabalhos do Google Classroom para a area Faculdade. A integracao usa OAuth, escopos somente de leitura e suporta mais de uma conta institucional.
 
 ## Variaveis
 
@@ -32,6 +32,8 @@ https://seu-dominio.vercel.app/api/classroom/callback
 - Trabalhos com `dueDate` viram atividades com prazo.
 - `dueTime` vira horario; sem horario, o app usa `23:59`.
 - Links do Classroom ficam guardados nas observacoes da disciplina ou atividade.
+- Cada conta conectada fica separada na previa antes da importacao.
+- Ao conectar novamente, o Google mostra o seletor de conta.
 - Itens sem data nao viram atividades, porque nao entram bem na agenda.
 
 O token do Google e usado apenas no callback do servidor para buscar os dados e nao fica salvo no `localStorage`.

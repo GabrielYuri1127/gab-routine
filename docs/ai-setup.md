@@ -13,6 +13,7 @@ Essas variaveis devem ficar no servidor, como variaveis de ambiente da Vercel. N
 ## Como Funciona
 
 - A tela `/assistente` envia a pergunta e o contexto para `/api/assistant`.
-- O servidor calcula uma resposta segura com regras locais.
-- Se `AI_PROVIDER=openai` e `AI_API_KEY` existirem, a API melhora o texto sem mudar numeros, datas ou links calculados.
+- O servidor calcula uma resposta segura com regras locais, incluindo base da resposta, avisos de dados faltantes e proximos passos.
+- Se `AI_PROVIDER=openai` e `AI_API_KEY` existirem, a API melhora o texto em JSON estruturado sem mudar numeros, datas ou links calculados.
 - Se a API falhar, o app volta automaticamente para a resposta local.
+- O estilo em Configuracoes muda o tom do assistente entre direto, equilibrado e mais orientador.

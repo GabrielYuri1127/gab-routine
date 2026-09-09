@@ -11,6 +11,30 @@ export type Priority = "low" | "medium" | "high" | "urgent";
 export type TaskStatus = "open" | "done" | "snoozed" | "cancelled";
 export type ProjectStatus = "idea" | "planning" | "in_progress" | "paused" | "completed";
 export type HabitFrequency = "daily" | "specific_days" | "times_per_week";
+export type AssistantAnswerStyle = "direct" | "balanced" | "coach";
+
+export interface EnabledModules {
+  assistant: boolean;
+  calendar: boolean;
+  classroom: boolean;
+  reminders: boolean;
+  tasks: boolean;
+  tutorial: boolean;
+}
+
+export interface AppPreference {
+  id: string;
+  userId: string;
+  accentColor: string;
+  appName: string;
+  assistantAnswerStyle: AssistantAnswerStyle;
+  defaultClassesQuantity: number;
+  defaultSemester: string;
+  defaultWorkloadHours: number;
+  displayName: string;
+  enabledModules: EnabledModules;
+  profileLabel: string;
+}
 
 export interface User {
   id: string;
