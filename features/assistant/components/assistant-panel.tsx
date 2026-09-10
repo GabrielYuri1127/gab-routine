@@ -20,7 +20,7 @@ const promptSuggestions = [
 ];
 
 export function AssistantPanel() {
-  const { addActivity, addAttendanceRecord, addGrade, addTask, data } = useRoutineData();
+  const { addActivity, addAttendanceRecord, addEvent, addGrade, addReminder, addTask, data } = useRoutineData();
   const today = getTodayInAppTimeZone();
   const [actionMessage, setActionMessage] = useState("");
   const [error, setError] = useState("");
@@ -179,6 +179,25 @@ export function AssistantPanel() {
         description: "Criada automaticamente pelo assistente do Gavium.",
         dueDate: proposal.dueDate,
         priority: proposal.priority,
+        title: proposal.title
+      });
+    }
+
+    if (proposal.intent === "add_reminder") {
+      addReminder({
+        remindAt: proposal.remindAt,
+        sourceType: proposal.sourceType,
+        status: "scheduled",
+        title: proposal.title
+      });
+    }
+
+    if (proposal.intent === "add_event") {
+      addEvent({
+        category: proposal.category,
+        date: proposal.date,
+        endsAt: proposal.endsAt,
+        startsAt: proposal.startsAt,
         title: proposal.title
       });
     }
@@ -342,6 +361,14 @@ function getCompletionMessage(proposal: AssistantCommandProposal) {
 
   if (proposal.intent === "add_task") {
     return `Concluido: tarefa "${proposal.summary}" adicionada.`;
+  }
+
+  if (proposal.intent === "add_reminder") {
+    return `Concluido: lembrete "${proposal.summary}" adicionado.`;
+  }
+
+  if (proposal.intent === "add_event") {
+    return `Concluido: compromisso "${proposal.summary}" adicionado.`;
   }
 
   return `Concluido: ${proposal.summary} adicionada.`;

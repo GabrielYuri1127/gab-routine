@@ -29,11 +29,14 @@ registre 2 faltas em Redes ontem
 adicione nota 8,5 da prova em Redes
 crie prova de Redes dia 20
 prova de Redes amanha
+me lembre de levar o carregador amanha as 8h
+tenho dentista sexta 15h
+reuniao do projeto sexta 15:30
 crie tarefa comprar livro amanha urgente
 comprar pilha amanha
 ```
 
-Depois de entender o comando, o app usa as mesmas funcoes internas das telas manuais para salvar os dados no backup local e mostra uma mensagem de conclusao.
+Depois de entender o comando, o app usa as mesmas funcoes internas das telas manuais para salvar faltas, notas, atividades, lembretes, compromissos ou tarefas no backup local e mostra uma mensagem de conclusao.
 
 ## Limite Atual
 

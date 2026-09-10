@@ -103,7 +103,29 @@ describe("assistant command parser", () => {
       today: "2026-09-10"
     });
 
-    assert.equal(proposal?.intent, "add_task");
-    assert.equal(proposal?.summary, "Dentista para 11/09");
+    assert.equal(proposal?.intent, "add_event");
+    assert.equal(proposal?.summary, "Dentista em 11/09");
+  });
+
+  it("creates a reminder with date and time from natural language", () => {
+    const proposal = buildAssistantCommandProposal({
+      question: "me lembre de levar o carregador amanha as 8h",
+      subjects: [subject],
+      today: "2026-09-10"
+    });
+
+    assert.equal(proposal?.intent, "add_reminder");
+    assert.equal(proposal?.summary, "Levar o carregador em 11/09 as 08:00");
+  });
+
+  it("creates timed events without turning them into tasks", () => {
+    const proposal = buildAssistantCommandProposal({
+      question: "reuniao do projeto sexta 15:30",
+      subjects: [subject],
+      today: "2026-09-10"
+    });
+
+    assert.equal(proposal?.intent, "add_event");
+    assert.equal(proposal?.summary, "Reuniao do projeto em 11/09 as 15:30");
   });
 });

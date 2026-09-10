@@ -175,6 +175,22 @@ function buildCommandEvidence(commandProposal: AssistantCommandProposal) {
     ];
   }
 
+  if (commandProposal.intent === "add_reminder") {
+    return [
+      `Lembrete detectado: ${commandProposal.title}.`,
+      `Quando: ${commandProposal.remindAtLabel}.`,
+      `Origem: ${commandProposal.sourceType}.`
+    ];
+  }
+
+  if (commandProposal.intent === "add_event") {
+    return [
+      `Compromisso detectado: ${commandProposal.title}.`,
+      `Data: ${commandProposal.dateLabel}.`,
+      commandProposal.startsAt ? `Horario: ${commandProposal.startsAt}.` : "Sem horario definido."
+    ];
+  }
+
   return [
     `Tarefa detectada: ${commandProposal.title}.`,
     commandProposal.dueDateLabel ? `Prazo: ${commandProposal.dueDateLabel}.` : "Sem prazo detectado.",
@@ -185,6 +201,17 @@ function buildCommandEvidence(commandProposal: AssistantCommandProposal) {
 function buildCommandLinks(commandProposal: AssistantCommandProposal): AssistantQuickLink[] {
   if (commandProposal.intent === "add_task") {
     return [{ href: "/tarefas", label: "Tarefas" }];
+  }
+
+  if (commandProposal.intent === "add_reminder") {
+    return [{ href: "/lembretes", label: "Lembretes" }];
+  }
+
+  if (commandProposal.intent === "add_event") {
+    return [
+      { href: "/calendario", label: "Calendario" },
+      { href: "/", label: "Hoje" }
+    ];
   }
 
   return [

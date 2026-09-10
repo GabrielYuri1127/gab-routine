@@ -1,8 +1,14 @@
 import { addDays, formatShortDate, parseDateKey, toDateKey } from "../date";
 import type { ActivityType, Subject } from "../../types/academic";
-import type { Priority } from "../../types/domain";
+import type { Event, Priority, Reminder } from "../../types/domain";
 
-export type AssistantCommandProposal = AddActivityProposal | AddGradeProposal | AddTaskProposal | RegisterAbsenceProposal;
+export type AssistantCommandProposal =
+  | AddActivityProposal
+  | AddEventProposal
+  | AddGradeProposal
+  | AddReminderProposal
+  | AddTaskProposal
+  | RegisterAbsenceProposal;
 
 export interface RegisterAbsenceProposal extends BaseProposal {
   date: string;
@@ -28,6 +34,24 @@ export interface AddActivityProposal extends BaseProposal {
   dueDateLabel: string;
   intent: "add_activity";
   subject: SubjectReference;
+  title: string;
+}
+
+export interface AddReminderProposal extends BaseProposal {
+  intent: "add_reminder";
+  remindAt: string;
+  remindAtLabel: string;
+  sourceType: NonNullable<Reminder["sourceType"]>;
+  title: string;
+}
+
+export interface AddEventProposal extends BaseProposal {
+  category: Event["category"];
+  date: string;
+  dateLabel: string;
+  endsAt?: string;
+  intent: "add_event";
+  startsAt?: string;
   title: string;
 }
 
@@ -93,6 +117,8 @@ export function buildAssistantCommandProposal(input: CommandParserInput): Assist
     buildAbsenceProposal(input) ??
     buildGradeProposal(input) ??
     buildActivityProposal(input) ??
+    buildReminderProposal(input) ??
+    buildEventProposal(input) ??
     buildTaskProposal(input)
   );
 }
@@ -266,6 +292,92 @@ function buildTaskProposal(input: CommandParserInput): AddTaskProposal | null {
   };
 }
 
+function buildReminderProposal(input: CommandParserInput): AddReminderProposal | null {
+  const normalized = normalizeText(input.question);
+  const wantsReminder = includesAny(normalized, [
+    "avise",
+    "crie lembrete",
+    "criar lembrete",
+    "lembrete",
+    "lembrar",
+    "me lembre",
+    "me lembra",
+    "notifique"
+  ]);
+
+  if (!wantsReminder) {
+    return null;
+  }
+
+  const parsedDate = parseCommandDate(input.question, input.today, { defaultToday: true, preferFuture: true });
+  const parsedTime = parseCommandTime(input.question);
+  const title = extractReminderTitle(input.question);
+
+  if (!parsedDate || !title) {
+    return null;
+  }
+
+  const time = parsedTime ?? "09:00";
+  const warnings = [
+    !parsedDate.explicit ? "Nao encontrei data na frase, entao vou usar hoje." : "",
+    !parsedTime ? "Nao encontrei horario, entao vou usar 09:00." : "",
+    parsedDate.date < input.today ? "A data detectada ja passou; confira antes de salvar." : ""
+  ].filter(Boolean);
+
+  return {
+    intent: "add_reminder",
+    remindAt: `${parsedDate.date}T${time}:00`,
+    remindAtLabel: `${formatShortDate(parsedDate.date)} as ${time}`,
+    sourceType: "custom",
+    summary: `${title} em ${formatShortDate(parsedDate.date)} as ${time}`,
+    title,
+    warnings
+  };
+}
+
+function buildEventProposal(input: CommandParserInput): AddEventProposal | null {
+  const normalized = normalizeText(input.question);
+  const parsedDate = parseCommandDate(input.question, input.today, { defaultToday: false, preferFuture: true });
+  const parsedTime = parseCommandTime(input.question);
+  const wantsEvent = includesAny(normalized, [
+    "compromisso",
+    "consulta",
+    "dentista",
+    "evento",
+    "medico",
+    "médico",
+    "reuniao",
+    "reunião",
+    "tenho"
+  ]);
+
+  if (!wantsEvent || !parsedDate || isQuestionLike(normalized)) {
+    return null;
+  }
+
+  const title = extractEventTitle(input.question);
+  if (!title) {
+    return null;
+  }
+
+  const warnings = [
+    !parsedTime ? "Nao encontrei horario, entao criei o compromisso sem hora." : "",
+    parsedDate.date < input.today ? "A data detectada ja passou; confira antes de salvar." : ""
+  ].filter(Boolean);
+
+  return {
+    category: inferEventCategory(input.question),
+    date: parsedDate.date,
+    dateLabel: formatShortDate(parsedDate.date),
+    endsAt: parsedTime ? addMinutesToTime(parsedTime, 60) : undefined,
+    intent: "add_event",
+    startsAt: parsedTime ?? undefined,
+    summary: parsedTime ? `${title} em ${formatShortDate(parsedDate.date)} as ${parsedTime}` : `${title} em ${formatShortDate(parsedDate.date)}`,
+    title,
+    warnings
+  };
+}
+
 function findBestSubject(question: string, subjects: Subject[]) {
   const normalizedQuestion = normalizeText(question);
   return subjects
@@ -392,6 +504,39 @@ function parseCommandDate(
   return options.defaultToday ? { date: today, explicit: false } : null;
 }
 
+function parseCommandTime(question: string) {
+  const normalized = normalizeText(question);
+
+  if (normalized.includes("meio dia")) {
+    return "12:00";
+  }
+
+  if (normalized.includes("meia noite")) {
+    return "00:00";
+  }
+
+  const timeMatch = normalized.match(/\b(?:as|a|às)?\s*(\d{1,2})(?::|h)(\d{2})?\b/);
+  const looseHourMatch = normalized.match(/\b(?:as|a|às)\s+(\d{1,2})\b/);
+  const match = timeMatch ?? looseHourMatch;
+
+  if (!match?.[1]) {
+    return null;
+  }
+
+  let hour = Number(match[1]);
+  const minute = match[2] ? Number(match[2]) : 0;
+
+  if (includesAny(normalized, ["da tarde", "de tarde", "tarde", "da noite", "de noite", "noite"]) && hour >= 1 && hour <= 11) {
+    hour += 12;
+  }
+
+  if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return null;
+  }
+
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
 function buildDateKey(day: number, month: number, rawYear: string | undefined, today: string, preferFuture = false) {
   const fallbackYear = Number(today.slice(0, 4));
   const year = rawYear ? normalizeYear(rawYear) : fallbackYear;
@@ -451,26 +596,76 @@ function inferTaskCategory(question: string) {
   return undefined;
 }
 
+function inferEventCategory(question: string): Event["category"] {
+  const normalized = normalizeText(question);
+  if (includesAny(normalized, ["aula", "faculdade"])) return "class";
+  if (includesAny(normalized, ["entrega", "prazo"])) return "deadline";
+  if (includesAny(normalized, ["estagio", "trabalho", "reuniao"])) return "work";
+  if (includesAny(normalized, ["estudar", "estudo"])) return "study";
+  if (includesAny(normalized, ["dentista", "medico", "consulta"])) return "appointment";
+  return "personal";
+}
+
+function addMinutesToTime(time: string, minutesToAdd: number) {
+  const [hour, minute] = time.split(":").map(Number);
+  const total = hour * 60 + minute + minutesToAdd;
+  const normalizedTotal = ((total % (24 * 60)) + 24 * 60) % (24 * 60);
+  const nextHour = Math.floor(normalizedTotal / 60);
+  const nextMinute = normalizedTotal % 60;
+  return `${String(nextHour).padStart(2, "0")}:${String(nextMinute).padStart(2, "0")}`;
+}
+
+function extractReminderTitle(question: string) {
+  const cleaned = cleanCommandTitle(question)
+    .replace(/^(avise|notifique|lembrar|lembrete)\s*(de|para)?\s*/i, "")
+    .replace(/^me\s+lembr[ae]\s+de\s*/i, "")
+    .replace(/^crie\s+lembrete\s*(de|para)?\s*/i, "")
+    .replace(/^criar\s+lembrete\s*(de|para)?\s*/i, "")
+    .trim();
+
+  return cleaned.length >= 3 ? capitalize(cleaned) : "";
+}
+
+function extractEventTitle(question: string) {
+  const cleaned = cleanCommandTitle(question)
+    .replace(/^tenho\s+/i, "")
+    .replace(/^marque\s+(um\s+)?compromisso\s*(de|para)?\s*/i, "")
+    .replace(/^crie\s+(um\s+)?compromisso\s*(de|para)?\s*/i, "")
+    .replace(/^criar\s+(um\s+)?compromisso\s*(de|para)?\s*/i, "")
+    .replace(/^compromisso\s*(de|para)?\s*/i, "")
+    .trim();
+
+  return cleaned.length >= 3 ? capitalize(cleaned) : "";
+}
+
 function extractTaskTitle(question: string) {
   const quoted = extractQuotedText(question);
   if (quoted) {
     return quoted;
   }
 
-  const cleaned = question
+  const cleaned = cleanCommandTitle(question)
     .replace(/^(crie|criar|adicione|adicionar|nova)\s+tarefa\s*/i, "")
-    .replace(/^me\s+lembre\s+de\s*/i, "")
     .replace(/^preciso\s+fazer\s*/i, "")
-    .replace(/^tenho\s+/i, "")
+    .replace(/\b(urgente|importante|alta prioridade|baixa prioridade|quando der)\b/gi, "")
+    .trim();
+
+  return cleaned.length >= 3 ? capitalize(cleaned) : "";
+}
+
+function cleanCommandTitle(question: string) {
+  return question
     .replace(/\b(hoje|amanh[ãa]|depois de amanh[ãa]|semana que vem|pr[oó]xima semana)\b/gi, "")
     .replace(/\b(domingo|segunda(?:-feira)?|ter[cç]a(?:-feira)?|quarta(?:-feira)?|quinta(?:-feira)?|sexta(?:-feira)?|s[áa]bado)\b/gi, "")
     .replace(/\bdia\s+\d{1,2}\b/gi, "")
     .replace(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/g, "")
-    .replace(/\b(urgente|importante|alta prioridade|baixa prioridade|quando der)\b/gi, "")
+    .replace(/\b(?:as|a|às)\s+\d{1,2}(?:(?::|h)\d{0,2})?\b/gi, "")
+    .replace(/\b\d{1,2}h\d{0,2}\b/gi, "")
+    .replace(/\b\d{1,2}:\d{2}\b/g, "")
+    .replace(/\b(meio dia|meia noite|da manh[ãa]|de manh[ãa]|manh[ãa]|da tarde|de tarde|tarde|da noite|de noite|noite)\b/gi, "")
     .replace(/\b(pra|para|pro|ate|até|em)\s*$/gi, "")
+    .replace(/\s{2,}/g, " ")
     .trim();
-
-  return cleaned.length >= 3 ? capitalize(cleaned) : "";
 }
 
 function extractQuotedText(question: string) {
