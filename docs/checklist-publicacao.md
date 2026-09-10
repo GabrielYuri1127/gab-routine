@@ -15,6 +15,7 @@ Use este checklist antes de compartilhar o Gavium com amigos, familiares ou no p
 - Testar cadastro de uma disciplina nova.
 - Testar registro de falta em data passada.
 - Testar criacao de tarefa e lembrete.
+- Testar ativacao de notificacoes no Android quando push estiver configurado.
 
 ## Vercel
 
@@ -41,6 +42,16 @@ Use este checklist antes de compartilhar o Gavium com amigos, familiares ou no p
 - Fazer novo deploy depois de mudar variaveis.
 - Perguntar no assistente: `O que devo fazer agora?`
 - Conferir se a resposta mostra base e dados faltantes.
+
+## Notificacoes Push
+
+- Rodar `npm run vapid` e guardar as chaves.
+- Configurar `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` e `CRON_SECRET` na Vercel.
+- Configurar `CRON_SECRET` e `NOTIFICATION_DISPATCH_URL` nos secrets do GitHub.
+- Rodar novamente `supabase/schema.sql`.
+- Entrar no app pelo Android.
+- Ativar notificacoes em `/configuracoes`.
+- Enviar um teste.
 
 ## Portfolio
 

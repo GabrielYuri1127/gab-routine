@@ -1,0 +1,16 @@
+name: Gavium notifications
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send due reminders
+        run: |
+          curl --fail-with-body --request POST \
+            --header "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.NOTIFICATION_DISPATCH_URL }}"

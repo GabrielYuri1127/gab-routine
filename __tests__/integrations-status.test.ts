@@ -19,10 +19,12 @@ describe("integration status", () => {
 
     const ai = report.items.find((item) => item.id === "ai");
     const classroom = report.items.find((item) => item.id === "classroom");
+    const push = report.items.find((item) => item.id === "push");
     const future = report.items.filter((item) => item.category === "futuro");
 
     assert.equal(ai?.state, "ready");
     assert.equal(classroom?.state, "ready");
+    assert.equal(push?.state, "needs_setup");
     assert.equal(future.length > 0, true);
     assert.equal(JSON.stringify(report).includes("secret"), false);
   });
@@ -31,10 +33,13 @@ describe("integration status", () => {
     const report = buildIntegrationStatus({}, "http://localhost:3000/configuracoes");
     const supabase = report.items.find((item) => item.id === "supabase");
     const ai = report.items.find((item) => item.id === "ai");
+    const push = report.items.find((item) => item.id === "push");
 
     assert.equal(supabase?.state, "needs_setup");
     assert.equal(supabase?.missing.includes("NEXT_PUBLIC_SUPABASE_URL"), true);
     assert.equal(ai?.state, "needs_setup");
     assert.equal(ai?.missing.includes("AI_API_KEY"), true);
+    assert.equal(push?.state, "needs_setup");
+    assert.equal(push?.missing.includes("CRON_SECRET"), true);
   });
 });

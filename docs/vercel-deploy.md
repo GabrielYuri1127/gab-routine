@@ -46,12 +46,16 @@ SUPABASE_SERVICE_ROLE_KEY=sua_service_role_key
 
 Depois de criar ou trocar essas variaveis, aplique `supabase/schema.sql` no SQL Editor do Supabase. A tabela `routine_snapshots` e as politicas RLS sao necessarias para cada usuario ver somente os proprios dados.
 
-Para notificacoes push futuras:
+Para notificacoes push no Android:
 
 ```env
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=sua_chave_publica
 VAPID_PRIVATE_KEY=sua_chave_privada
+VAPID_SUBJECT=mailto:seu-email@exemplo.com
+CRON_SECRET=um_segredo_longo
 ```
+
+Gere as chaves com `npm run vapid`. O `CRON_SECRET` tambem precisa existir como secret no GitHub Actions, com o mesmo valor usado na Vercel.
 
 ## Ambientes
 
@@ -84,6 +88,7 @@ http://localhost:3000/api/classroom/callback
 7. Abrir `/configuracoes` e testar Google Classroom.
 8. Abrir `/assistente` e testar a IA.
 9. Abrir o site no Android e usar `Adicionar a tela inicial`.
+10. Ativar notificacoes em `/configuracoes` e enviar um teste.
 
 ## Referencias
 

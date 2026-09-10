@@ -1,6 +1,6 @@
 # Android widget futuro
 
-O Gavium continua sendo uma PWA como base gratuita. Para widget real de tela inicial no Android, nao vale criar um "widget" falso em HTML: sera preciso um wrapper nativo.
+O Gavium continua sendo uma PWA como base gratuita. Notificacoes push no Android ja foram separadas para `docs/push-notifications.md`. Para widget real de tela inicial no Android, nao vale criar um "widget" falso em HTML: sera preciso um wrapper nativo.
 
 Opcoes futuras:
 

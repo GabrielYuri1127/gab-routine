@@ -16,6 +16,7 @@ Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, fa
 - Zod
 - Supabase free para cadastro, login e persistencia em nuvem por usuario
 - PWA com manifest, service worker e icone maskable para Android
+- Web Push para lembretes no Android quando VAPID, Supabase e agendamento estiverem configurados
 - Google Classroom preparado via OAuth somente leitura
 - Tutorial interno e perfil personalizavel para uso por outras pessoas
 - Suporte por WhatsApp com link direto
@@ -55,6 +56,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
 Chaves privadas de IA, VAPID e service role ficam somente no servidor.
 
+Para notificacoes push no Android:
+
+```bash
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:seu-email@exemplo.com
+CRON_SECRET=
+```
+
 Para importar turmas e atividades do Google Classroom:
 
 ```bash
@@ -84,6 +94,10 @@ O app ja inclui:
 - `public/manifest.webmanifest`
 - icone normal e maskable em SVG
 - `public/sw.js` com cache basico e estrutura inicial para push
+- painel de notificacoes em `/configuracoes`
+- inscricao de aparelho com Supabase
+- botao de teste de notificacao
+- rota segura para disparar lembretes vencidos
 - registro do service worker em producao
 - shortcuts para falta, nota, tarefa, lembrete e compromisso
 
@@ -91,7 +105,14 @@ No Android, instale pelo Chrome/Edge usando "Adicionar a tela inicial" depois do
 
 ## Notificacoes
 
-As preferencias padrao ficam em `services/notifications/defaults.ts`. A central de lembretes ja existe dentro do app; push completo com VAPID e subscriptions entra na Fase 3.
+As preferencias padrao ficam em `services/notifications/defaults.ts`. A central de lembretes existe dentro do app e o Web Push ja tem:
+
+- `app/api/notifications/subscribe`
+- `app/api/notifications/test`
+- `app/api/notifications/dispatch`
+- `.github/workflows/notifications.yml`
+
+Veja `docs/push-notifications.md` para gerar as chaves VAPID, ativar no Android e configurar o agendamento automatico pelo GitHub Actions.
 
 ## IA
 
@@ -154,6 +175,7 @@ O material apresentavel fica em `portfolio/`, com case study, ferramentas do pro
 - Marca visual propria com icone PWA, icone maskable e logo horizontal em SVG.
 - Perfil personalizavel com nome do app, usuario, cor, padroes academicos, modulos e estilo da IA.
 - `/login` com Supabase Auth real, cadastro e dados separados por usuario quando configurado.
+- Notificacoes push no Android com inscricao de dispositivo, teste manual e dispatch seguro de lembretes.
 - Persistencia local via `localStorage`.
 - Calculos academicos reutilizaveis em `lib/academic-rules`.
 - Preset UFAM em `lib/academic-rules/ufam.ts`.

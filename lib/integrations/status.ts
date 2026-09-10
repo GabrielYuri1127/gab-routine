@@ -1,4 +1,5 @@
 import { getClassroomRedirectUri, isClassroomConfigured } from "../classroom/google-classroom";
+import { getPushMissingConfig } from "../../services/notifications/push-service";
 
 export type IntegrationState = "ready" | "needs_setup" | "optional" | "future";
 export type IntegrationCategory = "agora" | "futuro";
@@ -26,7 +27,8 @@ export function buildIntegrationStatus(env: IntegrationEnv = process.env, reques
   const classroomReady = isClassroomConfigured(env);
   const supabaseReady = Boolean(env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
   const vercelReady = Boolean(env.VERCEL || env.VERCEL_URL);
-  const pushReady = Boolean(env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY);
+  const pushMissing = getPushMissingConfig(env);
+  const pushReady = pushMissing.length === 0;
 
   return {
     generatedAt: new Date().toISOString(),
@@ -81,12 +83,12 @@ export function buildIntegrationStatus(env: IntegrationEnv = process.env, reques
         title: "Supabase"
       },
       {
-        category: "futuro",
-        detail: pushReady ? "Chaves VAPID existem, mas ainda falta completar envio real no backend." : "A central de lembretes ja existe dentro do app.",
+        category: "agora",
+        detail: pushReady ? "Inscricao de aparelhos, teste e dispatch seguro de lembretes estao configurados." : "O app ja tem painel e rotas de push, mas faltam variaveis para enviar no Android.",
         id: "push",
-        missing: pushReady ? [] : ["NEXT_PUBLIC_VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY"],
-        nextStep: "Implementar subscriptions e envio de push na proxima fase.",
-        state: "future",
+        missing: pushReady ? [] : pushMissing,
+        nextStep: pushReady ? "Entrar pelo Android, ativar e enviar um teste." : "Gerar VAPID, configurar Supabase service role e CRON_SECRET.",
+        state: pushReady ? "ready" : "needs_setup",
         title: "Notificacoes push"
       },
       {

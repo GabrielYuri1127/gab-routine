@@ -50,10 +50,11 @@ self.addEventListener("push", (event) => {
       body: data.body || fallback.body,
       icon: "/icons/icon.svg",
       badge: "/icons/icon.svg",
+      tag: data.tag || "gavium",
+      renotify: true,
       data: data.url || "/",
       actions: [
-        { action: "open", title: "Abrir" },
-        { action: "snooze-10", title: "Adiar 10 min" }
+        { action: "open", title: "Abrir" }
       ]
     })
   );
@@ -61,7 +62,7 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data || "/";
+  const targetUrl = new URL(event.notification.data || "/", self.location.origin).href;
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {

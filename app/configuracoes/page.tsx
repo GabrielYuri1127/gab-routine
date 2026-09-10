@@ -5,6 +5,7 @@ import { ClassroomImportPanel } from "@/features/classroom/components/classroom-
 import { AppPreferencesPanel } from "@/features/settings/components/app-preferences-panel";
 import { DataTools } from "@/features/settings/components/data-tools";
 import { IntegrationStatusPanel } from "@/features/settings/components/integration-status-panel";
+import { PushNotificationsPanel } from "@/features/settings/components/push-notifications-panel";
 
 export default function SettingsPage() {
   return (
@@ -19,6 +20,7 @@ export default function SettingsPage() {
 
       <AppPreferencesPanel />
       <IntegrationStatusPanel />
+      <PushNotificationsPanel />
       <DataTools />
       <ClassroomImportPanel />
       <SupportWhatsAppCard />

@@ -159,8 +159,14 @@ create table if not exists public.push_subscriptions (
   endpoint text not null,
   p256dh text not null,
   auth text not null,
-  created_at timestamptz not null default now()
+  user_agent text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
+
+alter table public.push_subscriptions add column if not exists user_agent text;
+alter table public.push_subscriptions add column if not exists updated_at timestamptz not null default now();
+create unique index if not exists push_subscriptions_endpoint_unique on public.push_subscriptions(endpoint);
 
 create table if not exists public.study_sessions (
   id uuid primary key default gen_random_uuid(),
