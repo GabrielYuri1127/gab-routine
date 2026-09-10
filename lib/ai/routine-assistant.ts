@@ -6,8 +6,9 @@ import { getTaskDate, prioritizeTasks } from "../tasks/prioritization";
 import type { AcademicActivity, Subject } from "@/types/academic";
 import type { AppPreference, Event, Reminder, Task } from "@/types/domain";
 import type { IntegrationStatusItem, IntegrationStatusReport } from "../integrations/status";
+import { buildAssistantCommandProposal, type AssistantCommandProposal } from "./command-parser";
 
-export type AssistantIntent = "now" | "attendance" | "grades" | "deadlines" | "readiness" | "summary";
+export type AssistantIntent = "now" | "attendance" | "command" | "grades" | "deadlines" | "readiness" | "summary";
 export type AssistantTone = "mint" | "sky" | "gold" | "coral" | "neutral";
 
 export interface RoutineAssistantInput {
@@ -34,6 +35,7 @@ export interface AssistantQuickLink {
 
 export interface RoutineAssistantResponse {
   answer: string;
+  commandProposal?: AssistantCommandProposal;
   dataGaps: string[];
   evidence: string[];
   highlights: AssistantHighlight[];
@@ -71,9 +73,16 @@ export function buildRoutineAssistantResponse(input: RoutineAssistantInput): Rou
     ...input,
     subjects: input.subjects.filter((subject) => subject.status !== "archived")
   };
+  const commandProposal = buildAssistantCommandProposal({
+    question: input.question,
+    subjects: safeInput.subjects,
+    today: input.today
+  });
   const intent = detectIntent(input.question);
   const response =
-    intent === "readiness"
+    commandProposal
+      ? buildCommandAnswer(commandProposal)
+      : intent === "readiness"
       ? buildReadinessAnswer(safeInput)
       : intent === "attendance"
       ? buildAttendanceAnswer(safeInput)
@@ -118,6 +127,70 @@ function detectIntent(question: string): AssistantIntent {
   }
 
   return "summary";
+}
+
+function buildCommandAnswer(commandProposal: AssistantCommandProposal): RoutineAssistantResponse {
+  return {
+    answer: `Entendi a acao, mas nao vou alterar seus dados sem confirmacao. Confira abaixo: ${commandProposal.summary}.`,
+    commandProposal,
+    dataGaps: commandProposal.warnings,
+    evidence: buildCommandEvidence(commandProposal),
+    highlights: [
+      { label: "Acao", tone: "sky", value: "1" },
+      { label: "Confirmacao", tone: "gold", value: "manual" },
+      { label: "Risco", tone: commandProposal.warnings.length ? "gold" : "mint", value: commandProposal.warnings.length ? "revisar" : "baixo" }
+    ],
+    intent: "command",
+    quickLinks: buildCommandLinks(commandProposal),
+    suggestions: [
+      "Confirmar somente se os dados estiverem certos",
+      "Cancelar se disciplina, data ou valor estiver errado",
+      "Depois de confirmar, conferir o registro na tela indicada"
+    ]
+  };
+}
+
+function buildCommandEvidence(commandProposal: AssistantCommandProposal) {
+  if (commandProposal.intent === "register_absence") {
+    return [
+      `Disciplina detectada: ${commandProposal.subject.name}.`,
+      `Quantidade: ${commandProposal.quantity} aula(s).`,
+      `Data: ${commandProposal.dateLabel}.`
+    ];
+  }
+
+  if (commandProposal.intent === "add_grade") {
+    return [
+      `Disciplina detectada: ${commandProposal.subject.name}.`,
+      `Nota: ${formatNumber(commandProposal.score)} de ${formatNumber(commandProposal.maxScore)}.`,
+      commandProposal.dateLabel ? `Data: ${commandProposal.dateLabel}.` : "Sem data de nota detectada."
+    ];
+  }
+
+  if (commandProposal.intent === "add_activity") {
+    return [
+      `Disciplina detectada: ${commandProposal.subject.name}.`,
+      `Titulo: ${commandProposal.title}.`,
+      `Prazo: ${commandProposal.dueDateLabel}.`
+    ];
+  }
+
+  return [
+    `Tarefa detectada: ${commandProposal.title}.`,
+    commandProposal.dueDateLabel ? `Prazo: ${commandProposal.dueDateLabel}.` : "Sem prazo detectado.",
+    `Prioridade: ${commandProposal.priority}.`
+  ];
+}
+
+function buildCommandLinks(commandProposal: AssistantCommandProposal): AssistantQuickLink[] {
+  if (commandProposal.intent === "add_task") {
+    return [{ href: "/tarefas", label: "Tarefas" }];
+  }
+
+  return [
+    { href: `/faculdade/${commandProposal.subject.id}`, label: "Abrir disciplina" },
+    { href: "/faculdade", label: "Faculdade" }
+  ];
 }
 
 function isAttendanceQuestion(normalized: string) {

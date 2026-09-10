@@ -29,7 +29,7 @@ O Gavium organiza essas informacoes em uma interface pensada para uso diario no 
 - Tarefas com prioridade, data, tempo estimado e status.
 - Lembretes dentro do app.
 - Calendario mensal com aulas, tarefas, prazos, lembretes e compromissos.
-- Assistente de IA com respostas baseadas nos dados cadastrados.
+- Assistente de IA com respostas baseadas nos dados cadastrados e comandos confirmaveis para faltas, notas, atividades e tarefas.
 - Importacao do Google Classroom por conta.
 - Suporte a mais de uma conta institucional do Google Classroom.
 - Perfil personalizavel com nome do app, usuario, cor, semestre padrao, carga horaria e modulos visiveis.

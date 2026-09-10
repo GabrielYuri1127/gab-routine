@@ -69,7 +69,7 @@ const areas = [
   {
     icon: Bot,
     title: "Assistente",
-    text: "Pergunte o que fazer agora, quais prazos venceram, como estao as faltas ou quais notas pedem atencao.",
+    text: "Pergunte o que fazer agora ou peça para criar faltas, notas, atividades e tarefas com confirmacao antes de salvar.",
     href: "/assistente"
   },
   {

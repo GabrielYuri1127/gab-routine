@@ -19,6 +19,7 @@
 ## IA Do Produto
 
 - Assistente local por regras para funcionar sem chave externa.
+- Parser local de comandos com confirmacao antes de salvar dados.
 - Rota `/api/assistant` para resposta no servidor.
 - Preparacao para OpenAI API com resposta estruturada em JSON.
 

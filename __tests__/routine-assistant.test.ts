@@ -132,6 +132,21 @@ describe("routine assistant", () => {
     assert.equal(response.quickLinks.some((link) => link.href === "/configuracoes"), true);
   });
 
+  it("asks for confirmation before applying a command", () => {
+    const response = buildRoutineAssistantResponse({
+      events: [],
+      question: "registre 2 faltas em redes ontem",
+      reminders: [],
+      subjects: [baseSubject],
+      tasks: [],
+      today: "2026-09-10"
+    });
+
+    assert.equal(response.intent, "command");
+    assert.equal(response.commandProposal?.intent, "register_absence");
+    assert.match(response.answer, /sem confirmacao/);
+  });
+
   it("uses answer style preferences in the local assistant", () => {
     const response = buildRoutineAssistantResponse({
       appPreference: coachPreference,

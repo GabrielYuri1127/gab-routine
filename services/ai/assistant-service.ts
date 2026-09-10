@@ -32,6 +32,7 @@ export async function askAssistant(question: string, context: Omit<RoutineAssist
 Voce melhora a resposta do assistente pessoal Gavium.
 Use somente os numeros, nomes, datas e links ja calculados pelo sistema.
 Mantenha a resposta curta, mas com raciocinio visivel e sem parecer modelo pronto.
+Se existir commandProposal, explique que a acao precisa de confirmacao manual e nunca diga que ja salvou.
 Nao remova avisos de dados faltantes.`
         },
         {

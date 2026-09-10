@@ -17,7 +17,7 @@ O Gavium ja tem uma versao funcional para uso pessoal, testes com outras pessoas
 - Tarefas.
 - Lembretes.
 - Calendario.
-- Assistente com logica local.
+- Assistente com logica local, status do app e comandos com confirmacao.
 - Preparacao de IA online.
 - Personalizacao do app.
 - Painel de status separando o que falta resolver agora e o que e melhoria futura.
@@ -42,7 +42,7 @@ O Gavium ja tem uma versao funcional para uso pessoal, testes com outras pessoas
 - Notificacoes push reais.
 - Widget Android nativo.
 - Mais relatorios academicos.
-- Melhorias no assistente para sugerir planos semanais.
+- Melhorias no assistente para sugerir planos semanais e interpretar mais comandos.
 - Opcoes avancadas para diferentes faculdades e regras academicas.
 
 ## Fora Do Escopo Atual
