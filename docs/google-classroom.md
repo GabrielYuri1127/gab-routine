@@ -26,6 +26,19 @@ https://seu-dominio.vercel.app/api/classroom/callback
 
 5. Preencha as variaveis do app e acesse `/configuracoes`.
 
+## Mais De Uma Conta
+
+O botao `Adicionar conta Classroom` sempre pede o seletor de conta do Google. Para importar duas contas institucionais:
+
+1. Clique em `Adicionar conta Classroom`.
+2. Escolha a primeira conta.
+3. Volte para `/configuracoes` e confira a previa.
+4. Clique de novo em `Adicionar conta Classroom`.
+5. Escolha a segunda conta.
+6. Importe uma conta por vez ou use `Importar todas`.
+
+O app usa email/id da conta para separar as previas e marcadores nas disciplinas. Assim uma turma com o mesmo nome em contas diferentes nao fica sem origem.
+
 ## O que entra no app
 
 - Cursos ativos viram disciplinas.

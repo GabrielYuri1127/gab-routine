@@ -4,7 +4,7 @@
   <img src="public/brand/gavium-logo.svg" alt="Gavium" width="420" />
 </p>
 
-Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, faltas, notas, atividades, tarefas, compromissos e lembretes. A base atual entrega Fase 1 completa e Fase 2 com persistencia local, calendario mensal, telas editaveis, backup local e login Supabase com dados separados por usuario.
+Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, faltas, notas, atividades, tarefas, compromissos e lembretes. A base atual entrega persistencia local, calendario mensal, telas editaveis, backup local, login Supabase com dados separados por usuario, PWA Android, notificacoes push preparadas e assistente com comandos automaticos.
 
 ## Stack
 
@@ -87,6 +87,8 @@ Uso pessoal gratuito recomendado:
 
 Sem essas variaveis, o app continua funcionando em modo local com `localStorage`, mas nao e o modo ideal para compartilhar com varias pessoas.
 
+Veja `docs/supabase-setup.md` para configurar e testar duas contas sem misturar dados.
+
 ## PWA Android
 
 O app ja inclui:
@@ -125,7 +127,7 @@ A arquitetura inicial fica em:
 - `lib/ai/command-parser.ts`
 - `services/ai/`
 
-Por padrao o provedor esta desativado, entao o app continua funcionando com regras internas. A rota `/assistente` ja responde perguntas sobre prioridades, faltas, medias, prazos e status de publicacao usando os dados locais. Ela tambem entende comandos como registrar faltas, adicionar notas, criar atividades e criar tarefas, salvando direto quando os dados estao claros e pedindo complemento quando falta algo essencial. Quando `AI_PROVIDER=openai` e `AI_API_KEY` estiverem configurados no servidor, `/api/assistant` usa IA real sem expor a chave no navegador.
+Por padrao o provedor esta desativado, entao o app continua funcionando com regras internas. A rota `/assistente` ja responde perguntas sobre prioridades, faltas, medias, prazos e status de publicacao usando os dados locais. Ela tambem entende comandos como registrar faltas, adicionar notas, criar atividades, lembretes, compromissos e tarefas, salvando direto quando os dados estao claros e pedindo complemento quando falta algo essencial. Quando `AI_PROVIDER=openai` e `AI_API_KEY` estiverem configurados no servidor, `/api/assistant` usa IA real sem expor a chave no navegador.
 
 Veja `docs/ai-setup.md` antes de configurar a IA na Vercel.
 

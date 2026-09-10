@@ -27,9 +27,9 @@ O Gavium organiza essas informacoes em uma interface pensada para uso diario no 
 - Simulador academico para entender situacao da disciplina.
 - Atividades por prazo.
 - Tarefas com prioridade, data, tempo estimado e status.
-- Lembretes dentro do app.
+- Lembretes dentro do app e notificacoes push preparadas para Android.
 - Calendario mensal com aulas, tarefas, prazos, lembretes e compromissos.
-- Assistente de IA com respostas baseadas nos dados cadastrados e comandos automaticos para faltas, notas, atividades e tarefas quando os dados estao claros.
+- Assistente de IA com respostas baseadas nos dados cadastrados e comandos automaticos para faltas, notas, atividades, tarefas, lembretes e compromissos quando os dados estao claros.
 - Importacao do Google Classroom por conta.
 - Suporte a mais de uma conta institucional do Google Classroom.
 - Perfil personalizavel com nome do app, usuario, cor, semestre padrao, carga horaria e modulos visiveis.
@@ -47,7 +47,7 @@ A integracao com Google Classroom foi criada como importacao assistida: o usuari
 
 ## Resultado
 
-O resultado atual e um app funcional, responsivo, instalavel no Android como PWA e preparado para uso com varias contas quando Supabase esta configurado, alem de evoluir para notificacoes push completas, widgets Android e recursos mais avancados de IA.
+O resultado atual e um app funcional, responsivo, instalavel no Android como PWA, preparado para uso com varias contas quando Supabase esta configurado e com base de notificacoes push para lembretes no celular. A evolucao natural fica em widgets Android e recursos mais avancados de IA.
 
 ## Diferenciais
 
