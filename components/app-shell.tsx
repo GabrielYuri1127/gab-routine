@@ -124,6 +124,16 @@ function AppShellContent({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
+      <header className="sticky top-0 z-20 border-b border-line bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+        <Link className="flex items-center gap-3" href="/">
+          <img alt="" aria-hidden className="h-10 w-10 rounded-lg shadow-sm" src="/brand/gavium-mark.svg" />
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-semibold text-ink">{appName}</span>
+            <span className="block truncate text-xs text-slate-500">{profileLabel}</span>
+          </span>
+        </Link>
+      </header>
+
       <main className="mx-auto min-h-screen w-full max-w-5xl px-4 pb-28 pt-4 sm:px-6 lg:ml-64 lg:px-8 lg:pb-10 lg:pt-8">
         {children}
       </main>
