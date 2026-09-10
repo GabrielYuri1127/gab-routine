@@ -52,7 +52,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { data } = useRoutineData();
   const preferences = data.appPreference;
-  const appName = preferences.appName.trim() || "GAB ROUTINE";
+  const appName = preferences.appName.trim() || "Gavium";
   const profileLabel = preferences.profileLabel.trim() || "rotina pessoal";
   const brandInitial = appName[0]?.toUpperCase() ?? "G";
   const secondaryItems = secondaryNav.filter((item) => !item.module || preferences.enabledModules[item.module]);

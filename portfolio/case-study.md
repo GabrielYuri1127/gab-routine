@@ -1,8 +1,8 @@
-# Case Study: GAB ROUTINE
+# Case Study: Gavium
 
 ## Ideia
 
-O GAB ROUTINE surgiu da necessidade de ter um app pessoal para juntar rotina diaria e vida academica em um unico lugar. A ideia principal e evitar que faltas, notas, tarefas, prazos, aulas e lembretes fiquem espalhados entre caderno, mensagens, calendario e plataformas da faculdade.
+O Gavium surgiu da necessidade de ter um app pessoal para juntar rotina diaria e vida academica em um unico lugar. A ideia principal e evitar que faltas, notas, tarefas, prazos, aulas e lembretes fiquem espalhados entre caderno, mensagens, calendario e plataformas da faculdade.
 
 ## Problema
 
@@ -16,7 +16,7 @@ Na rotina de estudante, pequenos dados mudam o semestre inteiro: uma falta antig
 
 ## Solucao
 
-O GAB ROUTINE organiza essas informacoes em uma interface pensada para uso diario no celular. O app abre direto na tela Hoje, com resumo da rotina, e oferece areas especificas para faculdade, tarefas, lembretes, calendario, configuracoes e tutorial.
+O Gavium organiza essas informacoes em uma interface pensada para uso diario no celular. O app abre direto na tela Hoje, com resumo da rotina, e oferece areas especificas para faculdade, tarefas, lembretes, calendario, configuracoes e tutorial.
 
 ## Funcionalidades Principais
 

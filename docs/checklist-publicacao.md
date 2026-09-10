@@ -1,6 +1,6 @@
 # Checklist De Publicacao
 
-Use este checklist antes de compartilhar o GAB ROUTINE com amigos, familiares ou no portfolio.
+Use este checklist antes de compartilhar o Gavium com amigos, familiares ou no portfolio.
 
 ## Antes De Compartilhar
 
@@ -10,6 +10,7 @@ Use este checklist antes de compartilhar o GAB ROUTINE com amigos, familiares ou
 - Exportar um backup se o navegador ja tiver dados importantes.
 - Usar `Restaurar perfil padrao` se quiser enviar o app limpo.
 - Testar a tela `/tutorial`.
+- Testar o botao de suporte pelo WhatsApp.
 - Testar a tela `/assistente`.
 - Testar cadastro de uma disciplina nova.
 - Testar registro de falta em data passada.

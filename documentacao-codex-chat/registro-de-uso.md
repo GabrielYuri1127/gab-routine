@@ -2,7 +2,7 @@
 
 ## Objetivo Do Apoio
 
-O apoio de ChatGPT/Codex foi usado para transformar a ideia do GAB ROUTINE em um aplicativo funcional, organizar tarefas de desenvolvimento, editar arquivos do projeto, rodar validacoes e preparar commits para o GitHub.
+O apoio de ChatGPT/Codex foi usado para transformar a ideia do Gavium em um aplicativo funcional, organizar tarefas de desenvolvimento, editar arquivos do projeto, rodar validacoes e preparar commits para o GitHub.
 
 ## Como Foi Usado
 

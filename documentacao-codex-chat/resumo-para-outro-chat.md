@@ -4,7 +4,7 @@ Use este texto quando precisar continuar o projeto em outra conversa.
 
 ## Projeto
 
-O projeto se chama GAB ROUTINE. E um aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, faltas, notas, atividades, tarefas, compromissos, lembretes e importacao do Google Classroom.
+O projeto agora se chama Gavium. O nome anterior, Gab Routine, era apenas provisoriamente usado durante o inicio do desenvolvimento. E um aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, faltas, notas, atividades, tarefas, compromissos, lembretes e importacao do Google Classroom.
 
 ## Estado Atual
 

@@ -1,4 +1,4 @@
--- Supabase blueprint for GAB ROUTINE. Apply in Fase 2 after creating the free Supabase project.
+-- Supabase blueprint for Gavium. Apply in Fase 2 after creating the free Supabase project.
 -- Every table keeps user_id so Row Level Security can isolate personal data.
 
 create table if not exists public.semesters (

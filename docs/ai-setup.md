@@ -1,4 +1,4 @@
-# IA No GAB ROUTINE
+# IA No Gavium
 
 O app funciona sem chave externa usando a IA local por regras. Para ativar resposta por API no deploy:
 

@@ -2,7 +2,7 @@
 
 ## Status Atual
 
-O GAB ROUTINE ja tem uma versao funcional para uso pessoal, testes com outras pessoas e apresentacao em portfolio.
+O Gavium ja tem uma versao funcional para uso pessoal, testes com outras pessoas e apresentacao em portfolio.
 
 ## Pronto
 
@@ -21,6 +21,7 @@ O GAB ROUTINE ja tem uma versao funcional para uso pessoal, testes com outras pe
 - Preparacao de IA online.
 - Personalizacao do app.
 - Painel de status separando o que falta resolver agora e o que e melhoria futura.
+- Suporte por WhatsApp com link direto.
 - Tutorial interno.
 - Backup local.
 - PWA instalavel no Android.

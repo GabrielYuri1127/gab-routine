@@ -49,7 +49,7 @@ const urgentTask: Task = {
 
 const coachPreference: AppPreference = {
   accentColor: "#0f9f7a",
-  appName: "GAB ROUTINE",
+  appName: "Gavium",
   assistantAnswerStyle: "coach",
   defaultClassesQuantity: 2,
   defaultSemester: "2026/1",

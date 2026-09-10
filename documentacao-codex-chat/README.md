@@ -1,6 +1,6 @@
 # Documentacao Codex E Chat
 
-Esta pasta concentra o registro de uso de ChatGPT/Codex no projeto GAB ROUTINE.
+Esta pasta concentra o registro de uso de ChatGPT/Codex no projeto Gavium.
 
 Tudo que explicar apoio de conversa, agente de codigo, prompts, fluxo assistido, ferramentas do Codex ou uso do ChatGPT durante a criacao do projeto deve ficar aqui, e somente aqui.
 

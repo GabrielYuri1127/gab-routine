@@ -19,7 +19,7 @@ export function DataTools() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `gab-routine-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.download = `gavium-backup-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.append(anchor);
     anchor.click();
     anchor.remove();
@@ -45,7 +45,7 @@ export function DataTools() {
   }
 
   function restoreExamples() {
-    if (!window.confirm("Restaurar os dados de exemplo do GAB ROUTINE neste navegador?")) {
+    if (!window.confirm("Restaurar os dados de exemplo do Gavium neste navegador?")) {
       return;
     }
 

@@ -2,7 +2,7 @@
 
 ## Pitch Curto
 
-GAB ROUTINE e um app pessoal e academico mobile-first para estudantes organizarem rotina, faltas, notas, tarefas, prazos, lembretes e dados do Google Classroom em um so lugar.
+Gavium e um app pessoal e academico mobile-first para estudantes organizarem rotina, faltas, notas, tarefas, prazos, lembretes e dados do Google Classroom em um so lugar.
 
 ## Como Demonstrar
 
@@ -27,4 +27,4 @@ GAB ROUTINE e um app pessoal e academico mobile-first para estudantes organizare
 
 ## Texto Para Portfolio
 
-Desenvolvi o GAB ROUTINE como um aplicativo pessoal e academico para centralizar rotina, disciplinas, faltas, notas, atividades e tarefas. O projeto foi construido com Next.js, TypeScript e Tailwind CSS, usando persistencia local, PWA para Android e estrutura preparada para Supabase, Vercel, Google Classroom e recursos de IA. O foco foi criar uma ferramenta pratica, personalizavel e facil de compartilhar.
+Desenvolvi o Gavium como um aplicativo pessoal e academico para centralizar rotina, disciplinas, faltas, notas, atividades e tarefas. O projeto foi construido com Next.js, TypeScript e Tailwind CSS, usando persistencia local, PWA para Android e estrutura preparada para Supabase, Vercel, Google Classroom e recursos de IA. O foco foi criar uma ferramenta pratica, personalizavel e facil de compartilhar.

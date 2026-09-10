@@ -72,7 +72,7 @@ export function loadRoutineData() {
 
   try {
     const parsed = normalizeRoutineData(JSON.parse(stored));
-    if (migrated) {
+    if (migrated || JSON.stringify(parsed) !== stored) {
       saveRoutineData(parsed);
     }
 
@@ -109,15 +109,25 @@ export function normalizeAppPreference(value: unknown): AppPreference {
   }
 
   const parsed = value as Partial<AppPreference>;
+  const appName = normalizeAppName(parsed.appName);
   return {
     ...DEFAULT_APP_PREFERENCE,
     ...parsed,
+    appName,
     enabledModules: {
       ...DEFAULT_APP_PREFERENCE.enabledModules,
       ...(parsed.enabledModules ?? {})
     },
     userId: parsed.userId ?? LOCAL_USER_ID
   };
+}
+
+function normalizeAppName(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) {
+    return DEFAULT_APP_PREFERENCE.appName;
+  }
+
+  return value.trim().toLowerCase() === "gab routine" ? DEFAULT_APP_PREFERENCE.appName : value;
 }
 
 export function saveRoutineData(data: RoutineData) {

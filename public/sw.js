@@ -1,4 +1,4 @@
-const CACHE_NAME = "gab-routine-v1";
+const CACHE_NAME = "gavium-v1";
 const APP_SHELL = ["/", "/faculdade", "/manifest.webmanifest", "/icons/icon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -40,7 +40,7 @@ self.addEventListener("fetch", (event) => {
 
 self.addEventListener("push", (event) => {
   const fallback = {
-    title: "GAB ROUTINE",
+    title: "Gavium",
     body: "Voce tem um lembrete pendente."
   };
   const data = event.data ? event.data.json() : fallback;

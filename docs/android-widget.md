@@ -1,12 +1,12 @@
 # Android widget futuro
 
-O GAB ROUTINE continua sendo uma PWA como base gratuita. Para widget real de tela inicial no Android, nao vale criar um "widget" falso em HTML: sera preciso um wrapper nativo.
+O Gavium continua sendo uma PWA como base gratuita. Para widget real de tela inicial no Android, nao vale criar um "widget" falso em HTML: sera preciso um wrapper nativo.
 
 Opcoes futuras:
 
 - Capacitor com plugin nativo de AppWidget.
 - Wrapper Android simples usando WebView para o app e um `AppWidgetProvider` nativo.
-- AppWidget nativo consumindo uma API autenticada do GAB ROUTINE.
+- AppWidget nativo consumindo uma API autenticada do Gavium.
 
 API planejada:
 

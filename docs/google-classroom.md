@@ -1,6 +1,6 @@
 # Google Classroom
 
-O GAB ROUTINE pode importar turmas e trabalhos do Google Classroom para a area Faculdade. A integracao usa OAuth, escopos somente de leitura e suporta mais de uma conta institucional.
+O Gavium pode importar turmas e trabalhos do Google Classroom para a area Faculdade. A integracao usa OAuth, escopos somente de leitura e suporta mais de uma conta institucional.
 
 ## Variaveis
 

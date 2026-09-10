@@ -11,6 +11,7 @@ import {
   Smartphone
 } from "lucide-react";
 
+import { SupportWhatsAppCard } from "@/components/support-whatsapp-card";
 import { Badge } from "@/components/ui/badge";
 
 const firstSteps = [
@@ -150,6 +151,8 @@ export default function TutorialPage() {
           ))}
         </div>
       </section>
+
+      <SupportWhatsAppCard compact />
     </div>
   );
 }

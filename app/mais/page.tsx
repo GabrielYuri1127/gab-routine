@@ -12,6 +12,7 @@ import {
   Smartphone
 } from "lucide-react";
 
+import { SupportWhatsAppCard } from "@/components/support-whatsapp-card";
 import { Badge } from "@/components/ui/badge";
 
 const implemented = [
@@ -56,7 +57,7 @@ export default function MorePage() {
     <div className="space-y-5">
       <header>
         <p className="text-sm font-medium text-mint">Mais</p>
-        <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Estado do GAB ROUTINE</h1>
+        <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Estado do Gavium</h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
           Esta tela evita botoes falsos: o que existe aparece como pronto, e o restante fica marcado por fase.
         </p>
@@ -110,6 +111,8 @@ export default function MorePage() {
       <Link className="block rounded-lg border border-line bg-white p-4 text-sm font-medium text-ink shadow-sm" href="/login">
         Conta e Supabase
       </Link>
+
+      <SupportWhatsAppCard compact />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-# GAB ROUTINE
+# Gavium
 
 Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, faltas, notas, atividades, tarefas, compromissos e lembretes. A base atual entrega Fase 1 completa e Fase 2 com persistencia local, calendario mensal, telas editaveis, backup local e login Supabase preparado.
 
@@ -14,6 +14,7 @@ Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, fa
 - PWA com manifest, service worker e icone maskable para Android
 - Google Classroom preparado via OAuth somente leitura
 - Tutorial interno e perfil personalizavel para uso por outras pessoas
+- Suporte por WhatsApp com link direto
 
 ## Como Rodar
 
@@ -143,6 +144,7 @@ O material apresentavel fica em `portfolio/`, com case study, ferramentas do pro
 - `/configuracoes` com status de publicacao separando pendencias atuais e melhorias futuras.
 - `/configuracoes` com conexao Google Classroom e importacao para Faculdade.
 - `/tutorial` com guia de uso para compartilhar com amigos e familiares.
+- Suporte por WhatsApp em `/configuracoes`, `/mais` e `/tutorial`.
 - Perfil personalizavel com nome do app, usuario, cor, padroes academicos, modulos e estilo da IA.
 - `/login` com Supabase Auth real quando configurado.
 - Persistencia local via `localStorage`.

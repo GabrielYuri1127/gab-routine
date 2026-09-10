@@ -9,7 +9,7 @@ export const DEFAULT_APP_PREFERENCE: AppPreference = {
   id: "local-app-preferences",
   userId: LOCAL_USER_ID,
   accentColor: "#0f9f7a",
-  appName: "GAB ROUTINE",
+  appName: "Gavium",
   assistantAnswerStyle: "balanced",
   defaultClassesQuantity: 2,
   defaultSemester: "2026/1",

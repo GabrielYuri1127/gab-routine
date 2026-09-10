@@ -55,7 +55,7 @@ export function AppPreferencesPanel() {
           <input
             className={inputClass}
             onChange={(event) => updateAppPreference({ appName: event.target.value })}
-            placeholder="GAB ROUTINE"
+            placeholder="Gavium"
             value={preferences.appName}
           />
         </label>

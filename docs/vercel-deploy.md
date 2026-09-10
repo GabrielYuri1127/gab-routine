@@ -1,6 +1,6 @@
 # Deploy Na Vercel
 
-Este guia resume como publicar o GAB ROUTINE usando o repositorio do GitHub.
+Este guia resume como publicar o Gavium usando o repositorio do GitHub.
 
 ## Repositorio
 
