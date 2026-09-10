@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bot, Loader2, Send, Sparkles } from "lucide-react";
+import { AlarmClockPlus, Bot, CalendarPlus, ClipboardCheck, GraduationCap, Loader2, Send, Sparkles, type LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -11,12 +11,14 @@ import type { AssistantCommandProposal } from "@/lib/ai/command-parser";
 import { buildRoutineAssistantResponse, type RoutineAssistantResponse } from "@/lib/ai/routine-assistant";
 import { getTodayInAppTimeZone } from "@/lib/date";
 
-const promptSuggestions = [
-  "O que devo fazer agora?",
-  "O que falta para publicar o app?",
-  "Como estao minhas faltas?",
-  "Quais prazos vem primeiro?",
-  "Como estao minhas medias?"
+const promptSuggestions: Array<{ icon: LucideIcon; label: string }> = [
+  { icon: Sparkles, label: "O que devo fazer agora?" },
+  { icon: ClipboardCheck, label: "O que falta para publicar o app?" },
+  { icon: GraduationCap, label: "Como estao minhas faltas?" },
+  { icon: GraduationCap, label: "Quais prazos vem primeiro?" },
+  { icon: GraduationCap, label: "Como estao minhas medias?" },
+  { icon: CalendarPlus, label: "Tenho dentista sexta 15h" },
+  { icon: AlarmClockPlus, label: "Me lembre de levar o carregador amanha as 8h" }
 ];
 
 export function AssistantPanel() {
@@ -233,22 +235,27 @@ export function AssistantPanel() {
           </Button>
         </form>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {promptSuggestions.map((suggestion) => (
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {promptSuggestions.map((suggestion) => {
+            const Icon = suggestion.icon;
+
+            return (
             <button
-              className="rounded-lg border border-line px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-ink"
+              className="flex min-h-11 items-center gap-2 rounded-lg border border-line px-3 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-ink"
               disabled={loading}
-              key={suggestion}
-              onClick={() => ask(suggestion)}
+              key={suggestion.label}
+              onClick={() => ask(suggestion.label)}
               type="button"
             >
-              {suggestion}
+              <Icon aria-hidden className="h-4 w-4 shrink-0 text-slate-400" />
+              <span>{suggestion.label}</span>
             </button>
-          ))}
+            );
+          })}
         </div>
       </section>
 
-      <section className="rounded-lg border border-line bg-ink p-4 text-white shadow-soft">
+      <section className="rounded-lg border border-line bg-ink p-4 text-white shadow-soft" style={{ borderTop: `4px solid ${data.appPreference.accentColor}` }}>
         <div className="mb-3 flex items-center justify-between gap-3">
           <span className="flex items-center gap-2 text-sm font-medium text-white/75">
             <Sparkles aria-hidden className="h-4 w-4" />
