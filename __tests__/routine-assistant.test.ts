@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { buildRoutineAssistantResponse } from "../lib/ai/routine-assistant";
+import { buildIntegrationStatus } from "../lib/integrations/status";
 import type { Subject } from "../types/academic";
 import type { AppPreference, Task } from "../types/domain";
 
@@ -112,6 +113,23 @@ describe("routine assistant", () => {
     assert.match(response.answer, /Redes de Computadores/);
     assert.equal(response.quickLinks.some((link) => link.href === "/faculdade/redes"), true);
     assert.equal(response.evidence.some((item) => item.includes("14/15 faltas")), true);
+  });
+
+  it("answers app readiness questions without confusing them with attendance", () => {
+    const response = buildRoutineAssistantResponse({
+      events: [],
+      integrationStatus: buildIntegrationStatus({}, "http://localhost:3000/configuracoes"),
+      question: "O que falta?",
+      reminders: [],
+      subjects: [baseSubject],
+      tasks: [urgentTask],
+      today: "2026-09-08"
+    });
+
+    assert.equal(response.intent, "readiness");
+    assert.match(response.answer, /Gavium/);
+    assert.match(response.answer, /IA online|Deploy Vercel|Google Classroom/);
+    assert.equal(response.quickLinks.some((link) => link.href === "/configuracoes"), true);
   });
 
   it("uses answer style preferences in the local assistant", () => {

@@ -12,10 +12,10 @@ import { getTodayInAppTimeZone } from "@/lib/date";
 
 const promptSuggestions = [
   "O que devo fazer agora?",
+  "O que falta para publicar o app?",
   "Como estao minhas faltas?",
   "Quais prazos vem primeiro?",
-  "Como estao minhas medias?",
-  "O que esta atrasado?"
+  "Como estao minhas medias?"
 ];
 
 export function AssistantPanel() {
@@ -23,6 +23,7 @@ export function AssistantPanel() {
   const today = getTodayInAppTimeZone();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [modeDetail, setModeDetail] = useState("IA local pronta para responder com os dados cadastrados.");
   const [model, setModel] = useState("");
   const [question, setQuestion] = useState("");
   const [lastQuestion, setLastQuestion] = useState("");
@@ -91,6 +92,7 @@ export function AssistantPanel() {
       setResponse(payload.response ?? localResponse);
       setSource(payload.source ?? "rules");
       setModel(payload.model ?? "");
+      setModeDetail(payload.modeDetail ?? (payload.source === "ai" ? "IA online ativa." : "IA local ativa."));
 
       if (payload.error) {
         setError("Usei a resposta local porque a IA online nao respondeu.");
@@ -98,6 +100,7 @@ export function AssistantPanel() {
     } catch {
       setResponse(localResponse);
       setSource("rules");
+      setModeDetail("IA local ativa; nao consegui confirmar a rota online agora.");
       setError("Usei a resposta local porque a IA online nao respondeu.");
     } finally {
       setLoading(false);
@@ -119,6 +122,7 @@ export function AssistantPanel() {
           </span>
           <Badge tone={source === "ai" ? "mint" : "sky"}>{source === "ai" ? "IA API" : "IA local"}</Badge>
         </div>
+        <p className="mb-4 text-xs leading-5 text-slate-500">{modeDetail}</p>
 
         <form className="space-y-3" onSubmit={handleSubmit}>
           <label className="block">
@@ -243,11 +247,13 @@ const intentLabels: Record<RoutineAssistantResponse["intent"], string> = {
   deadlines: "prazos",
   grades: "notas",
   now: "agora",
+  readiness: "status",
   summary: "resumo"
 };
 
 interface AssistantApiResponse {
   error?: string;
+  modeDetail?: string;
   model?: string;
   response?: RoutineAssistantResponse;
   source?: "ai" | "rules";

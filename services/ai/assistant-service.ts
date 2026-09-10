@@ -4,6 +4,7 @@ import { NATURAL_LANGUAGE_SYSTEM_PROMPT } from "@/lib/ai/prompts";
 
 export interface AssistantServiceResult {
   error?: string;
+  modeDetail?: string;
   model?: string;
   response: ReturnType<typeof buildRoutineAssistantResponse>;
   source: "ai" | "rules";
@@ -15,6 +16,7 @@ export async function askAssistant(question: string, context: Omit<RoutineAssist
 
   if (provider.name === "none") {
     return {
+      modeDetail: "IA online nao configurada; resposta gerada pelo motor local do Gavium.",
       response: localResponse,
       source: "rules"
     };
@@ -43,7 +45,7 @@ Nao remova avisos de dados faltantes.`
         }
       ],
       responseFormat: {
-        name: "gab_routine_assistant_response",
+        name: "gavium_assistant_response",
         schema: {
           additionalProperties: false,
           properties: {
@@ -66,6 +68,7 @@ Nao remova avisos de dados faltantes.`
     const polished = parsePolishedResponse(completion.content);
 
     return {
+      modeDetail: `IA online ativa com ${completion.model}.`,
       model: completion.model,
       response: {
         ...localResponse,
@@ -77,6 +80,7 @@ Nao remova avisos de dados faltantes.`
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "AI request failed",
+      modeDetail: "A IA online falhou; resposta gerada pelo motor local do Gavium.",
       response: localResponse,
       source: "rules"
     };

@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { askAssistant } from "@/services/ai/assistant-service";
 import type { RoutineAssistantInput } from "@/lib/ai/routine-assistant";
+import { buildIntegrationStatus } from "@/lib/integrations/status";
 
 const assistantRequestSchema = z.object({
   events: z.array(z.unknown()).default([]),
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
   const result = await askAssistant(parsed.data.question, {
     events: parsed.data.events,
     appPreference: parsed.data.appPreference,
+    integrationStatus: buildIntegrationStatus(process.env, request.url),
     reminders: parsed.data.reminders,
     subjects: parsed.data.subjects,
     tasks: parsed.data.tasks,

@@ -5,8 +5,9 @@ import { getReminderDateKey, getReminderTime } from "../reminders/schedule";
 import { getTaskDate, prioritizeTasks } from "../tasks/prioritization";
 import type { AcademicActivity, Subject } from "@/types/academic";
 import type { AppPreference, Event, Reminder, Task } from "@/types/domain";
+import type { IntegrationStatusItem, IntegrationStatusReport } from "../integrations/status";
 
-export type AssistantIntent = "now" | "attendance" | "grades" | "deadlines" | "summary";
+export type AssistantIntent = "now" | "attendance" | "grades" | "deadlines" | "readiness" | "summary";
 export type AssistantTone = "mint" | "sky" | "gold" | "coral" | "neutral";
 
 export interface RoutineAssistantInput {
@@ -17,6 +18,7 @@ export interface RoutineAssistantInput {
   subjects: Subject[];
   tasks: Task[];
   today: string;
+  integrationStatus?: IntegrationStatusReport;
 }
 
 export interface AssistantHighlight {
@@ -71,7 +73,9 @@ export function buildRoutineAssistantResponse(input: RoutineAssistantInput): Rou
   };
   const intent = detectIntent(input.question);
   const response =
-    intent === "attendance"
+    intent === "readiness"
+      ? buildReadinessAnswer(safeInput)
+      : intent === "attendance"
       ? buildAttendanceAnswer(safeInput)
       : intent === "grades"
         ? buildGradeAnswer(safeInput)
@@ -86,9 +90,19 @@ export function buildRoutineAssistantResponse(input: RoutineAssistantInput): Rou
 
 function detectIntent(question: string): AssistantIntent {
   const normalized = normalizeText(question);
+  const attendanceQuestion = isAttendanceQuestion(normalized);
+  const readinessQuestion = isReadinessQuestion(normalized);
 
-  if (includesAny(normalized, ["falta", "faltas", "frequencia", "presenca", "reprovar por falta", "posso faltar"])) {
+  if (readinessQuestion && !attendanceQuestion) {
+    return "readiness";
+  }
+
+  if (attendanceQuestion) {
     return "attendance";
+  }
+
+  if (readinessQuestion) {
+    return "readiness";
   }
 
   if (includesAny(normalized, ["nota", "media", "pf", "prova final", "passar", "aprovacao", "reprovar por nota"])) {
@@ -104,6 +118,46 @@ function detectIntent(question: string): AssistantIntent {
   }
 
   return "summary";
+}
+
+function isAttendanceQuestion(normalized: string) {
+  return includesAny(normalized, [
+    "falta de aula",
+    "faltas",
+    "faltei",
+    "frequencia",
+    "presenca",
+    "reprovar por falta",
+    "posso faltar",
+    "quantas aulas posso faltar",
+    "limite de falta"
+  ]);
+}
+
+function isReadinessQuestion(normalized: string) {
+  return includesAny(normalized, [
+    "o que falta",
+    "o que ainda falta",
+    "o que precisa",
+    "o que resta",
+    "proximo passo",
+    "proximos passos",
+    "pronto para publicar",
+    "publicar",
+    "deploy",
+    "vercel",
+    "github",
+    "configurar",
+    "variavel",
+    "variaveis",
+    "chave",
+    "chaves",
+    "classroom",
+    "supabase",
+    "android",
+    "vender",
+    "comercializacao"
+  ]);
 }
 
 function buildNowAnswer(input: RoutineAssistantInput): RoutineAssistantResponse {
@@ -321,6 +375,70 @@ function buildDeadlineAnswer(input: RoutineAssistantInput): RoutineAssistantResp
   };
 }
 
+function buildReadinessAnswer(input: RoutineAssistantInput): RoutineAssistantResponse {
+  const report = input.integrationStatus;
+
+  if (!report) {
+    return emptyAnswer(
+      "readiness",
+      "Consigo ajudar com o plano do app, mas agora nao consegui ler o status tecnico do servidor. O caminho mais seguro e abrir Configuracoes e conferir o painel de publicacao.",
+      "/configuracoes",
+      "Configuracoes",
+      ["Sem status tecnico do servidor, a IA nao consegue confirmar variaveis, Vercel, Classroom ou Supabase."]
+    );
+  }
+
+  const nowItems = report.items.filter((item) => item.category === "agora");
+  const futureItems = report.items.filter((item) => item.category === "futuro");
+  const readyItems = nowItems.filter((item) => item.state === "ready");
+  const missingItems = nowItems.filter((item) => item.state === "needs_setup");
+  const optionalItems = nowItems.filter((item) => item.state === "optional");
+  const firstMissing = missingItems[0];
+
+  const answer = firstMissing
+    ? `Para o Gavium ficar pronto para compartilhar, faltam ${missingItems.length} ponto(s) principais: ${joinParts(
+        missingItems.map((item) => item.title)
+      )}. Eu comecaria por ${firstMissing.title}: ${firstMissing.nextStep}`
+    : optionalItems.length
+      ? `A base principal do Gavium esta pronta para compartilhar. O que ainda aparece como opcional e ${joinParts(
+          optionalItems.map((item) => item.title)
+        )}, entao da para testar com amigos antes de investir nisso.`
+      : "O Gavium aparece pronto nos itens principais. Agora o melhor passo e testar no celular, revisar o fluxo com alguem de fora e anotar ajustes reais de uso.";
+
+  const missingVariables = missingItems.flatMap((item) => item.missing.map((missing) => `${item.title}: ${missing}`));
+
+  return {
+    answer,
+    dataGaps: missingVariables.length
+      ? missingVariables.slice(0, 6)
+      : futureItems.length
+        ? ["Melhorias como push, widget Android real e comercializacao ficam como fase futura."]
+        : [],
+    evidence: [
+      ...nowItems.map((item) => `${item.title}: ${formatIntegrationState(item)}. ${item.detail}`),
+      futureItems.length ? `Futuro planejado: ${joinParts(futureItems.map((item) => item.title))}.` : ""
+    ].filter(Boolean),
+    highlights: [
+      { label: "Pronto", tone: "mint", value: String(readyItems.length) },
+      { label: "Falta", tone: missingItems.length ? "gold" : "mint", value: String(missingItems.length) },
+      { label: "Futuro", tone: "neutral", value: String(futureItems.length) }
+    ],
+    intent: "readiness",
+    quickLinks: [
+      { href: "/configuracoes", label: "Configuracoes" },
+      { href: "/assistente", label: "Assistente" },
+      { href: "/tutorial", label: "Tutorial" }
+    ],
+    suggestions: missingItems.length
+      ? missingItems.slice(0, 3).map((item) => `${item.title}: ${item.nextStep}`)
+      : [
+          "Testar o app instalado no Android",
+          "Pedir para alguem usar sem explicacao sua",
+          "Anotar melhorias reais antes de abrir escopo novo"
+        ]
+  };
+}
+
 function buildSummaryAnswer(input: RoutineAssistantInput): RoutineAssistantResponse {
   const openTasks = input.tasks.filter((task) => task.status !== "done" && task.status !== "cancelled");
   const pendingActivities = getPendingActivities(input.subjects);
@@ -453,6 +571,22 @@ function sortDeadlineItem(a: DeadlineItem, b: DeadlineItem) {
   }
 
   return (a.time ?? "23:59").localeCompare(b.time ?? "23:59");
+}
+
+function formatIntegrationState(item: IntegrationStatusItem) {
+  if (item.state === "ready") {
+    return "pronto";
+  }
+
+  if (item.state === "optional") {
+    return "opcional";
+  }
+
+  if (item.state === "future") {
+    return "futuro";
+  }
+
+  return "falta configurar";
 }
 
 function sortByOptionalTime(a: Event, b: Event) {
