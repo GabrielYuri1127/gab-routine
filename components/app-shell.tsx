@@ -54,19 +54,13 @@ function AppShellContent({ children }: { children: ReactNode }) {
   const preferences = data.appPreference;
   const appName = preferences.appName.trim() || "Gavium";
   const profileLabel = preferences.profileLabel.trim() || "rotina pessoal";
-  const brandInitial = appName[0]?.toUpperCase() ?? "G";
   const secondaryItems = secondaryNav.filter((item) => !item.module || preferences.enabledModules[item.module]);
 
   return (
     <div className="min-h-screen bg-paper">
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-line bg-white px-4 py-5 lg:block">
         <Link className="mb-8 flex items-center gap-3" href="/">
-          <span
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-lg font-semibold text-white"
-            style={{ backgroundColor: preferences.accentColor }}
-          >
-            {brandInitial}
-          </span>
+          <img alt="" aria-hidden className="h-11 w-11 rounded-lg shadow-sm" src="/brand/gavium-mark.svg" />
           <span>
             <span className="block font-semibold text-ink">{appName}</span>
             <span className="block text-xs text-slate-500">{profileLabel}</span>

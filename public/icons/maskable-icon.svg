@@ -1,6 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#15161a"/>
-  <circle cx="256" cy="256" r="170" fill="#f8fafc"/>
-  <path d="M178 151h168v48H237v57h91v47h-91v88h-59V151z" fill="#15161a"/>
-  <path d="M324 325c18 0 33-15 33-33h45c0 43-35 78-78 78h-29v-45h29z" fill="#0f9f7a"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Gavium</title>
+  <desc id="desc">Icone maskable do Gavium com margem segura para Android.</desc>
+  <defs>
+    <linearGradient id="bg" x1="96" y1="56" x2="416" y2="456" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#172033"/>
+      <stop offset="1" stop-color="#101115"/>
+    </linearGradient>
+    <linearGradient id="mint" x1="150" y1="154" x2="360" y2="358" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#47e5bd"/>
+      <stop offset="0.58" stop-color="#0f9f7a"/>
+      <stop offset="1" stop-color="#2574db"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="178" fill="#f8fafc" opacity=".08"/>
+  <path d="M344 178c-25-27-61-42-100-38-56 6-101 52-106 109-7 69 47 127 115 127 45 0 84-25 104-61" fill="none" stroke="#f8fafc" stroke-width="42" stroke-linecap="round"/>
+  <path d="M274 256h88c0 69-43 123-109 123" fill="none" stroke="url(#mint)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M176 178 151 149m193 29 31-23M253 379v38" fill="none" stroke="#47e5bd" stroke-width="18" stroke-linecap="round" opacity=".78"/>
+  <circle cx="274" cy="256" r="20" fill="#f8fafc"/>
+  <circle cx="362" cy="256" r="16" fill="#47e5bd"/>
 </svg>

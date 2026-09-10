@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   title: "Gavium",
   description: "Secretario pessoal e academico para rotina, faculdade e lembretes.",
   applicationName: "Gavium",
+  icons: {
+    apple: "/icons/maskable-icon.svg",
+    icon: "/icons/icon.svg"
+  },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,

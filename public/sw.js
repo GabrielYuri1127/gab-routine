@@ -1,5 +1,5 @@
-const CACHE_NAME = "gavium-v1";
-const APP_SHELL = ["/", "/faculdade", "/manifest.webmanifest", "/icons/icon.svg"];
+const CACHE_NAME = "gavium-v2";
+const APP_SHELL = ["/", "/faculdade", "/manifest.webmanifest", "/icons/icon.svg", "/brand/gavium-mark.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

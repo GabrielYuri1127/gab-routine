@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">Gavium</title>
-  <desc id="desc">Marca do Gavium: um simbolo G com trilhas de organizacao e foco.</desc>
+  <title id="title">Gavium mark</title>
+  <desc id="desc">Simbolo principal do Gavium.</desc>
   <defs>
     <linearGradient id="bg" x1="96" y1="56" x2="416" y2="456" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#172033"/>
