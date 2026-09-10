@@ -1,21 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
   <title id="title">Gavium</title>
-  <desc id="desc">Marca do Gavium: um simbolo G com trilhas de organizacao e foco.</desc>
+  <desc id="desc">Icone do Gavium: monograma G limpo com sinal de progresso.</desc>
   <defs>
-    <linearGradient id="bg" x1="96" y1="56" x2="416" y2="456" gradientUnits="userSpaceOnUse">
+    <linearGradient id="panel" x1="92" y1="56" x2="420" y2="456" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#172033"/>
       <stop offset="1" stop-color="#101115"/>
     </linearGradient>
-    <linearGradient id="mint" x1="126" y1="138" x2="378" y2="378" gradientUnits="userSpaceOnUse">
+    <linearGradient id="accent" x1="300" y1="274" x2="418" y2="366" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#47e5bd"/>
-      <stop offset="0.58" stop-color="#0f9f7a"/>
-      <stop offset="1" stop-color="#2574db"/>
+      <stop offset="1" stop-color="#0f9f7a"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="110" fill="url(#bg)"/>
-  <path d="M364 164c-32-34-78-53-127-48-70 8-126 65-133 136-8 86 59 158 143 158 56 0 105-31 130-76" fill="none" stroke="#f8fafc" stroke-width="46" stroke-linecap="round"/>
-  <path d="M274 256h110c0 86-54 154-137 154" fill="none" stroke="url(#mint)" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M152 164 121 127m243 37 38-28M247 410v48" fill="none" stroke="#47e5bd" stroke-width="20" stroke-linecap="round" opacity=".78"/>
-  <circle cx="274" cy="256" r="23" fill="#f8fafc"/>
-  <circle cx="384" cy="256" r="18" fill="#47e5bd"/>
+  <rect width="512" height="512" rx="112" fill="url(#panel)"/>
+  <text x="252" y="342" fill="#f8fafc" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="256" font-weight="820" letter-spacing="0" text-anchor="middle">G</text>
+  <path d="M310 326 344 360 414 278" fill="none" stroke="url(#accent)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

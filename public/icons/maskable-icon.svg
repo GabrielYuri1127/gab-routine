@@ -2,21 +2,17 @@
   <title id="title">Gavium</title>
   <desc id="desc">Icone maskable do Gavium com margem segura para Android.</desc>
   <defs>
-    <linearGradient id="bg" x1="96" y1="56" x2="416" y2="456" gradientUnits="userSpaceOnUse">
+    <linearGradient id="panel" x1="96" y1="64" x2="416" y2="448" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#172033"/>
       <stop offset="1" stop-color="#101115"/>
     </linearGradient>
-    <linearGradient id="mint" x1="150" y1="154" x2="360" y2="358" gradientUnits="userSpaceOnUse">
+    <linearGradient id="accent" x1="304" y1="274" x2="402" y2="352" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#47e5bd"/>
-      <stop offset="0.58" stop-color="#0f9f7a"/>
-      <stop offset="1" stop-color="#2574db"/>
+      <stop offset="1" stop-color="#0f9f7a"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512" fill="url(#bg)"/>
-  <circle cx="256" cy="256" r="178" fill="#f8fafc" opacity=".08"/>
-  <path d="M344 178c-25-27-61-42-100-38-56 6-101 52-106 109-7 69 47 127 115 127 45 0 84-25 104-61" fill="none" stroke="#f8fafc" stroke-width="42" stroke-linecap="round"/>
-  <path d="M274 256h88c0 69-43 123-109 123" fill="none" stroke="url(#mint)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M176 178 151 149m193 29 31-23M253 379v38" fill="none" stroke="#47e5bd" stroke-width="18" stroke-linecap="round" opacity=".78"/>
-  <circle cx="274" cy="256" r="20" fill="#f8fafc"/>
-  <circle cx="362" cy="256" r="16" fill="#47e5bd"/>
+  <rect width="512" height="512" fill="url(#panel)"/>
+  <rect x="54" y="54" width="404" height="404" rx="92" fill="#f8fafc" opacity=".06"/>
+  <text x="250" y="329" fill="#f8fafc" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="226" font-weight="820" letter-spacing="0" text-anchor="middle">G</text>
+  <path d="M304 314 336 346 396 276" fill="none" stroke="url(#accent)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
