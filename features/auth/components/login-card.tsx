@@ -5,11 +5,13 @@ import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useRoutineData } from "@/features/data/routine-store";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 type AuthMode = "sign-in" | "sign-up";
 
 export function LoginCard() {
+  const { cloud } = useRoutineData();
   const configured = isSupabaseConfigured();
   const [mode, setMode] = useState<AuthMode>("sign-in");
   const [email, setEmail] = useState("");
@@ -74,7 +76,7 @@ export function LoginCard() {
         </div>
         <h2 className="text-lg font-semibold text-ink">Supabase ainda nao configurado</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          O app funciona no Android com armazenamento local. Para ativar login e nuvem, preencha
+          O app funciona no Android com armazenamento local, mas para mais de uma pessoa usar com dados separados e seguro preencher
           `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` no ambiente da Vercel ou no arquivo `.env.local`.
         </p>
       </div>
@@ -90,8 +92,9 @@ export function LoginCard() {
         </div>
         <h2 className="text-lg font-semibold text-ink">{currentEmail}</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          A sessao Supabase esta ativa. A base local continua disponivel para uso offline.
+          Esta conta tem um espaco proprio no Gavium. Disciplinas, faltas, notas, tarefas, lembretes e Classroom ficam separados dos outros usuarios.
         </p>
+        <p className="mt-2 text-xs font-medium text-slate-500">{getSyncLabel(cloud.status)}</p>
         {message ? <p className="mt-3 text-sm text-slate-600">{message}</p> : null}
         <Button className="mt-4 w-full" disabled={loading} onClick={signOut} variant="secondary">
           <LogOut aria-hidden className="h-4 w-4" />
@@ -112,6 +115,9 @@ export function LoginCard() {
         <Badge tone="mint">Supabase</Badge>
       </div>
       <h2 className="text-lg font-semibold text-ink">{mode === "sign-in" ? "Entrar" : "Criar conta"}</h2>
+      <p className="mt-2 text-sm leading-6 text-slate-600">
+        Cada pessoa deve usar o proprio email. Assim os dados ficam isolados e sincronizados pela conta dela.
+      </p>
 
       <div className="mt-4 space-y-3">
         <label className="block">
@@ -156,4 +162,12 @@ export function LoginCard() {
       </button>
     </form>
   );
+}
+
+function getSyncLabel(status: string) {
+  if (status === "saving") return "Salvando alteracoes na nuvem...";
+  if (status === "synced") return "Dados sincronizados na nuvem.";
+  if (status === "loading") return "Carregando dados da sua conta...";
+  if (status === "error") return "Nuvem indisponivel agora; usando cache local desta conta.";
+  return "Sessao ativa.";
 }

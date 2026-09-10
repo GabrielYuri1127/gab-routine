@@ -16,6 +16,12 @@ import { Badge } from "@/components/ui/badge";
 
 const firstSteps = [
   {
+    title: "Entre na sua conta",
+    text: "Crie uma conta ou entre com seu email para seus dados ficarem separados dos outros usuarios.",
+    href: "/login",
+    label: "Entrar"
+  },
+  {
     title: "Ajuste seu perfil",
     text: "Troque o nome do app, seu nome, cor principal, semestre padrao e modulos que aparecem no menu.",
     href: "/configuracoes",
@@ -81,10 +87,10 @@ const areas = [
 ];
 
 const sharingChecklist = [
-  "Antes de compartilhar, abra Configuracoes e use Restaurar perfil padrao se quiser mandar limpo.",
-  "Cada pessoa deve usar o proprio navegador ou login para os dados nao se misturarem.",
+  "Para mais de uma pessoa usar, configure Supabase e peca para cada uma criar a propria conta.",
+  "Cada pessoa deve conectar o proprio Google Classroom, inclusive contas institucionais diferentes.",
   "No Android, abra a URL publicada no Chrome e use Adicionar a tela inicial.",
-  "Para trocar de aparelho, exporte o backup em Configuracoes e importe no outro navegador."
+  "Backup local continua existindo, mas login e nuvem sao o caminho certo para compartilhar."
 ];
 
 export default function TutorialPage() {

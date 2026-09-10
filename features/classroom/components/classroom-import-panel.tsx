@@ -55,7 +55,9 @@ export function ClassroomImportPanel() {
         }
       });
 
-    setImports(readStoredImports());
+    const storedImports = readStoredImports(data.userId);
+    saveStoredImports(data.userId, storedImports);
+    setImports(storedImports);
 
     const query = new URLSearchParams(window.location.search).get("classroom");
     if (query === "import-ready") {
@@ -72,7 +74,7 @@ export function ClassroomImportPanel() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [data.userId]);
 
   const totals = useMemo(() => {
     const courses = imports.reduce((total, item) => total + item.courses.length, 0);
@@ -92,8 +94,7 @@ export function ClassroomImportPanel() {
 
   function clearImport(target: ClassroomImportPayload) {
     const nextImports = imports.filter((item) => getImportKey(item) !== getImportKey(target));
-    window.localStorage.setItem(CLASSROOM_IMPORTS_STORAGE_KEY, JSON.stringify(nextImports));
-    window.localStorage.removeItem(CLASSROOM_IMPORT_STORAGE_KEY);
+    saveStoredImports(data.userId, nextImports);
     setImports(nextImports);
     setMessage("Previa dessa conta removida.");
   }
@@ -233,16 +234,42 @@ export function ClassroomImportPanel() {
   );
 }
 
-function readStoredImports() {
-  const imports = parseImports(window.localStorage.getItem(CLASSROOM_IMPORTS_STORAGE_KEY));
+function readStoredImports(userId: string) {
+  const imports = parseImports(window.localStorage.getItem(getImportsStorageKey(userId)));
   const legacyImport = parseImport(window.localStorage.getItem(CLASSROOM_IMPORT_STORAGE_KEY));
+  const legacyImports = parseImports(window.localStorage.getItem(CLASSROOM_IMPORTS_STORAGE_KEY));
+  const knownImports = mergeImports(imports, legacyImports);
 
   if (!legacyImport) {
-    return imports;
+    return knownImports;
   }
 
-  const hasLegacy = imports.some((item) => getImportKey(item) === getImportKey(legacyImport));
-  return hasLegacy ? imports : [legacyImport, ...imports].slice(0, 8);
+  return mergeImports([legacyImport], knownImports).slice(0, 8);
+}
+
+function saveStoredImports(userId: string, imports: ClassroomImportPayload[]) {
+  window.localStorage.setItem(getImportsStorageKey(userId), JSON.stringify(imports));
+  window.localStorage.removeItem(getImportStorageKey(userId));
+  window.localStorage.removeItem(CLASSROOM_IMPORT_STORAGE_KEY);
+  window.localStorage.removeItem(CLASSROOM_IMPORTS_STORAGE_KEY);
+}
+
+function mergeImports(first: ClassroomImportPayload[], second: ClassroomImportPayload[]) {
+  return [...first, ...second].reduce<ClassroomImportPayload[]>((result, item) => {
+    if (!result.some((existing) => getImportKey(existing) === getImportKey(item))) {
+      result.push(item);
+    }
+
+    return result;
+  }, []);
+}
+
+function getImportStorageKey(userId: string) {
+  return `${CLASSROOM_IMPORT_STORAGE_KEY}:${userId}`;
+}
+
+function getImportsStorageKey(userId: string) {
+  return `${CLASSROOM_IMPORTS_STORAGE_KEY}:${userId}`;
 }
 
 function parseImports(value: string | null) {

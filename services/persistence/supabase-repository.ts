@@ -1,5 +1,13 @@
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { assignRoutineDataUser, normalizeRoutineData } from "@/features/data/routine-store";
+import type { RoutineData } from "@/features/data/seed";
 import type { Reminder, Task } from "@/types/domain";
+
+type DbRoutineSnapshot = {
+  data: unknown;
+  updated_at: string;
+  user_id: string;
+};
 
 type DbTask = {
   id: string;
@@ -39,6 +47,49 @@ export async function getCloudAuthState() {
     configured: true,
     userId: data.user?.id ?? null,
     email: data.user?.email ?? null
+  };
+}
+
+export async function fetchCloudRoutineData(userId: string) {
+  const client = createSupabaseBrowserClient();
+  const { data, error } = await client.from("routine_snapshots").select("*").eq("user_id", userId).maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  const row = data as DbRoutineSnapshot;
+  return {
+    data: assignRoutineDataUser(normalizeRoutineData(row.data, userId), userId),
+    updatedAt: row.updated_at
+  };
+}
+
+export async function upsertCloudRoutineData(routineData: RoutineData, userId: string) {
+  const client = createSupabaseBrowserClient();
+  const snapshot = assignRoutineDataUser(normalizeRoutineData(routineData, userId), userId);
+  const { data, error } = await client
+    .from("routine_snapshots")
+    .upsert({
+      data: snapshot,
+      updated_at: new Date().toISOString(),
+      user_id: userId
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  const row = data as DbRoutineSnapshot;
+  return {
+    data: assignRoutineDataUser(normalizeRoutineData(row.data, userId), userId),
+    updatedAt: row.updated_at
   };
 }
 

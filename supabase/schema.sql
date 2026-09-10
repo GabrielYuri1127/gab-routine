@@ -10,6 +10,12 @@ create table if not exists public.semesters (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.routine_snapshots (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.subjects (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -227,6 +233,7 @@ create table if not exists public.ai_usage (
 );
 
 alter table public.semesters enable row level security;
+alter table public.routine_snapshots enable row level security;
 alter table public.subjects enable row level security;
 alter table public.academic_rules enable row level security;
 alter table public.subject_schedules enable row level security;
@@ -253,6 +260,7 @@ declare
   table_name text;
   user_owned_tables text[] := array[
     'semesters',
+    'routine_snapshots',
     'subjects',
     'academic_rules',
     'subject_schedules',

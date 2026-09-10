@@ -13,18 +13,19 @@ Gavium e um app pessoal e academico mobile-first para estudantes organizarem rot
 5. Abra Tarefas e mostre prioridade, adiamento e conclusao.
 6. Abra Calendario e mostre como os dados aparecem juntos.
 7. Abra o Assistente e pergunte: "O que devo fazer agora?"
-8. Abra Configuracoes e mostre perfil, backup, tutorial e Google Classroom.
-9. Abra o app no celular ou explique a instalacao como PWA no Android.
+8. Abra Login e explique que cada pessoa entra com a propria conta.
+9. Abra Configuracoes e mostre perfil, backup, tutorial e Google Classroom.
+10. Abra o app no celular ou explique a instalacao como PWA no Android.
 
 ## Pontos Para Destacar
 
 - O projeto resolve uma dor real de organizacao academica.
 - A interface foi pensada primeiro para celular.
-- O app nao depende de login para funcionar.
+- O app funciona localmente, mas tambem tem login para separar dados por usuario.
 - O usuario pode editar e corrigir dados antigos.
 - A arquitetura separa regras academicas da interface.
 - O app ja esta preparado para crescer com banco, notificacoes, IA e integracoes.
 
 ## Texto Para Portfolio
 
-Desenvolvi o Gavium como um aplicativo pessoal e academico para centralizar rotina, disciplinas, faltas, notas, atividades e tarefas. O projeto foi construido com Next.js, TypeScript e Tailwind CSS, usando persistencia local, PWA para Android e estrutura preparada para Supabase, Vercel, Google Classroom e recursos de IA. O foco foi criar uma ferramenta pratica, personalizavel e facil de compartilhar.
+Desenvolvi o Gavium como um aplicativo pessoal e academico para centralizar rotina, disciplinas, faltas, notas, atividades e tarefas. O projeto foi construido com Next.js, TypeScript e Tailwind CSS, usando persistencia local, login Supabase por usuario, PWA para Android e estrutura preparada para Vercel, Google Classroom e recursos de IA. O foco foi criar uma ferramenta pratica, personalizavel e facil de compartilhar.

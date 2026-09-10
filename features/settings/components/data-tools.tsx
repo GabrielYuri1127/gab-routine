@@ -10,7 +10,7 @@ import type { RoutineData } from "@/features/data/seed";
 const inputClass = "mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-ink";
 
 export function DataTools() {
-  const { data, replaceData, resetData, updateNotificationPreference } = useRoutineData();
+  const { cloud, data, replaceData, resetData, updateNotificationPreference } = useRoutineData();
   const [message, setMessage] = useState("");
   const preferences = data.notificationPreference;
 
@@ -102,10 +102,14 @@ export function DataTools() {
       </section>
 
       <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
-        <h2 className="text-lg font-semibold text-ink">Backup local</h2>
+        <h2 className="text-lg font-semibold text-ink">Dados e sincronizacao</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Os dados ficam salvos neste navegador enquanto o Supabase nao estiver conectado.
+          {getCloudDescription(cloud.status, cloud.email, cloud.configured)}
         </p>
+        {cloud.lastSyncedAt ? (
+          <p className="mt-1 text-xs text-slate-500">Ultima sincronizacao: {new Date(cloud.lastSyncedAt).toLocaleString("pt-BR")}</p>
+        ) : null}
+        {cloud.error ? <p className="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-coral">{cloud.error}</p> : null}
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <Button onClick={exportData} variant="secondary">
@@ -127,4 +131,32 @@ export function DataTools() {
       </section>
     </div>
   );
+}
+
+function getCloudDescription(status: string, email: string | null, configured: boolean) {
+  if (!configured) {
+    return "Modo local: cada pessoa usa os dados salvos no proprio navegador ate o Supabase ser configurado.";
+  }
+
+  if (!email) {
+    return "Supabase configurado. Entre em /login para separar e sincronizar os dados por pessoa.";
+  }
+
+  if (status === "saving") {
+    return `Salvando na nuvem para ${email}.`;
+  }
+
+  if (status === "synced") {
+    return `Sincronizado na nuvem para ${email}. Cada conta ve somente os proprios dados.`;
+  }
+
+  if (status === "loading") {
+    return `Carregando dados da conta ${email}.`;
+  }
+
+  if (status === "error") {
+    return `Modo offline/cache para ${email}. O app tenta manter os dados locais e sincronizar quando possivel.`;
+  }
+
+  return "Modo local ativo neste navegador.";
 }

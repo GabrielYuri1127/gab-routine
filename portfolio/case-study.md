@@ -35,11 +35,11 @@ O Gavium organiza essas informacoes em uma interface pensada para uso diario no 
 - Perfil personalizavel com nome do app, usuario, cor, semestre padrao, carga horaria e modulos visiveis.
 - Tutorial interno para amigos e familiares aprenderem a usar.
 - PWA instalavel no Android.
-- Preparacao para Supabase e deploy na Vercel.
+- Login Supabase com dados separados por usuario quando configurado na Vercel.
 
 ## Como Foi Feito
 
-O projeto foi construido como uma aplicacao web moderna com Next.js, TypeScript e Tailwind CSS. A primeira versao usa `localStorage`, permitindo que o app funcione sem banco de dados e sem login obrigatorio. Isso facilita testar, compartilhar e usar no celular.
+O projeto foi construido como uma aplicacao web moderna com Next.js, TypeScript e Tailwind CSS. A primeira versao continua funcionando com `localStorage`, permitindo uso offline e testes rapidos. Para compartilhamento com varias pessoas, o app usa Supabase Auth e um snapshot de rotina por usuario, isolado por RLS.
 
 A parte academica foi separada em regras reutilizaveis para faltas, horarios, notas e prazos. A interface usa formularios editaveis para que o usuario consiga corrigir dados antigos, adaptar disciplinas e ajustar a rotina sem depender de alteracoes no codigo.
 
@@ -47,7 +47,7 @@ A integracao com Google Classroom foi criada como importacao assistida: o usuari
 
 ## Resultado
 
-O resultado atual e um app funcional, responsivo, instalavel no Android como PWA e preparado para evoluir para sincronizacao em nuvem, notificacoes push completas, widgets Android e recursos mais avancados de IA.
+O resultado atual e um app funcional, responsivo, instalavel no Android como PWA e preparado para uso com varias contas quando Supabase esta configurado, alem de evoluir para notificacoes push completas, widgets Android e recursos mais avancados de IA.
 
 ## Diferenciais
 

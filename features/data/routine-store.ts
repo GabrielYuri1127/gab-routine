@@ -7,11 +7,23 @@ import { buildSeedData, DEFAULT_APP_PREFERENCE, LOCAL_USER_ID, type RoutineData 
 export const STORAGE_KEY = "gab-routine:data:v4";
 const LEGACY_STORAGE_KEYS = ["gab-routine:data:v3", "gab-routine:data:v2"];
 
+export type CloudSyncStatus = "local" | "loading" | "synced" | "saving" | "error";
+
 export type AppPreferencePatch = Partial<Omit<AppPreference, "enabledModules">> & {
   enabledModules?: Partial<EnabledModules>;
 };
 
+export interface CloudSyncState {
+  configured: boolean;
+  email: string | null;
+  error?: string;
+  lastSyncedAt?: string;
+  status: CloudSyncStatus;
+  userId: string | null;
+}
+
 export interface RoutineDataContextValue {
+  cloud: CloudSyncState;
   data: RoutineData;
   hydrated: boolean;
   replaceData: (data: RoutineData) => void;
@@ -46,15 +58,22 @@ export interface RoutineDataContextValue {
 
 export const RoutineDataContext = createContext<RoutineDataContextValue | null>(null);
 
-export function loadRoutineData() {
+export const LOCAL_CLOUD_STATE: CloudSyncState = {
+  configured: false,
+  email: null,
+  status: "local",
+  userId: null
+};
+
+export function loadRoutineData(storageUserId?: string | null) {
   if (typeof window === "undefined") {
     return buildSeedData();
   }
 
-  let stored = window.localStorage.getItem(STORAGE_KEY);
+  let stored = window.localStorage.getItem(getRoutineStorageKey(storageUserId));
   let migrated = false;
 
-  if (!stored) {
+  if (!stored && !storageUserId) {
     for (const key of LEGACY_STORAGE_KEYS) {
       stored = window.localStorage.getItem(key);
       if (stored) {
@@ -65,47 +84,82 @@ export function loadRoutineData() {
   }
 
   if (!stored) {
-    const seed = buildSeedData();
-    saveRoutineData(seed);
+    const seed = storageUserId ? createEmptyRoutineData(storageUserId) : buildSeedData();
+    saveRoutineData(seed, storageUserId);
     return seed;
   }
 
   try {
-    const parsed = normalizeRoutineData(JSON.parse(stored));
+    const parsed = normalizeRoutineData(JSON.parse(stored), storageUserId ?? LOCAL_USER_ID);
     if (migrated || JSON.stringify(parsed) !== stored) {
-      saveRoutineData(parsed);
+      saveRoutineData(parsed, storageUserId);
     }
 
     return parsed;
   } catch {
-    return buildSeedData();
+    return storageUserId ? createEmptyRoutineData(storageUserId) : buildSeedData();
   }
 }
 
-export function normalizeRoutineData(value: unknown): RoutineData {
+export function createEmptyRoutineData(userId = LOCAL_USER_ID, email?: string | null): RoutineData {
+  const seed = buildSeedData();
+  const displayName = getDisplayNameFromEmail(email) || "Usuario";
+
+  return assignRoutineDataUser(
+    {
+      ...seed,
+      events: [],
+      reminders: [],
+      subjects: [],
+      tasks: [],
+      appPreference: {
+        ...DEFAULT_APP_PREFERENCE,
+        displayName,
+        userId
+      },
+      notificationPreference: {
+        ...seed.notificationPreference,
+        userId
+      },
+      userId
+    },
+    userId
+  );
+}
+
+export function normalizeRoutineData(value: unknown, userId = LOCAL_USER_ID): RoutineData {
   const seed = buildSeedData();
   if (!value || typeof value !== "object") {
-    return seed;
+    return assignRoutineDataUser(seed, userId);
   }
 
   const parsed = value as Partial<RoutineData>;
-  return {
+  const normalized: RoutineData = {
     ...seed,
     ...parsed,
     version: 4,
-    userId: parsed.userId ?? LOCAL_USER_ID,
-    appPreference: normalizeAppPreference(parsed.appPreference),
+    userId: parsed.userId ?? userId,
+    appPreference: normalizeAppPreference(parsed.appPreference, userId),
     subjects: Array.isArray(parsed.subjects) ? parsed.subjects : seed.subjects,
     tasks: Array.isArray(parsed.tasks) ? parsed.tasks : seed.tasks,
     reminders: Array.isArray(parsed.reminders) ? parsed.reminders : seed.reminders,
     events: Array.isArray(parsed.events) ? parsed.events : seed.events,
-    notificationPreference: parsed.notificationPreference ?? seed.notificationPreference
+    notificationPreference: {
+      ...seed.notificationPreference,
+      ...(parsed.notificationPreference ?? {}),
+      userId
+    }
   };
+
+  return assignRoutineDataUser(normalized, userId);
 }
 
-export function normalizeAppPreference(value: unknown): AppPreference {
+export function normalizeAppPreference(value: unknown, userId = LOCAL_USER_ID): AppPreference {
   if (!value || typeof value !== "object") {
-    return DEFAULT_APP_PREFERENCE;
+    return {
+      ...DEFAULT_APP_PREFERENCE,
+      userId
+    };
   }
 
   const parsed = value as Partial<AppPreference>;
@@ -118,7 +172,7 @@ export function normalizeAppPreference(value: unknown): AppPreference {
       ...DEFAULT_APP_PREFERENCE.enabledModules,
       ...(parsed.enabledModules ?? {})
     },
-    userId: parsed.userId ?? LOCAL_USER_ID
+    userId
   };
 }
 
@@ -130,12 +184,30 @@ function normalizeAppName(value: unknown) {
   return value.trim().toLowerCase() === "gab routine" ? DEFAULT_APP_PREFERENCE.appName : value;
 }
 
-export function saveRoutineData(data: RoutineData) {
+export function assignRoutineDataUser(data: RoutineData, userId: string): RoutineData {
+  return {
+    ...data,
+    userId,
+    appPreference: {
+      ...data.appPreference,
+      userId
+    },
+    tasks: data.tasks.map((task) => ({ ...task, userId })),
+    reminders: data.reminders.map((reminder) => ({ ...reminder, userId })),
+    events: data.events.map((event) => ({ ...event, userId })),
+    notificationPreference: {
+      ...data.notificationPreference,
+      userId
+    }
+  };
+}
+
+export function saveRoutineData(data: RoutineData, storageUserId?: string | null) {
   if (typeof window === "undefined") {
     return;
   }
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  window.localStorage.setItem(getRoutineStorageKey(storageUserId), JSON.stringify(data));
 }
 
 export function createId(prefix: string) {
@@ -156,4 +228,17 @@ export function withLocalUser<T extends object>(value: T) {
     ...value,
     userId: LOCAL_USER_ID
   };
+}
+
+function getRoutineStorageKey(storageUserId?: string | null) {
+  return storageUserId ? `${STORAGE_KEY}:${storageUserId}` : STORAGE_KEY;
+}
+
+function getDisplayNameFromEmail(email?: string | null) {
+  if (!email) {
+    return "";
+  }
+
+  const name = email.split("@")[0]?.replace(/[._-]+/g, " ").trim();
+  return name ? `${name.charAt(0).toUpperCase()}${name.slice(1)}` : "";
 }

@@ -1,42 +1,213 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 import { buildSeedData, LOCAL_USER_ID, type RoutineData } from "@/features/data/seed";
 import {
+  LOCAL_CLOUD_STATE,
+  assignRoutineDataUser,
+  createEmptyRoutineData,
   createId,
   loadRoutineData,
   normalizeRoutineData,
   RoutineDataContext,
   saveRoutineData,
+  type CloudSyncState,
   type RoutineDataContextValue
 } from "@/features/data/routine-store";
+import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { fetchCloudRoutineData, upsertCloudRoutineData } from "@/services/persistence/supabase-repository";
 import type { AcademicActivity, AttendanceRecord, Grade, Subject } from "@/types/academic";
 import type { Reminder, Task } from "@/types/domain";
 
 export function RoutineDataProvider({ children }: { children: ReactNode }) {
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [data, setData] = useState<RoutineData>(() => buildSeedData());
+  const [cloud, setCloud] = useState<CloudSyncState>(LOCAL_CLOUD_STATE);
   const [hydrated, setHydrated] = useState(false);
+  const cloudRef = useRef(cloud);
 
   useEffect(() => {
-    setData(loadRoutineData());
-    setHydrated(true);
+    cloudRef.current = cloud;
+  }, [cloud]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadForUser(user: SupabaseUser | null) {
+      if (!active) {
+        return;
+      }
+
+      if (!user) {
+        setData(loadRoutineData());
+        setCloud({
+          configured: isSupabaseConfigured(),
+          email: null,
+          status: "local",
+          userId: null
+        });
+        setHydrated(true);
+        return;
+      }
+
+      setHydrated(false);
+      setCloud({
+        configured: true,
+        email: user.email ?? null,
+        status: "loading",
+        userId: user.id
+      });
+
+      try {
+        const snapshot = await fetchCloudRoutineData(user.id);
+        const nextData = snapshot?.data ?? createEmptyRoutineData(user.id, user.email);
+        const synced = snapshot ?? (await upsertCloudRoutineData(nextData, user.id));
+
+        if (!active) {
+          return;
+        }
+
+        saveRoutineData(nextData, user.id);
+        setData(nextData);
+        setCloud({
+          configured: true,
+          email: user.email ?? null,
+          lastSyncedAt: synced.updatedAt,
+          status: "synced",
+          userId: user.id
+        });
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+
+        const cached = assignRoutineDataUser(loadRoutineData(user.id), user.id);
+        setData(cached);
+        setCloud({
+          configured: true,
+          email: user.email ?? null,
+          error: error instanceof Error ? error.message : "Nao consegui sincronizar com o Supabase.",
+          status: "error",
+          userId: user.id
+        });
+      } finally {
+        if (active) {
+          setHydrated(true);
+        }
+      }
+    }
+
+    if (!isSupabaseConfigured()) {
+      setData(loadRoutineData());
+      setCloud(LOCAL_CLOUD_STATE);
+      setHydrated(true);
+      return;
+    }
+
+    const client = createSupabaseBrowserClient();
+    client.auth
+      .getUser()
+      .then(({ data: authData }) => loadForUser(authData.user ?? null))
+      .catch(() => {
+        if (!active) {
+          return;
+        }
+
+        setData(loadRoutineData());
+        setCloud({
+          configured: true,
+          email: null,
+          error: "Nao consegui ler a sessao Supabase.",
+          status: "error",
+          userId: null
+        });
+        setHydrated(true);
+      });
+
+    const {
+      data: { subscription }
+    } = client.auth.onAuthStateChange((_event, session) => {
+      void loadForUser(session?.user ?? null);
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+    };
+  }, []);
+
+  const scheduleCloudSave = useCallback((nextData: RoutineData, userId: string) => {
+    if (!isSupabaseConfigured()) {
+      return;
+    }
+
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+
+    setCloud((current) =>
+      current.userId === userId
+        ? {
+            ...current,
+            error: undefined,
+            status: "saving"
+          }
+        : current
+    );
+
+    saveTimerRef.current = setTimeout(() => {
+      void upsertCloudRoutineData(nextData, userId)
+        .then((synced) => {
+          setCloud((current) =>
+            current.userId === userId
+              ? {
+                  ...current,
+                  error: undefined,
+                  lastSyncedAt: synced.updatedAt,
+                  status: "synced"
+                }
+              : current
+          );
+        })
+        .catch((error) => {
+          setCloud((current) =>
+            current.userId === userId
+              ? {
+                  ...current,
+                  error: error instanceof Error ? error.message : "Nao consegui salvar na nuvem.",
+                  status: "error"
+                }
+              : current
+          );
+        });
+    }, 700);
   }, []);
 
   const updateData = useCallback((updater: (current: RoutineData) => RoutineData) => {
     setData((current) => {
-      const next = updater(current);
-      saveRoutineData(next);
+      const cloudUserId = cloudRef.current.userId;
+      const ownerId = cloudUserId ?? current.userId ?? LOCAL_USER_ID;
+      const next = assignRoutineDataUser(normalizeRoutineData(updater(current), ownerId), ownerId);
+      saveRoutineData(next, cloudUserId);
+      if (cloudUserId) {
+        scheduleCloudSave(next, cloudUserId);
+      }
       return next;
     });
-  }, []);
+  }, [scheduleCloudSave]);
 
   const value = useMemo<RoutineDataContextValue>(
     () => ({
+      cloud,
       data,
       hydrated,
       replaceData: (newData) => {
-        updateData(() => normalizeRoutineData(newData));
+        updateData((current) => normalizeRoutineData(newData, current.userId));
       },
       resetData: () => {
         updateData(() => buildSeedData());
@@ -65,7 +236,7 @@ export function RoutineDataProvider({ children }: { children: ReactNode }) {
           tasks: [
             {
               id: createId("task"),
-              userId: LOCAL_USER_ID,
+              userId: current.userId,
               status: "open",
               ...task
             },
@@ -121,7 +292,7 @@ export function RoutineDataProvider({ children }: { children: ReactNode }) {
           reminders: [
             {
               id: createId("reminder"),
-              userId: LOCAL_USER_ID,
+              userId: current.userId,
               status: "scheduled",
               ...reminder
             },
@@ -157,7 +328,7 @@ export function RoutineDataProvider({ children }: { children: ReactNode }) {
           events: [
             {
               id: createId("event"),
-              userId: LOCAL_USER_ID,
+              userId: current.userId,
               ...event
             },
             ...current.events
@@ -299,7 +470,7 @@ export function RoutineDataProvider({ children }: { children: ReactNode }) {
         }));
       }
     }),
-    [data, hydrated, updateData]
+    [cloud, data, hydrated, updateData]
   );
 
   return <RoutineDataContext.Provider value={value}>{children}</RoutineDataContext.Provider>;

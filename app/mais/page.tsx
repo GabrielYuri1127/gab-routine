@@ -28,8 +28,8 @@ const implemented = [
   "Tarefas com persistencia local",
   "Lembretes dentro do app",
   "Calendario mensal",
-  "Backup e preferencias locais",
-  "Login Supabase preparado",
+  "Backup, preferencias locais e sincronizacao por conta",
+  "Login Supabase com dados separados por usuario",
   "Importacao Google Classroom preparada",
   "Tutorial de uso no app",
   "Perfil personalizavel"

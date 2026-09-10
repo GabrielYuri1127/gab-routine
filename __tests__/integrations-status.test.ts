@@ -27,12 +27,13 @@ describe("integration status", () => {
     assert.equal(JSON.stringify(report).includes("secret"), false);
   });
 
-  it("marks cloud sync as optional while local storage is enough", () => {
+  it("marks cloud sync as required for sharing with multiple users", () => {
     const report = buildIntegrationStatus({}, "http://localhost:3000/configuracoes");
     const supabase = report.items.find((item) => item.id === "supabase");
     const ai = report.items.find((item) => item.id === "ai");
 
-    assert.equal(supabase?.state, "optional");
+    assert.equal(supabase?.state, "needs_setup");
+    assert.equal(supabase?.missing.includes("NEXT_PUBLIC_SUPABASE_URL"), true);
     assert.equal(ai?.state, "needs_setup");
     assert.equal(ai?.missing.includes("AI_API_KEY"), true);
   });

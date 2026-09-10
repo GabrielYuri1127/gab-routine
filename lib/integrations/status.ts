@@ -71,11 +71,13 @@ export function buildIntegrationStatus(env: IntegrationEnv = process.env, reques
       },
       {
         category: "agora",
-        detail: supabaseReady ? "Login Supabase pode ser usado." : "O app funciona sem login usando backup local neste navegador.",
+        detail: supabaseReady
+          ? "Login e snapshot em nuvem por usuario podem ser usados."
+          : "Sem Supabase, cada navegador fica isolado e nao serve bem para compartilhar com varias pessoas.",
         id: "supabase",
         missing: supabaseReady ? [] : ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"],
-        nextStep: supabaseReady ? "Testar login em /login." : "Deixar para quando quiser sincronizacao em nuvem.",
-        state: supabaseReady ? "ready" : "optional",
+        nextStep: supabaseReady ? "Testar login em /login com duas contas diferentes." : "Criar projeto Supabase gratuito, aplicar o schema e configurar as variaveis na Vercel.",
+        state: supabaseReady ? "ready" : "needs_setup",
         title: "Supabase"
       },
       {

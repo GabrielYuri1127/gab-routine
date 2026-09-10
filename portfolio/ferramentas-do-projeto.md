@@ -12,6 +12,7 @@
 ## Dados E Validacao
 
 - `localStorage` para persistencia local.
+- Supabase Auth e tabela `routine_snapshots` para dados separados por usuario.
 - Zod para validacao de entrada.
 - Tipos TypeScript para modelagem de dominio.
 - Regras academicas proprias para faltas, horarios, notas e prazos.
@@ -27,7 +28,7 @@
 
 - Google Classroom API.
 - Google OAuth para conexao de contas.
-- Supabase preparado para login e persistencia futura.
+- Supabase para login, cadastro e persistencia em nuvem quando configurado.
 - Vercel para deploy.
 
 ## Mobile E PWA

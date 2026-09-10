@@ -44,6 +44,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_anonima
 SUPABASE_SERVICE_ROLE_KEY=sua_service_role_key
 ```
 
+Depois de criar ou trocar essas variaveis, aplique `supabase/schema.sql` no SQL Editor do Supabase. A tabela `routine_snapshots` e as politicas RLS sao necessarias para cada usuario ver somente os proprios dados.
+
 Para notificacoes push futuras:
 
 ```env
@@ -78,9 +80,10 @@ http://localhost:3000/api/classroom/callback
 3. Conferir que o preset esta como Next.js.
 4. Adicionar as variaveis necessarias.
 5. Fazer novo deploy.
-6. Abrir `/configuracoes` e testar Google Classroom.
-7. Abrir `/assistente` e testar a IA.
-8. Abrir o site no Android e usar `Adicionar a tela inicial`.
+6. Abrir `/login`, criar duas contas de teste e confirmar que cada uma tem dados separados.
+7. Abrir `/configuracoes` e testar Google Classroom.
+8. Abrir `/assistente` e testar a IA.
+9. Abrir o site no Android e usar `Adicionar a tela inicial`.
 
 ## Referencias
 

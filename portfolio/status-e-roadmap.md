@@ -26,7 +26,7 @@ O Gavium ja tem uma versao funcional para uso pessoal, testes com outras pessoas
 - Backup local.
 - PWA instalavel no Android.
 - Preparacao para Google Classroom.
-- Preparacao para Supabase.
+- Login Supabase com dados separados por usuario quando configurado.
 - Deploy via GitHub e Vercel.
 
 ## Em Andamento Ou Preparado
@@ -38,7 +38,7 @@ O Gavium ja tem uma versao funcional para uso pessoal, testes com outras pessoas
 
 ## Futuro
 
-- Sincronizacao completa com Supabase.
+- Sincronizacao granular por tabela no Supabase.
 - Notificacoes push reais.
 - Widget Android nativo.
 - Mais relatorios academicos.

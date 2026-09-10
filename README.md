@@ -4,7 +4,7 @@
   <img src="public/brand/gavium-logo.svg" alt="Gavium" width="420" />
 </p>
 
-Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, faltas, notas, atividades, tarefas, compromissos e lembretes. A base atual entrega Fase 1 completa e Fase 2 com persistencia local, calendario mensal, telas editaveis, backup local e login Supabase preparado.
+Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, faltas, notas, atividades, tarefas, compromissos e lembretes. A base atual entrega Fase 1 completa e Fase 2 com persistencia local, calendario mensal, telas editaveis, backup local e login Supabase com dados separados por usuario.
 
 ## Stack
 
@@ -14,7 +14,7 @@ Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, fa
 - Componentes locais inspirados em shadcn/ui
 - Lucide Icons
 - Zod
-- Supabase free preparado para autenticacao e persistencia em nuvem
+- Supabase free para cadastro, login e persistencia em nuvem por usuario
 - PWA com manifest, service worker e icone maskable para Android
 - Google Classroom preparado via OAuth somente leitura
 - Tutorial interno e perfil personalizavel para uso por outras pessoas
@@ -65,7 +65,7 @@ GOOGLE_CLASSROOM_REDIRECT_URI=http://localhost:3000/api/classroom/callback
 
 ## Supabase
 
-O arquivo `supabase/schema.sql` prepara as tabelas principais e habilita RLS por `user_id`.
+O arquivo `supabase/schema.sql` prepara as tabelas principais, cria `routine_snapshots` para salvar o estado completo do app por pessoa e habilita RLS por `user_id`.
 
 Uso pessoal gratuito recomendado:
 
@@ -73,8 +73,9 @@ Uso pessoal gratuito recomendado:
 - Rode `supabase/schema.sql` no SQL Editor.
 - Ative autenticacao por email e senha.
 - Configure as variaveis `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- Cada pessoa deve criar ou entrar com a propria conta em `/login`; assim disciplinas, faltas, notas, tarefas, lembretes e Classroom ficam isolados.
 
-Sem essas variaveis, o app continua funcionando em modo local com `localStorage`.
+Sem essas variaveis, o app continua funcionando em modo local com `localStorage`, mas nao e o modo ideal para compartilhar com varias pessoas.
 
 ## PWA Android
 
@@ -152,7 +153,7 @@ O material apresentavel fica em `portfolio/`, com case study, ferramentas do pro
 - Suporte por WhatsApp em `/configuracoes`, `/mais` e `/tutorial`.
 - Marca visual propria com icone PWA, icone maskable e logo horizontal em SVG.
 - Perfil personalizavel com nome do app, usuario, cor, padroes academicos, modulos e estilo da IA.
-- `/login` com Supabase Auth real quando configurado.
+- `/login` com Supabase Auth real, cadastro e dados separados por usuario quando configurado.
 - Persistencia local via `localStorage`.
 - Calculos academicos reutilizaveis em `lib/academic-rules`.
 - Preset UFAM em `lib/academic-rules/ufam.ts`.
