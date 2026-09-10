@@ -37,7 +37,7 @@ const implemented = [
 
 const next = [
   { icon: Bell, title: "Push completo e central", phase: "Fase 3" },
-  { icon: Bot, title: "IA por API e comandos com confirmacao", phase: "Fase 4" },
+  { icon: Bot, title: "IA por API e comandos mais inteligentes", phase: "Fase 4" },
   { icon: Smartphone, title: "Widget Android", phase: "Fase 6" }
 ];
 

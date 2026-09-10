@@ -172,24 +172,47 @@ function buildGradeProposal(input: CommandParserInput): AddGradeProposal | null 
 function buildActivityProposal(input: CommandParserInput): AddActivityProposal | null {
   const normalized = normalizeText(input.question);
   const activityType = inferActivityType(input.question);
-  const wantsActivity =
-    includesAny(normalized, ["adicione", "crie", "registrar", "registre", "tenho", "marque"]) &&
-    includesAny(normalized, ["atividade", "trabalho", "lista", "prova", "seminario", "apresentacao", "relatorio", "projeto", "laboratorio"]);
+  const hasActivityWord = includesAny(normalized, [
+    "atividade",
+    "trabalho",
+    "lista",
+    "prova",
+    "seminario",
+    "apresentacao",
+    "relatorio",
+    "projeto",
+    "laboratorio"
+  ]);
 
-  if (!wantsActivity) {
+  if (!hasActivityWord) {
     return null;
   }
 
   const subject = findBestSubject(input.question, input.subjects);
   const parsedDate = parseCommandDate(input.question, input.today, { defaultToday: false, preferFuture: true });
-  if (!subject || !parsedDate) {
+  const hasActionVerb = includesAny(normalized, [
+    "adicione",
+    "adicionar",
+    "agende",
+    "agenda",
+    "coloca",
+    "coloque",
+    "crie",
+    "criar",
+    "marque",
+    "registrar",
+    "registre",
+    "tenho"
+  ]);
+  const directAcademicCommand = Boolean(subject && parsedDate && !isQuestionLike(normalized));
+
+  if (!(hasActionVerb || directAcademicCommand) || !subject || !parsedDate) {
     return null;
   }
 
-  const title = extractQuotedText(input.question) ?? buildActivityTitle(activityType, subject.name);
+  const title = extractQuotedText(input.question) ?? buildActivityTitle(activityType);
   const warnings = [
-    parsedDate.date < input.today ? "A data detectada ja passou; confira antes de criar o prazo." : "",
-    !parsedDate.explicit ? "Nao encontrei data clara, entao nao vou criar sem confirmacao." : ""
+    parsedDate.date < input.today ? "A data detectada ja passou; confira antes de criar o prazo." : ""
   ].filter(Boolean);
 
   return {
@@ -206,9 +229,18 @@ function buildActivityProposal(input: CommandParserInput): AddActivityProposal |
 
 function buildTaskProposal(input: CommandParserInput): AddTaskProposal | null {
   const normalized = normalizeText(input.question);
-  const wantsTask =
-    includesAny(normalized, ["crie tarefa", "criar tarefa", "adicione tarefa", "adicionar tarefa", "nova tarefa", "me lembre de", "preciso fazer"]) &&
-    !includesAny(normalized, ["nota", "falta", "faltas"]);
+  const parsedDate = parseCommandDate(input.question, input.today, { defaultToday: false, preferFuture: true });
+  const hasTaskCommand = includesAny(normalized, [
+    "adicione tarefa",
+    "adicionar tarefa",
+    "crie tarefa",
+    "criar tarefa",
+    "me lembre de",
+    "nova tarefa",
+    "preciso fazer"
+  ]);
+  const directTaskCommand = Boolean(parsedDate && !isQuestionLike(normalized) && !hasAcademicCommandKeyword(normalized));
+  const wantsTask = (hasTaskCommand || directTaskCommand) && !includesAny(normalized, ["nota", "falta", "faltas"]);
 
   if (!wantsTask) {
     return null;
@@ -219,7 +251,6 @@ function buildTaskProposal(input: CommandParserInput): AddTaskProposal | null {
     return null;
   }
 
-  const parsedDate = parseCommandDate(input.question, input.today, { defaultToday: false, preferFuture: true });
   const priority = inferPriority(input.question);
   const warnings = [parsedDate ? "" : "Sem data detectada; a tarefa vai ficar sem prazo."].filter(Boolean);
 
@@ -335,6 +366,11 @@ function parseCommandDate(
     return { date: toDateKey(addDays(todayDate, 7)), explicit: true };
   }
 
+  const weekdayDate = parseWeekdayDate(normalized, todayDate, Boolean(options.preferFuture));
+  if (weekdayDate) {
+    return { date: toDateKey(weekdayDate), explicit: true };
+  }
+
   const isoMatch = normalized.match(/\b(20\d{2}-\d{2}-\d{2})\b/);
   if (isoMatch?.[1]) {
     return { date: isoMatch[1], explicit: true };
@@ -395,8 +431,8 @@ function inferActivityType(question: string): ActivityType {
   return "activity";
 }
 
-function buildActivityTitle(type: ActivityType, subjectName: string) {
-  return `${activityTypeLabels[type]} de ${subjectName}`;
+function buildActivityTitle(type: ActivityType) {
+  return activityTypeLabels[type];
 }
 
 function inferPriority(question: string): Priority {
@@ -425,10 +461,13 @@ function extractTaskTitle(question: string) {
     .replace(/^(crie|criar|adicione|adicionar|nova)\s+tarefa\s*/i, "")
     .replace(/^me\s+lembre\s+de\s*/i, "")
     .replace(/^preciso\s+fazer\s*/i, "")
+    .replace(/^tenho\s+/i, "")
     .replace(/\b(hoje|amanh[ãa]|depois de amanh[ãa]|semana que vem|pr[oó]xima semana)\b/gi, "")
+    .replace(/\b(domingo|segunda(?:-feira)?|ter[cç]a(?:-feira)?|quarta(?:-feira)?|quinta(?:-feira)?|sexta(?:-feira)?|s[áa]bado)\b/gi, "")
     .replace(/\bdia\s+\d{1,2}\b/gi, "")
     .replace(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/g, "")
     .replace(/\b(urgente|importante|alta prioridade|baixa prioridade|quando der)\b/gi, "")
+    .replace(/\b(pra|para|pro|ate|até|em)\s*$/gi, "")
     .trim();
 
   return cleaned.length >= 3 ? capitalize(cleaned) : "";
@@ -465,6 +504,61 @@ function formatScore(value: number) {
 
 function capitalize(value: string) {
   return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
+}
+
+function parseWeekdayDate(normalized: string, todayDate: Date, preferFuture: boolean) {
+  const weekdays = [
+    { index: 0, pattern: /\bdomingo\b/ },
+    { index: 1, pattern: /\bsegunda(?:-feira)?\b/ },
+    { index: 2, pattern: /\bterca(?:-feira)?\b/ },
+    { index: 3, pattern: /\bquarta(?:-feira)?\b/ },
+    { index: 4, pattern: /\bquinta(?:-feira)?\b/ },
+    { index: 5, pattern: /\bsexta(?:-feira)?\b/ },
+    { index: 6, pattern: /\bsabado\b/ }
+  ];
+  const match = weekdays.find((weekday) => weekday.pattern.test(normalized));
+
+  if (!match) {
+    return null;
+  }
+
+  const currentWeekday = todayDate.getDay();
+  let dayDelta = match.index - currentWeekday;
+  const nextExplicit = /\b(proxima|proximo|que vem)\b/.test(normalized);
+
+  if (nextExplicit || preferFuture) {
+    dayDelta = (dayDelta + 7) % 7;
+    if (dayDelta === 0 && nextExplicit) {
+      dayDelta = 7;
+    }
+  }
+
+  if (!preferFuture && !nextExplicit && dayDelta > 0) {
+    dayDelta -= 7;
+  }
+
+  return addDays(todayDate, dayDelta);
+}
+
+function hasAcademicCommandKeyword(normalized: string) {
+  return includesAny(normalized, [
+    "atividade",
+    "falta",
+    "faltas",
+    "faltei",
+    "laboratorio",
+    "lista",
+    "nota",
+    "projeto",
+    "prova",
+    "relatorio",
+    "seminario",
+    "trabalho"
+  ]);
+}
+
+function isQuestionLike(normalized: string) {
+  return /\?|\b(como|mostre|o que|posso|qual|quais|quando|quanto|quantas)\b/.test(normalized);
 }
 
 function includesAny(value: string, candidates: string[]) {

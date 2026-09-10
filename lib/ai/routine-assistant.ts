@@ -131,21 +131,21 @@ function detectIntent(question: string): AssistantIntent {
 
 function buildCommandAnswer(commandProposal: AssistantCommandProposal): RoutineAssistantResponse {
   return {
-    answer: `Entendi a acao, mas nao vou alterar seus dados sem confirmacao. Confira abaixo: ${commandProposal.summary}.`,
+    answer: `Entendi a acao e vou salvar direto no app: ${commandProposal.summary}.`,
     commandProposal,
     dataGaps: commandProposal.warnings,
     evidence: buildCommandEvidence(commandProposal),
     highlights: [
       { label: "Acao", tone: "sky", value: "1" },
-      { label: "Confirmacao", tone: "gold", value: "manual" },
+      { label: "Execucao", tone: "mint", value: "auto" },
       { label: "Risco", tone: commandProposal.warnings.length ? "gold" : "mint", value: commandProposal.warnings.length ? "revisar" : "baixo" }
     ],
     intent: "command",
     quickLinks: buildCommandLinks(commandProposal),
     suggestions: [
-      "Confirmar somente se os dados estiverem certos",
-      "Cancelar se disciplina, data ou valor estiver errado",
-      "Depois de confirmar, conferir o registro na tela indicada"
+      "Conferir o registro salvo",
+      "Editar manualmente se algum detalhe precisar ajuste",
+      "Criar outro comando se precisar"
     ]
   };
 }

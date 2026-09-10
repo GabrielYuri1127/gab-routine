@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bot, CheckCircle2, Loader2, Send, Sparkles, X } from "lucide-react";
+import { Bot, Loader2, Send, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -92,7 +92,8 @@ export function AssistantPanel() {
       }
 
       const payload = (await result.json()) as AssistantApiResponse;
-      setResponse(payload.response ?? localResponse);
+      const nextResponse = applyCommandIfNeeded(payload.response ?? localResponse);
+      setResponse(nextResponse);
       setSource(payload.source ?? "rules");
       setModel(payload.model ?? "");
       setModeDetail(payload.modeDetail ?? (payload.source === "ai" ? "IA online ativa." : "IA local ativa."));
@@ -101,7 +102,7 @@ export function AssistantPanel() {
         setError("Usei a resposta local porque a IA online nao respondeu.");
       }
     } catch {
-      setResponse(localResponse);
+      setResponse(applyCommandIfNeeded(localResponse));
       setSource("rules");
       setModeDetail("IA local ativa; nao consegui confirmar a rota online agora.");
       setError("Usei a resposta local porque a IA online nao respondeu.");
@@ -115,12 +116,32 @@ export function AssistantPanel() {
     ask(question);
   }
 
-  function confirmCommand(proposal: AssistantCommandProposal) {
+  function applyCommandIfNeeded(nextResponse: RoutineAssistantResponse) {
+    if (!nextResponse.commandProposal) {
+      return nextResponse;
+    }
+
+    const proposal = nextResponse.commandProposal;
+    applyCommand(proposal);
+    return {
+      ...nextResponse,
+      answer: getCompletionMessage(proposal),
+      commandProposal: undefined,
+      dataGaps: proposal.warnings,
+      evidence: [
+        ...nextResponse.evidence,
+        "Acao salva automaticamente porque o comando tinha dados suficientes."
+      ],
+      suggestions: ["Conferir o registro salvo", "Perguntar qual e a proxima prioridade", "Criar outro comando se precisar"]
+    };
+  }
+
+  function applyCommand(proposal: AssistantCommandProposal) {
     if (proposal.intent === "register_absence") {
       addAttendanceRecord(proposal.subject.id, {
         date: proposal.date,
         id: createId("absence-ai"),
-        notes: "Registrado pelo assistente do Gavium apos confirmacao.",
+        notes: "Registrado automaticamente pelo assistente do Gavium.",
         quantity: proposal.quantity,
         status: "absence",
         subjectId: proposal.subject.id
@@ -133,7 +154,7 @@ export function AssistantPanel() {
         id: createId("grade-ai"),
         maxScore: proposal.maxScore,
         name: proposal.name,
-        notes: "Registrado pelo assistente do Gavium apos confirmacao.",
+        notes: "Registrado automaticamente pelo assistente do Gavium.",
         score: proposal.score,
         subjectId: proposal.subject.id
       });
@@ -143,7 +164,7 @@ export function AssistantPanel() {
       addActivity(proposal.subject.id, {
         dueDate: proposal.dueDate,
         id: createId("activity-ai"),
-        notes: "Criado pelo assistente do Gavium apos confirmacao.",
+        notes: "Criado automaticamente pelo assistente do Gavium.",
         status: "not_started",
         subjectId: proposal.subject.id,
         title: proposal.title,
@@ -155,38 +176,14 @@ export function AssistantPanel() {
       addTask({
         category: proposal.category,
         date: proposal.dueDate,
-        description: "Criada pelo assistente do Gavium apos confirmacao.",
+        description: "Criada automaticamente pelo assistente do Gavium.",
         dueDate: proposal.dueDate,
         priority: proposal.priority,
         title: proposal.title
       });
     }
 
-    setActionMessage(`Feito: ${proposal.summary}.`);
-    setResponse((current) =>
-      current
-        ? {
-            ...current,
-            answer: `Pronto, registrei: ${proposal.summary}.`,
-            commandProposal: undefined,
-            dataGaps: [],
-            suggestions: ["Conferir o registro salvo", "Perguntar qual e a proxima prioridade", "Criar outro comando se precisar"]
-          }
-        : current
-    );
-  }
-
-  function cancelCommand() {
-    setActionMessage("Acao cancelada. Nada foi alterado.");
-    setResponse((current) =>
-      current
-        ? {
-            ...current,
-            commandProposal: undefined,
-            suggestions: ["Reescrever o comando com mais detalhes", "Abrir a tela manualmente", "Perguntar outra coisa"]
-          }
-        : current
-    );
+    setActionMessage(getCompletionMessage(proposal));
   }
 
   return (
@@ -245,10 +242,6 @@ export function AssistantPanel() {
         {error ? <p className="mt-3 text-sm text-white/65">{error}</p> : null}
         {actionMessage ? <p className="mt-3 text-sm font-medium text-white/75">{actionMessage}</p> : null}
       </section>
-
-      {currentResponse.commandProposal ? (
-        <CommandProposalCard onCancel={cancelCommand} onConfirm={confirmCommand} proposal={currentResponse.commandProposal} />
-      ) : null}
 
       <section className="grid gap-3 sm:grid-cols-3">
         {currentResponse.highlights.map((highlight) => (
@@ -342,101 +335,14 @@ interface AssistantApiResponse {
   source?: "ai" | "rules";
 }
 
-function CommandProposalCard({
-  onCancel,
-  onConfirm,
-  proposal
-}: {
-  onCancel: () => void;
-  onConfirm: (proposal: AssistantCommandProposal) => void;
-  proposal: AssistantCommandProposal;
-}) {
-  return (
-    <section className="rounded-lg border border-gold/40 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="mb-2 flex items-center gap-2">
-            <Sparkles aria-hidden className="h-5 w-5 text-gold" />
-            <h2 className="text-lg font-semibold text-ink">Confirmar acao</h2>
-          </div>
-          <p className="text-sm leading-6 text-slate-600">O assistente entendeu uma acao, mas ela so sera salva se voce confirmar.</p>
-        </div>
-        <Badge tone="gold">{proposalLabels[proposal.intent]}</Badge>
-      </div>
-
-      <div className="rounded-lg bg-slate-50 p-3">
-        <p className="text-sm font-semibold text-ink">{proposal.summary}</p>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          {getProposalRows(proposal).map((row) => (
-            <div className="rounded-md bg-white px-3 py-2" key={row.label}>
-              <p className="text-[11px] font-semibold uppercase text-slate-400">{row.label}</p>
-              <p className="mt-1 text-sm text-slate-700">{row.value}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {proposal.warnings.length ? (
-        <div className="mt-3 space-y-2">
-          {proposal.warnings.map((warning) => (
-            <p className="rounded-md bg-gold/10 px-3 py-2 text-sm text-slate-700" key={warning}>
-              {warning}
-            </p>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        <Button onClick={() => onConfirm(proposal)} type="button">
-          <CheckCircle2 aria-hidden className="h-4 w-4" />
-          Confirmar e salvar
-        </Button>
-        <Button onClick={onCancel} type="button" variant="secondary">
-          <X aria-hidden className="h-4 w-4" />
-          Cancelar
-        </Button>
-      </div>
-    </section>
-  );
-}
-
-const proposalLabels: Record<AssistantCommandProposal["intent"], string> = {
-  add_activity: "atividade",
-  add_grade: "nota",
-  add_task: "tarefa",
-  register_absence: "falta"
-};
-
-function getProposalRows(proposal: AssistantCommandProposal) {
+function getCompletionMessage(proposal: AssistantCommandProposal) {
   if (proposal.intent === "register_absence") {
-    return [
-      { label: "Disciplina", value: proposal.subject.name },
-      { label: "Data", value: proposal.dateLabel },
-      { label: "Quantidade", value: `${proposal.quantity} aula(s)` }
-    ];
+    return `Concluido: ${proposal.summary} ${proposal.quantity === 1 ? "registrada" : "registradas"}.`;
   }
 
-  if (proposal.intent === "add_grade") {
-    return [
-      { label: "Disciplina", value: proposal.subject.name },
-      { label: "Nota", value: `${proposal.score}/${proposal.maxScore}` },
-      { label: "Tipo", value: proposal.name },
-      { label: "Data", value: proposal.dateLabel ?? "Sem data" }
-    ];
+  if (proposal.intent === "add_task") {
+    return `Concluido: tarefa "${proposal.summary}" adicionada.`;
   }
 
-  if (proposal.intent === "add_activity") {
-    return [
-      { label: "Disciplina", value: proposal.subject.name },
-      { label: "Titulo", value: proposal.title },
-      { label: "Prazo", value: proposal.dueDateLabel }
-    ];
-  }
-
-  return [
-    { label: "Tarefa", value: proposal.title },
-    { label: "Prazo", value: proposal.dueDateLabel ?? "Sem prazo" },
-    { label: "Prioridade", value: proposal.priority },
-    { label: "Categoria", value: proposal.category ?? "Sem categoria" }
-  ];
+  return `Concluido: ${proposal.summary} adicionada.`;
 }

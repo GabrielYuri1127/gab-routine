@@ -99,7 +99,7 @@ A arquitetura inicial fica em:
 - `lib/ai/command-parser.ts`
 - `services/ai/`
 
-Por padrao o provedor esta desativado, entao o app continua funcionando com regras internas. A rota `/assistente` ja responde perguntas sobre prioridades, faltas, medias, prazos e status de publicacao usando os dados locais. Ela tambem entende comandos como registrar faltas, adicionar notas, criar atividades e criar tarefas, sempre com cartao de confirmacao antes de salvar. Quando `AI_PROVIDER=openai` e `AI_API_KEY` estiverem configurados no servidor, `/api/assistant` usa IA real sem expor a chave no navegador.
+Por padrao o provedor esta desativado, entao o app continua funcionando com regras internas. A rota `/assistente` ja responde perguntas sobre prioridades, faltas, medias, prazos e status de publicacao usando os dados locais. Ela tambem entende comandos como registrar faltas, adicionar notas, criar atividades e criar tarefas, salvando direto quando os dados estao claros e pedindo complemento quando falta algo essencial. Quando `AI_PROVIDER=openai` e `AI_API_KEY` estiverem configurados no servidor, `/api/assistant` usa IA real sem expor a chave no navegador.
 
 Veja `docs/ai-setup.md` antes de configurar a IA na Vercel.
 
@@ -129,7 +129,7 @@ O material apresentavel fica em `portfolio/`, com case study, ferramentas do pro
 ## Entregue
 
 - Home Hoje com proximo item, agenda do dia, compromissos, pendencias, lembretes e resumo da faculdade.
-- `/assistente` com IA local para perguntas, status do app e comandos com confirmacao.
+- `/assistente` com IA local para perguntas, status do app e comandos automaticos quando os dados estao claros.
 - Navegacao mobile com botao central de acao rapida.
 - `/faculdade` com busca, filtros por status, cards com atalhos e cadastro detalhado.
 - `/faculdade/[id]` com detalhes, acoes rapidas, faltas, notas, simulador, atividades e gerenciamento.

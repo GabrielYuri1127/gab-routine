@@ -59,7 +59,18 @@ describe("assistant command parser", () => {
     });
 
     assert.equal(proposal?.intent, "add_activity");
-    assert.equal(proposal?.summary, "Prova de Redes de Computadores em Redes de Computadores para 20/09");
+    assert.equal(proposal?.summary, "Prova em Redes de Computadores para 20/09");
+  });
+
+  it("understands direct academic commands without a create verb", () => {
+    const proposal = buildAssistantCommandProposal({
+      question: "prova de redes amanha",
+      subjects: [subject],
+      today: "2026-09-10"
+    });
+
+    assert.equal(proposal?.intent, "add_activity");
+    assert.equal(proposal?.summary, "Prova em Redes de Computadores para 11/09");
   });
 
   it("proposes a task with priority and date", () => {
@@ -72,5 +83,27 @@ describe("assistant command parser", () => {
     assert.equal(proposal?.intent, "add_task");
     assert.equal(proposal?.summary, "Comprar livro para 11/09");
     assert.equal(proposal?.warnings.length, 0);
+  });
+
+  it("turns a short dated phrase into a task when it is not academic data", () => {
+    const proposal = buildAssistantCommandProposal({
+      question: "comprar pilha amanha",
+      subjects: [subject],
+      today: "2026-09-10"
+    });
+
+    assert.equal(proposal?.intent, "add_task");
+    assert.equal(proposal?.summary, "Comprar pilha para 11/09");
+  });
+
+  it("cleans natural personal reminders before saving the task title", () => {
+    const proposal = buildAssistantCommandProposal({
+      question: "tenho dentista sexta",
+      subjects: [subject],
+      today: "2026-09-10"
+    });
+
+    assert.equal(proposal?.intent, "add_task");
+    assert.equal(proposal?.summary, "Dentista para 11/09");
   });
 });

@@ -132,7 +132,7 @@ describe("routine assistant", () => {
     assert.equal(response.quickLinks.some((link) => link.href === "/configuracoes"), true);
   });
 
-  it("asks for confirmation before applying a command", () => {
+  it("prepares clear commands for automatic execution", () => {
     const response = buildRoutineAssistantResponse({
       events: [],
       question: "registre 2 faltas em redes ontem",
@@ -144,7 +144,7 @@ describe("routine assistant", () => {
 
     assert.equal(response.intent, "command");
     assert.equal(response.commandProposal?.intent, "register_absence");
-    assert.match(response.answer, /sem confirmacao/);
+    assert.match(response.answer, /salvar direto/);
   });
 
   it("uses answer style preferences in the local assistant", () => {
