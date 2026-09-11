@@ -1,22 +1,22 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 
 interface SupabaseServerConfig {
-  anonKey: string;
-  serviceRoleKey?: string;
+  publishableKey: string;
+  secretKey?: string;
   url: string;
 }
 
 export function getSupabaseServerConfig(env: NodeJS.ProcessEnv = process.env): SupabaseServerConfig | null {
   const url = env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  const publishableKey = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ?? env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
-  if (!url || !anonKey) {
+  if (!url || !publishableKey) {
     return null;
   }
 
   return {
-    anonKey,
-    serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
+    publishableKey,
+    secretKey: env.SUPABASE_SECRET_KEY?.trim() ?? env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
     url
   };
 }
@@ -24,11 +24,11 @@ export function getSupabaseServerConfig(env: NodeJS.ProcessEnv = process.env): S
 export function createSupabaseServiceClient(env: NodeJS.ProcessEnv = process.env): SupabaseClient {
   const config = getSupabaseServerConfig(env);
 
-  if (!config?.serviceRoleKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
+  if (!config?.secretKey) {
+    throw new Error("SUPABASE_SECRET_KEY is not configured.");
   }
 
-  return createClient(config.url, config.serviceRoleKey, {
+  return createClient(config.url, config.secretKey, {
     auth: {
       persistSession: false
     }
@@ -43,7 +43,7 @@ export async function getSupabaseUserFromRequest(request: Request): Promise<User
     return null;
   }
 
-  const client = createClient(config.url, config.anonKey, {
+  const client = createClient(config.url, config.publishableKey, {
     auth: {
       persistSession: false
     }

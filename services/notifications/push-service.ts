@@ -44,8 +44,8 @@ export function getPushMissingConfig(env: PushEnv = process.env) {
     missing.push("VAPID_PRIVATE_KEY");
   }
 
-  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
-    missing.push("SUPABASE_SERVICE_ROLE_KEY");
+  if (!env.SUPABASE_SECRET_KEY && !env.SUPABASE_SERVICE_ROLE_KEY) {
+    missing.push("SUPABASE_SECRET_KEY");
   }
 
   if (!env.CRON_SECRET) {

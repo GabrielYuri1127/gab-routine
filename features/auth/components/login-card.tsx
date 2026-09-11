@@ -77,7 +77,7 @@ export function LoginCard() {
         <h2 className="text-lg font-semibold text-ink">Supabase ainda nao configurado</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
           O app funciona no Android com armazenamento local, mas para mais de uma pessoa usar com dados separados e seguro preencher
-          `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` no ambiente da Vercel ou no arquivo `.env.local`.
+          `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` no ambiente da Vercel ou no arquivo `.env.local`.
         </p>
       </div>
     );

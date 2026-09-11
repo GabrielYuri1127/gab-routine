@@ -25,7 +25,9 @@ export function buildIntegrationStatus(env: IntegrationEnv = process.env, reques
   const aiProvider = (env.AI_PROVIDER ?? "none").toLowerCase();
   const aiReady = aiProvider === "openai" && Boolean(env.AI_API_KEY);
   const classroomReady = isClassroomConfigured(env);
-  const supabaseReady = Boolean(env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const supabaseReady = Boolean(
+    env.NEXT_PUBLIC_SUPABASE_URL && (env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  );
   const vercelReady = Boolean(env.VERCEL || env.VERCEL_URL);
   const pushMissing = getPushMissingConfig(env);
   const pushReady = pushMissing.length === 0;
@@ -77,7 +79,7 @@ export function buildIntegrationStatus(env: IntegrationEnv = process.env, reques
           ? "Login e snapshot em nuvem por usuario podem ser usados."
           : "Sem Supabase, cada navegador fica isolado e nao serve bem para compartilhar com varias pessoas.",
         id: "supabase",
-        missing: supabaseReady ? [] : ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"],
+        missing: supabaseReady ? [] : ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"],
         nextStep: supabaseReady ? "Testar login em /login com duas contas diferentes." : "Criar projeto Supabase gratuito, aplicar o schema e configurar as variaveis na Vercel.",
         state: supabaseReady ? "ready" : "needs_setup",
         title: "Supabase"

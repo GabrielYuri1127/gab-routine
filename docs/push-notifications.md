@@ -11,7 +11,7 @@ NEXT_PUBLIC_VAPID_PUBLIC_KEY=sua_chave_publica
 VAPID_PRIVATE_KEY=sua_chave_privada
 VAPID_SUBJECT=mailto:seu-email@exemplo.com
 CRON_SECRET=um_segredo_longo
-SUPABASE_SERVICE_ROLE_KEY=sua_service_role_key
+SUPABASE_SECRET_KEY=sua_chave_secreta
 ```
 
 Gere as chaves VAPID com:

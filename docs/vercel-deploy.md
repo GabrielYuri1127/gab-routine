@@ -40,8 +40,8 @@ Para Supabase:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=sua_url_supabase
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_anonima
-SUPABASE_SERVICE_ROLE_KEY=sua_service_role_key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sua_chave_publicavel
+SUPABASE_SECRET_KEY=sua_chave_secreta
 ```
 
 Depois de criar ou trocar essas variaveis, aplique `supabase/schema.sql` no SQL Editor do Supabase. A tabela `routine_snapshots` e as politicas RLS sao necessarias para cada usuario ver somente os proprios dados.

@@ -51,7 +51,7 @@ Para login Supabase no app:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 ```
 
 Chaves privadas de IA, VAPID e service role ficam somente no servidor.
@@ -82,7 +82,7 @@ Uso pessoal gratuito recomendado:
 - Crie um projeto no plano gratuito do Supabase.
 - Rode `supabase/schema.sql` no SQL Editor.
 - Ative autenticacao por email e senha.
-- Configure as variaveis `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- Configure as variaveis `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
 - Cada pessoa deve criar ou entrar com a propria conta em `/login`; assim disciplinas, faltas, notas, tarefas, lembretes e Classroom ficam isolados.
 
 Sem essas variaveis, o app continua funcionando em modo local com `localStorage`, mas nao e o modo ideal para compartilhar com varias pessoas.

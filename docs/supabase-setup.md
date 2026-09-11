@@ -17,11 +17,11 @@ Na Vercel:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=sua_url_supabase
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_anonima
-SUPABASE_SERVICE_ROLE_KEY=sua_service_role_key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sua_chave_publicavel
+SUPABASE_SECRET_KEY=sua_chave_secreta
 ```
 
-Use `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` no navegador. Use `SUPABASE_SERVICE_ROLE_KEY` somente no servidor, porque ela permite que as rotas protegidas do app salvem inscricoes de notificacao.
+Use `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` no navegador. Use `SUPABASE_SECRET_KEY` somente no servidor, porque ela permite que as rotas protegidas do app salvem inscricoes de notificacao.
 
 ## Como Testar
 
@@ -47,4 +47,4 @@ Se os dados misturarem, pare e confira se `supabase/schema.sql` foi executado in
 
 Todas as tabelas principais usam `user_id` e Row Level Security. A politica `own rows` limita leitura e escrita para o dono dos dados.
 
-Nunca coloque `SUPABASE_SERVICE_ROLE_KEY` no frontend, no README publico com valor real, nem em variavel `NEXT_PUBLIC_`.
+Nunca coloque `SUPABASE_SECRET_KEY` no frontend, no README publico com valor real, nem em variavel `NEXT_PUBLIC_`.
