@@ -30,10 +30,10 @@ export function SubjectDetailView({ subjectId }: { subjectId: string }) {
       <div className="space-y-4">
         <Link className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-ink" href="/faculdade">
           <ArrowLeft aria-hidden className="h-4 w-4" />
-          Faculdade
+          Estudos
         </Link>
         <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
-          <h1 className="text-xl font-semibold text-ink">Disciplina nao encontrada</h1>
+          <h1 className="text-xl font-semibold text-ink">Area nao encontrada</h1>
           <p className="mt-2 text-sm text-slate-600">Ela pode ter sido removida ou ainda nao foi sincronizada neste dispositivo.</p>
         </div>
       </div>
@@ -48,7 +48,7 @@ export function SubjectDetailView({ subjectId }: { subjectId: string }) {
       <header className="space-y-4">
         <Link className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-ink" href="/faculdade">
           <ArrowLeft aria-hidden className="h-4 w-4" />
-          Faculdade
+          Estudos
         </Link>
 
         <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
@@ -63,11 +63,11 @@ export function SubjectDetailView({ subjectId }: { subjectId: string }) {
               <div className="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
                 <p className="flex items-center gap-2">
                   <UserRound aria-hidden className="h-4 w-4" />
-                  {subject.professor ?? "Professor nao informado"}
+                  {subject.professor ?? "Responsavel nao informado"}
                 </p>
                 <p className="flex items-center gap-2">
                   <MapPin aria-hidden className="h-4 w-4" />
-                  {subject.room ?? "Sala nao informada"}
+                  {subject.room ?? "Local nao informado"}
                 </p>
               </div>
               <p className="mt-2 text-sm text-slate-500">{getSubjectScheduleLabel(subject.schedules)}</p>

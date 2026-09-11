@@ -256,21 +256,6 @@ export interface DayBlock {
   subjectId?: string;
 }
 
-export const extraTodayBlocks: DayBlock[] = [
-  {
-    id: "estagio",
-    title: "Estagio",
-    time: "12:00",
-    type: "work"
-  },
-  {
-    id: "estudo-noite",
-    title: "Estudo",
-    time: "19:00",
-    type: "study"
-  }
-];
-
 export function getSubjectById(id: string) {
   return mockSubjects.find((subject) => subject.id === id);
 }

@@ -39,7 +39,7 @@ export function SubjectCard({ subject }: { subject: Subject }) {
           </Link>
           <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
             <CalendarClock aria-hidden className="h-3.5 w-3.5" />
-            {todaySchedule ? `Hoje - ${todaySchedule.startTime}` : subject.professor ?? "Sem aula hoje"}
+            {todaySchedule ? `Hoje - ${todaySchedule.startTime}` : subject.professor ?? "Sem horario hoje"}
           </p>
         </div>
       </div>

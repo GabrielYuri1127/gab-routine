@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { calculateAttendanceSummary } from "@/lib/academic-rules/attendance";
 import { calculateGradeAverage } from "@/lib/academic-rules/grades";
 import { formatLongDate, formatShortDate, getCurrentWeekday, getTodayInAppTimeZone } from "@/lib/date";
-import { extraTodayBlocks, getClassBlocksForWeekday, getPendingActivities, type DayBlock } from "@/features/academic/data/mock";
+import { getClassBlocksForWeekday, getPendingActivities, type DayBlock } from "@/features/academic/data/mock";
 import { getReminderDateKey, getReminderTime } from "@/lib/reminders/schedule";
 import { getTaskDate, prioritizeTasks } from "@/lib/tasks/prioritization";
 import { useRoutineData } from "@/features/data/routine-store";
@@ -59,9 +59,7 @@ export function TodayOverview() {
         type: "event"
       }));
 
-    return [...classBlocks, ...extraTodayBlocks, ...taskBlocks, ...reminderBlocks, ...eventBlocks].sort((a, b) =>
-      a.time.localeCompare(b.time)
-    );
+    return [...classBlocks, ...taskBlocks, ...reminderBlocks, ...eventBlocks].sort((a, b) => a.time.localeCompare(b.time));
   }, [activeSubjects, data.events, data.reminders, data.tasks, now, today]);
 
   const nextBlock = useMemo(() => {
@@ -207,37 +205,54 @@ export function TodayOverview() {
         </section>
       ) : null}
 
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-ink">Faculdade</h2>
-          <Link className="text-sm font-medium text-mint" href="/faculdade">
-            Abrir
-          </Link>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          {visibleSubjects.slice(0, 2).map((subject) => {
-            const attendance = calculateAttendanceSummary(subject.attendance, subject.rules, subject.name);
-            const average = calculateGradeAverage(subject.grades, subject.rules.gradingMethod);
-            const pendingCount = subject.activities.filter(
-              (activity) => activity.status !== "submitted" && activity.status !== "corrected"
-            ).length;
+      {visibleSubjects.length ? (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-ink">Estudos e disciplinas</h2>
+            <Link className="text-sm font-medium text-mint" href="/faculdade">
+              Abrir
+            </Link>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {visibleSubjects.slice(0, 2).map((subject) => {
+              const attendance = calculateAttendanceSummary(subject.attendance, subject.rules, subject.name);
+              const average = calculateGradeAverage(subject.grades, subject.rules.gradingMethod);
+              const pendingCount = subject.activities.filter(
+                (activity) => activity.status !== "submitted" && activity.status !== "corrected"
+              ).length;
 
-            return (
-              <Link className="rounded-lg border border-line bg-white p-4 shadow-sm" href={`/faculdade/${subject.id}`} key={subject.id}>
-                <div className="mb-3 flex items-center gap-2">
-                  <BookOpen aria-hidden className="h-4 w-4" style={{ color: subject.color }} />
-                  <h3 className="truncate text-sm font-semibold uppercase text-ink">{subject.name}</h3>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <MiniMetric label="Media" value={average === null ? "--" : average.toFixed(1).replace(".", ",")} />
-                  <MiniMetric label="Frequencia" value={`${Math.round(attendance.frequency)}%`} />
-                  <MiniMetric label="Atividades" value={`${pendingCount}`} />
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
+              return (
+                <Link className="rounded-lg border border-line bg-white p-4 shadow-sm" href={`/faculdade/${subject.id}`} key={subject.id}>
+                  <div className="mb-3 flex items-center gap-2">
+                    <BookOpen aria-hidden className="h-4 w-4" style={{ color: subject.color }} />
+                    <h3 className="truncate text-sm font-semibold uppercase text-ink">{subject.name}</h3>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <MiniMetric label="Media" value={average === null ? "--" : average.toFixed(1).replace(".", ",")} />
+                    <MiniMetric label="Frequencia" value={`${Math.round(attendance.frequency)}%`} />
+                    <MiniMetric label="Atividades" value={`${pendingCount}`} />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ) : (
+        <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-ink">Comece do seu jeito</h2>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <Link className="flex h-11 items-center justify-center rounded-lg border border-line text-sm font-medium text-ink" href="/tarefas">
+              Criar tarefa
+            </Link>
+            <Link className="flex h-11 items-center justify-center rounded-lg border border-line text-sm font-medium text-ink" href="/calendario">
+              Agendar compromisso
+            </Link>
+            <Link className="flex h-11 items-center justify-center rounded-lg border border-line text-sm font-medium text-ink" href="/configuracoes">
+              Ajustar perfil
+            </Link>
+          </div>
+        </section>
+      )}
 
       <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
         <div className="mb-3 flex items-center gap-2">

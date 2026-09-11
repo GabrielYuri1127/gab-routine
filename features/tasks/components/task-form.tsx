@@ -9,7 +9,7 @@ import { getTodayInAppTimeZone } from "@/lib/date";
 import { useRoutineData } from "@/features/data/routine-store";
 import type { Priority } from "@/types/domain";
 
-const categories = ["Faculdade", "Estudo", "Rotina", "Trabalho", "Pessoal"];
+const categories = ["Produtividade", "Rotina", "Estudo", "Trabalho", "Pessoal", "Faculdade"];
 
 interface TaskFormProps {
   afterCreateHref?: string;
@@ -74,7 +74,7 @@ export function TaskForm({ afterCreateHref, compact = false }: TaskFormProps) {
           <input
             className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-mint"
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="Ex.: Revisar Sistemas Operacionais"
+            placeholder="Ex.: revisar aula, enviar relatorio ou organizar agenda"
             required
             value={title}
           />

@@ -7,7 +7,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Gavium",
-  description: "Secretario pessoal e academico para rotina, faculdade e lembretes.",
+  description: "Sistema pessoal para rotina, estudos, trabalho, tarefas, lembretes e produtividade.",
   applicationName: "Gavium",
   icons: {
     apple: "/icons/maskable-icon.svg",

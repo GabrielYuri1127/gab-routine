@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 
 const implemented = [
   "Tela Hoje mobile-first",
-  "Modulo Faculdade",
+  "Modulo Estudos e rotina",
   "Faltas com registros individuais",
   "Notas e simulador",
   "Atividades por prazo",
@@ -42,7 +42,7 @@ const next = [
 ];
 
 const links = [
-  { href: "/faculdade", title: "Abrir Faculdade", icon: Database },
+  { href: "/faculdade", title: "Abrir Estudos", icon: Database },
   { href: "/tarefas", title: "Abrir Tarefas", icon: CheckSquare },
   { href: "/lembretes", title: "Abrir Lembretes", icon: Bell },
   { href: "/calendario", title: "Abrir Calendario", icon: CalendarDays },

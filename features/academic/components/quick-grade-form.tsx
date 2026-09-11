@@ -33,7 +33,7 @@ export function QuickGradeForm() {
       <header>
         <p className="text-sm font-medium text-mint">Acao rapida</p>
         <h1 className="mt-1 text-2xl font-semibold text-ink">Adicionar nota</h1>
-        <p className="mt-2 text-sm text-slate-600">Nome, nota, nota maxima e salvar. O resto fica dentro da disciplina.</p>
+        <p className="mt-2 text-sm text-slate-600">Nome, nota, nota maxima e salvar. O resto fica dentro da area escolhida.</p>
       </header>
 
       <form
@@ -61,7 +61,7 @@ export function QuickGradeForm() {
       >
         <div className="space-y-3">
           <label>
-            <span className="text-sm font-medium text-slate-700">Disciplina</span>
+            <span className="text-sm font-medium text-slate-700">Area</span>
             <select
               className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
               onChange={(event) => setSubjectId(event.target.value)}
@@ -119,7 +119,7 @@ export function QuickGradeForm() {
 
         {selectedSubject ? (
           <Link className="mt-4 flex items-center justify-between rounded-lg border border-line px-3 py-3 text-sm font-medium text-ink" href={`/faculdade/${selectedSubject.id}#notas`}>
-            Abrir notas da disciplina
+            Abrir notas da area
             <ArrowRight aria-hidden className="h-4 w-4" />
           </Link>
         ) : null}

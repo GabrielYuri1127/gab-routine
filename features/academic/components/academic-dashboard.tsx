@@ -63,11 +63,11 @@ export function AcademicDashboard() {
   return (
     <div className="space-y-5">
       <header className="flex flex-col gap-2">
-        <p className="text-sm font-medium text-mint">Faculdade</p>
-        <h1 className="text-2xl font-semibold text-ink sm:text-3xl">Semestre atual</h1>
+        <p className="text-sm font-medium text-mint">Estudos e rotina</p>
+        <h1 className="text-2xl font-semibold text-ink sm:text-3xl">Areas acompanhadas</h1>
         <p className="max-w-2xl text-sm leading-6 text-slate-600">
-          Disciplinas, faltas, notas e atividades em uma visao compacta. As regras iniciais seguem o preset UFAM,
-          mas cada disciplina pode mudar seus parametros.
+          Use para faculdade, escola, curso, trabalho ou qualquer area que precise de horarios, presenca, notas,
+          entregas e acompanhamento.
         </p>
       </header>
 
@@ -110,7 +110,7 @@ export function AcademicDashboard() {
             <input
               className="h-11 w-full rounded-lg border border-line pl-9 pr-3 text-sm outline-none focus:border-ink"
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar por nome, codigo, professor ou sala"
+              placeholder="Buscar por nome, codigo, responsavel, local ou periodo"
               value={query}
             />
           </label>
@@ -143,7 +143,7 @@ export function AcademicDashboard() {
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-label="Disciplinas">
         {filteredSubjects.length === 0 ? (
           <div className="rounded-lg border border-dashed border-line bg-white p-4 text-sm text-slate-500 md:col-span-2 xl:col-span-3">
-            Nenhuma disciplina nesse filtro.
+            Nenhuma area nesse filtro. Cadastre faculdade, escola, trabalho, projeto ou rotina que queira acompanhar.
           </div>
         ) : null}
         {filteredSubjects.map((subject) => (

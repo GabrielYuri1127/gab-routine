@@ -72,13 +72,13 @@ export function QuickAbsenceForm() {
       <header>
         <p className="text-sm font-medium text-mint">Acao rapida</p>
         <h1 className="mt-1 text-2xl font-semibold text-ink">Registrar falta</h1>
-        <p className="mt-2 text-sm text-slate-600">Escolha a disciplina, ajuste a data e toque na quantidade.</p>
+        <p className="mt-2 text-sm text-slate-600">Escolha a area, ajuste a data e toque na quantidade.</p>
       </header>
 
       <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
         <div className="grid gap-3 sm:grid-cols-2">
           <label>
-            <span className="text-sm font-medium text-slate-700">Disciplina</span>
+            <span className="text-sm font-medium text-slate-700">Area</span>
             <select
               className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
               onChange={(event) => setSubjectId(event.target.value)}
@@ -124,7 +124,7 @@ export function QuickAbsenceForm() {
                 type="button"
               >
                 <span className="block font-semibold">{option.label}</span>
-                <span className="block opacity-75">{option.alreadyRegistered ? "ja tem" : `${option.classesQuantity} aulas`}</span>
+                <span className="block opacity-75">{option.alreadyRegistered ? "ja tem" : `${option.classesQuantity} registros`}</span>
               </button>
             ))}
           </div>
@@ -142,7 +142,7 @@ export function QuickAbsenceForm() {
 
         <p className="mt-3 text-xs text-slate-500">
           {selectedSubject && isClassDate(selectedSubject, date)
-            ? "Essa data bate com seu horario de aula cadastrado."
+            ? "Essa data bate com seu horario fixo cadastrado."
             : "Voce tambem pode registrar uma data manual para ajustes."}
         </p>
 
@@ -159,7 +159,7 @@ export function QuickAbsenceForm() {
 
         {selectedSubject ? (
           <Link className="mt-4 flex items-center justify-between rounded-lg border border-line px-3 py-3 text-sm font-medium text-ink" href={`/faculdade/${selectedSubject.id}`}>
-            Abrir disciplina
+            Abrir area
             <ArrowRight aria-hidden className="h-4 w-4" />
           </Link>
         ) : null}

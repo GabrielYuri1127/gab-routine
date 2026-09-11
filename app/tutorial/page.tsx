@@ -23,15 +23,15 @@ const firstSteps = [
   },
   {
     title: "Ajuste seu perfil",
-    text: "Troque o nome do app, seu nome, cor principal, semestre padrao e modulos que aparecem no menu.",
+    text: "Troque nome, cor, uso principal, periodo padrao, objetivo e modulos que aparecem no menu.",
     href: "/configuracoes",
     label: "Configurar"
   },
   {
-    title: "Cadastre as disciplinas",
-    text: "Coloque professor, sala, horarios, carga horaria e regras de falta. Depois cada materia pode ser editada por completo.",
+    title: "Cadastre areas importantes",
+    text: "Use para faculdade, escola, trabalho, projetos, cursos, treinos ou qualquer rotina com horarios e acompanhamento.",
     href: "/faculdade",
-    label: "Abrir Faculdade"
+    label: "Abrir Estudos"
   },
   {
     title: "Registre o que ja aconteceu",
@@ -41,7 +41,7 @@ const firstSteps = [
   },
   {
     title: "Use a tela Hoje",
-    text: "Depois dos cadastros, a tela inicial vira seu resumo diario com aulas, tarefas, compromissos, lembretes e prazos.",
+    text: "Depois dos cadastros, a tela inicial vira seu resumo diario com horarios, tarefas, compromissos, lembretes e prazos.",
     href: "/",
     label: "Ver Hoje"
   }
@@ -50,8 +50,8 @@ const firstSteps = [
 const areas = [
   {
     icon: GraduationCap,
-    title: "Faculdade",
-    text: "Controle disciplinas, faltas, notas, atividades, horarios e status de cada materia.",
+    title: "Estudos",
+    text: "Controle areas, disciplinas, presenca, notas, atividades, horarios e status de cada item.",
     href: "/faculdade"
   },
   {
@@ -69,7 +69,7 @@ const areas = [
   {
     icon: CalendarDays,
     title: "Calendario",
-    text: "Veja aulas, prazos, tarefas, lembretes e compromissos juntos no mes.",
+    text: "Veja horarios fixos, prazos, tarefas, lembretes e compromissos juntos no mes.",
     href: "/calendario"
   },
   {
@@ -100,7 +100,7 @@ export default function TutorialPage() {
         <p className="text-sm font-medium text-mint">Tutorial</p>
         <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Comece sem bagunca</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          Um roteiro curto para deixar o app pronto para rotina, faculdade e uso no celular.
+          Um roteiro curto para deixar o app pronto para rotina, estudos, trabalho e uso no celular.
         </p>
       </header>
 

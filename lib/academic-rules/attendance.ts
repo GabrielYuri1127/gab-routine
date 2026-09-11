@@ -101,7 +101,7 @@ export function buildAttendanceAlert(subjectName: string, summary: Pick<Attendan
 export function calculateAttendanceSummary(
   records: AttendanceRecord[],
   rules: Pick<AcademicRules, "minimumAttendance" | "totalExpectedClasses">,
-  subjectName = "esta disciplina"
+  subjectName = "esta area"
 ): AttendanceSummary {
   const usedAbsences = countUsedAbsences(records);
   const absenceLimit = getAbsenceLimit(rules.totalExpectedClasses, rules.minimumAttendance);

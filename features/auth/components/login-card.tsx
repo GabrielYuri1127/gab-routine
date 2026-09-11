@@ -32,12 +32,12 @@ const defaultSignUpProfile: SignUpProfile = {
   assistantStyle: "balanced",
   birthDate: "",
   contextDetails: "",
-  contexts: ["faculdade"],
+  contexts: ["produtividade"],
   courseOrArea: "",
   discoverySource: "",
   fullName: "",
   gender: "",
-  primaryContext: "faculdade",
+  primaryContext: "produtividade",
   productivityGoal: ""
 };
 
@@ -46,12 +46,12 @@ const textareaClass =
   "mt-1 min-h-24 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink outline-none focus:border-mint";
 
 const contextOptions = [
+  { label: "Produtividade", value: "produtividade" },
+  { label: "Rotina pessoal", value: "rotina_pessoal" },
   { label: "Escola", value: "escola" },
   { label: "Faculdade", value: "faculdade" },
   { label: "Trabalho", value: "trabalho" },
-  { label: "Rotina pessoal", value: "rotina_pessoal" },
-  { label: "Projetos", value: "projetos" },
-  { label: "Produtividade", value: "produtividade" }
+  { label: "Projetos", value: "projetos" }
 ];
 
 export function LoginCard() {
@@ -288,11 +288,11 @@ function SignUpProfileFields({
         <label className="block">
           <span className="text-xs font-semibold uppercase text-slate-500">Uso principal</span>
           <select className={inputClass} onChange={(event) => updateField("primaryContext", event.target.value)} value={profile.primaryContext}>
+            <option value="produtividade">Produtividade geral</option>
+            <option value="rotina_pessoal">Rotina pessoal</option>
+            <option value="trabalho">Trabalho</option>
             <option value="faculdade">Faculdade</option>
             <option value="escola">Escola</option>
-            <option value="trabalho">Trabalho</option>
-            <option value="rotina_pessoal">Rotina pessoal</option>
-            <option value="produtividade">Produtividade geral</option>
             <option value="projetos">Projetos</option>
           </select>
         </label>

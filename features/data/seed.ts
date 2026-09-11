@@ -1,4 +1,3 @@
-import { mockSubjects } from "@/features/academic/data/mock";
 import { addDays, getTodayInAppTimeZone, toDateKey } from "@/lib/date";
 import type { AppPreference, Event, NotificationPreference, Reminder, Task } from "@/types/domain";
 import type { Subject } from "@/types/academic";
@@ -11,10 +10,15 @@ export const DEFAULT_APP_PREFERENCE: AppPreference = {
   accentColor: "#0f9f7a",
   appName: "Gavium",
   assistantAnswerStyle: "balanced",
+  birthDate: "",
+  contextDetails: "",
+  contexts: ["produtividade"],
+  courseOrArea: "",
   defaultClassesQuantity: 2,
-  defaultSemester: "2026/1",
+  defaultSemester: "Atual",
   defaultWorkloadHours: 60,
-  displayName: "Gabriel",
+  discoverySource: "",
+  displayName: "Usuario",
   enabledModules: {
     assistant: true,
     calendar: true,
@@ -23,7 +27,10 @@ export const DEFAULT_APP_PREFERENCE: AppPreference = {
     tasks: true,
     tutorial: true
   },
-  profileLabel: "rotina pessoal"
+  gender: "",
+  primaryContext: "produtividade",
+  profileLabel: "rotina inteligente",
+  productivityGoal: ""
 };
 
 export interface RoutineData {
@@ -46,36 +53,37 @@ export function buildSeedData(today = getTodayInAppTimeZone()): RoutineData {
     version: 4,
     userId: LOCAL_USER_ID,
     appPreference: DEFAULT_APP_PREFERENCE,
-    subjects: mockSubjects,
+    subjects: [],
     tasks: [
       {
-        id: "finalizar-relatorio",
+        id: "definir-prioridades",
         userId: LOCAL_USER_ID,
-        title: "Finalizar relatorio",
-        description: "Fechar versao final antes de enviar.",
-        priority: "urgent",
-        category: "Faculdade",
+        title: "Definir prioridades do dia",
+        description: "Escolha ate 3 coisas importantes para hoje.",
+        priority: "high",
+        category: "Produtividade",
         date: today,
         dueDate: today,
-        time: "20:00",
-        estimatedMinutes: 45,
+        time: "08:30",
+        estimatedMinutes: 15,
         status: "open"
       },
       {
-        id: "revisar-redes",
+        id: "organizar-rotina",
         userId: LOCAL_USER_ID,
-        title: "Revisar Redes",
-        priority: "high",
-        category: "Estudo",
+        title: "Adicionar compromissos fixos",
+        description: "Cadastre aulas, trabalho, treino, estudos ou qualquer rotina recorrente.",
+        priority: "medium",
+        category: "Rotina",
         date: today,
         dueDate: tomorrow,
-        estimatedMinutes: 35,
+        estimatedMinutes: 20,
         status: "open"
       },
       {
-        id: "organizar-amanha",
+        id: "planejar-amanha",
         userId: LOCAL_USER_ID,
-        title: "Organizar amanha",
+        title: "Planejar amanha",
         priority: "medium",
         category: "Rotina",
         date: today,
@@ -84,11 +92,11 @@ export function buildSeedData(today = getTodayInAppTimeZone()): RoutineData {
         status: "open"
       },
       {
-        id: "limpar-backlog",
+        id: "revisar-semana",
         userId: LOCAL_USER_ID,
-        title: "Limpar backlog do projeto",
+        title: "Revisar semana",
         priority: "low",
-        category: "Trabalho",
+        category: "Produtividade",
         date: nextWeek,
         dueDate: nextWeek,
         estimatedMinutes: 30,
@@ -97,10 +105,10 @@ export function buildSeedData(today = getTodayInAppTimeZone()): RoutineData {
     ],
     reminders: [
       {
-        id: "levar-relatorio",
+        id: "revisao-rapida",
         userId: LOCAL_USER_ID,
-        title: "Levar relatorio",
-        remindAt: `${tomorrow}T08:00:00`,
+        title: "Revisar prioridades",
+        remindAt: `${today}T09:00:00`,
         sourceType: "custom",
         status: "scheduled"
       },
@@ -115,13 +123,13 @@ export function buildSeedData(today = getTodayInAppTimeZone()): RoutineData {
     ],
     events: [
       {
-        id: "resolver-pendencias",
+        id: "organizar-agenda",
         userId: LOCAL_USER_ID,
-        title: "Resolver pendencias",
+        title: "Organizar agenda",
         date: today,
         startsAt: "16:00",
-        endsAt: "17:00",
-        category: "appointment"
+        endsAt: "16:30",
+        category: "personal"
       }
     ],
     notificationPreference: {

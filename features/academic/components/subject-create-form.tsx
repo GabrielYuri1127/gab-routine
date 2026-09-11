@@ -86,8 +86,8 @@ export function SubjectCreateForm({ onCreate }: SubjectCreateFormProps) {
       }}
     >
       <div>
-        <h2 className="text-base font-semibold text-ink">Nova disciplina</h2>
-        <p className="mt-1 text-sm text-slate-500">Cadastre o essencial agora e ajuste tudo depois.</p>
+        <h2 className="text-base font-semibold text-ink">Nova area ou disciplina</h2>
+        <p className="mt-1 text-sm text-slate-500">Cadastre estudo, curso, trabalho, projeto ou rotina que deseja acompanhar.</p>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -96,28 +96,28 @@ export function SubjectCreateForm({ onCreate }: SubjectCreateFormProps) {
           <input
             className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none transition focus:border-ink"
             onChange={(event) => setName(event.target.value)}
-            placeholder="Ex.: Redes de Computadores"
+            placeholder="Ex.: Ingles, Academia, Projeto TCC ou Redes de Computadores"
             required
             value={name}
           />
         </label>
 
         <label>
-          <span className="text-sm font-medium text-slate-700">Professor</span>
+          <span className="text-sm font-medium text-slate-700">Responsavel</span>
           <input
             className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none transition focus:border-ink"
             onChange={(event) => setProfessor(event.target.value)}
-            placeholder="Opcional"
+            placeholder="Professor, lider, cliente ou opcional"
             value={professor}
           />
         </label>
 
         <label>
-          <span className="text-sm font-medium text-slate-700">Sala</span>
+          <span className="text-sm font-medium text-slate-700">Local ou link</span>
           <input
             className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none transition focus:border-ink"
             onChange={(event) => setRoom(event.target.value)}
-            placeholder="Bloco, sala ou link"
+            placeholder="Local, sala ou link"
             value={room}
           />
         </label>
@@ -128,7 +128,7 @@ export function SubjectCreateForm({ onCreate }: SubjectCreateFormProps) {
 
         <div className="mt-3 grid gap-3 sm:grid-cols-4">
           <label>
-            <span className="text-sm font-medium text-slate-700">Codigo</span>
+            <span className="text-sm font-medium text-slate-700">Codigo ou sigla</span>
             <input
               className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none transition focus:border-ink"
               onChange={(event) => setCode(event.target.value)}
@@ -137,7 +137,7 @@ export function SubjectCreateForm({ onCreate }: SubjectCreateFormProps) {
             />
           </label>
           <label>
-            <span className="text-sm font-medium text-slate-700">Semestre</span>
+            <span className="text-sm font-medium text-slate-700">Periodo</span>
             <input
               className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none transition focus:border-ink"
               onChange={(event) => setSemester(event.target.value)}
@@ -145,7 +145,7 @@ export function SubjectCreateForm({ onCreate }: SubjectCreateFormProps) {
             />
           </label>
           <label>
-            <span className="text-sm font-medium text-slate-700">Carga horaria</span>
+            <span className="text-sm font-medium text-slate-700">Carga total</span>
             <input
               className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none transition focus:border-ink"
               min={1}
@@ -155,7 +155,7 @@ export function SubjectCreateForm({ onCreate }: SubjectCreateFormProps) {
             />
           </label>
           <label>
-            <span className="text-sm font-medium text-slate-700">Primeiro dia</span>
+            <span className="text-sm font-medium text-slate-700">Dia fixo</span>
             <select
               className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none transition focus:border-ink"
               onChange={(event) => setWeekday(event.target.value as Weekday)}
@@ -190,7 +190,7 @@ export function SubjectCreateForm({ onCreate }: SubjectCreateFormProps) {
             />
           </label>
           <label>
-            <span className="text-sm font-medium text-slate-700">Aulas</span>
+            <span className="text-sm font-medium text-slate-700">Encontros</span>
             <input
               className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none transition focus:border-ink"
               min={1}
@@ -215,7 +215,7 @@ export function SubjectCreateForm({ onCreate }: SubjectCreateFormProps) {
             />
           ))}
         </div>
-        <Button type="submit">Criar disciplina</Button>
+        <Button type="submit">Criar area</Button>
       </div>
     </form>
   );

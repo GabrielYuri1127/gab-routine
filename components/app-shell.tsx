@@ -24,7 +24,7 @@ import type { EnabledModules } from "@/types/domain";
 
 const primaryNav = [
   { label: "Hoje", href: "/", icon: Home },
-  { label: "Faculdade", href: "/faculdade", icon: BookOpen },
+  { label: "Estudos", href: "/faculdade", icon: BookOpen },
   { label: "Semana", href: "/semana", icon: CalendarDays },
   { label: "Mais", href: "/mais", icon: MoreHorizontal }
 ];
@@ -38,7 +38,7 @@ const secondaryNav: Array<{ label: string; href: string; icon: LucideIcon; modul
   { label: "Configuracoes", href: "/configuracoes", icon: Settings, module: null }
 ];
 
-const futureModules = ["Estudos", "Projetos", "Habitos"];
+const futureModules = ["Projetos", "Habitos", "Metas"];
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -141,7 +141,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 px-2 pb-2 pt-2 backdrop-blur lg:hidden">
         <div className="grid grid-cols-5 items-end">
           <MobileNavItem accentColor={preferences.accentColor} href="/" icon={Home} label="Hoje" pathname={pathname} />
-          <MobileNavItem accentColor={preferences.accentColor} href="/faculdade" icon={BookOpen} label="Faculdade" pathname={pathname} />
+          <MobileNavItem accentColor={preferences.accentColor} href="/faculdade" icon={BookOpen} label="Estudos" pathname={pathname} />
           <MobileAddMenu />
           <MobileNavItem accentColor={preferences.accentColor} href="/semana" icon={CalendarDays} label="Semana" pathname={pathname} />
           <MobileNavItem accentColor={preferences.accentColor} href="/mais" icon={MoreHorizontal} label="Mais" pathname={pathname} />

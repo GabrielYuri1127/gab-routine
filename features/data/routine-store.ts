@@ -103,9 +103,9 @@ export function loadRoutineData(storageUserId?: string | null) {
   }
 }
 
-export function createEmptyRoutineData(userId = LOCAL_USER_ID, email?: string | null): RoutineData {
+export function createEmptyRoutineData(userId = LOCAL_USER_ID, email?: string | null, metadata?: unknown): RoutineData {
   const seed = buildSeedData();
-  const displayName = getDisplayNameFromEmail(email) || "Usuario";
+  const profilePreference = buildProfilePreferenceFromMetadata(metadata, email, userId);
 
   return assignRoutineDataUser(
     {
@@ -116,7 +116,7 @@ export function createEmptyRoutineData(userId = LOCAL_USER_ID, email?: string | 
       tasks: [],
       appPreference: {
         ...DEFAULT_APP_PREFERENCE,
-        displayName,
+        ...profilePreference,
         userId
       },
       notificationPreference: {
@@ -170,6 +170,15 @@ export function normalizeAppPreference(value: unknown, userId = LOCAL_USER_ID): 
     ...DEFAULT_APP_PREFERENCE,
     ...parsed,
     appName,
+    assistantAnswerStyle: normalizeAssistantStyle(parsed.assistantAnswerStyle),
+    birthDate: normalizeText(parsed.birthDate),
+    contextDetails: normalizeText(parsed.contextDetails),
+    contexts: normalizeStringArray(parsed.contexts, DEFAULT_APP_PREFERENCE.contexts),
+    courseOrArea: normalizeText(parsed.courseOrArea),
+    discoverySource: normalizeText(parsed.discoverySource),
+    gender: normalizeText(parsed.gender),
+    primaryContext: normalizeText(parsed.primaryContext) || DEFAULT_APP_PREFERENCE.primaryContext,
+    productivityGoal: normalizeText(parsed.productivityGoal),
     enabledModules: {
       ...DEFAULT_APP_PREFERENCE.enabledModules,
       ...(parsed.enabledModules ?? {})
@@ -184,6 +193,90 @@ function normalizeAppName(value: unknown) {
   }
 
   return value.trim().toLowerCase() === "gab routine" ? DEFAULT_APP_PREFERENCE.appName : value;
+}
+
+function buildProfilePreferenceFromMetadata(metadata: unknown, email?: string | null, userId = LOCAL_USER_ID): AppPreference {
+  const displayName =
+    readMetadataString(metadata, "full_name") || readMetadataString(metadata, "name") || getDisplayNameFromEmail(email) || "Usuario";
+  const primaryContext = readMetadataString(metadata, "primary_context") || DEFAULT_APP_PREFERENCE.primaryContext;
+  const contexts = readMetadataStringArray(metadata, "contexts", [primaryContext]);
+  const assistantAnswerStyle = normalizeAssistantStyle(readMetadataString(metadata, "assistant_style"));
+
+  return {
+    ...DEFAULT_APP_PREFERENCE,
+    assistantAnswerStyle,
+    birthDate: readMetadataString(metadata, "birth_date"),
+    contextDetails: readMetadataString(metadata, "context_details"),
+    contexts,
+    courseOrArea: readMetadataString(metadata, "course_or_area"),
+    discoverySource: readMetadataString(metadata, "discovery_source"),
+    displayName,
+    gender: readMetadataString(metadata, "gender"),
+    id: DEFAULT_APP_PREFERENCE.id,
+    primaryContext,
+    profileLabel: getContextLabel(primaryContext),
+    productivityGoal: readMetadataString(metadata, "productivity_goal"),
+    userId
+  };
+}
+
+function readMetadataString(metadata: unknown, key: string) {
+  if (!metadata || typeof metadata !== "object") {
+    return "";
+  }
+
+  const value = (metadata as Record<string, unknown>)[key];
+  return normalizeText(value);
+}
+
+function readMetadataStringArray(metadata: unknown, key: string, fallback: string[]) {
+  if (!metadata || typeof metadata !== "object") {
+    return fallback;
+  }
+
+  return normalizeStringArray((metadata as Record<string, unknown>)[key], fallback);
+}
+
+function normalizeText(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeStringArray(value: unknown, fallback: string[]) {
+  if (!Array.isArray(value)) {
+    return fallback;
+  }
+
+  const values = value.filter((item): item is string => typeof item === "string" && Boolean(item.trim())).map((item) => item.trim());
+  return values.length ? values : fallback;
+}
+
+function normalizeAssistantStyle(value: unknown): AppPreference["assistantAnswerStyle"] {
+  if (value === "direct" || value === "balanced" || value === "coach") {
+    return value;
+  }
+
+  if (value === "mentor") {
+    return "coach";
+  }
+
+  if (value === "strict") {
+    return "direct";
+  }
+
+  return DEFAULT_APP_PREFERENCE.assistantAnswerStyle;
+}
+
+function getContextLabel(value: string) {
+  const labels: Record<string, string> = {
+    escola: "rotina escolar",
+    faculdade: "rotina academica",
+    produtividade: "rotina produtiva",
+    projetos: "projetos e rotina",
+    rotina_pessoal: "rotina pessoal",
+    trabalho: "rotina de trabalho"
+  };
+
+  return labels[value] ?? DEFAULT_APP_PREFERENCE.profileLabel;
 }
 
 export function assignRoutineDataUser(data: RoutineData, userId: string): RoutineData {

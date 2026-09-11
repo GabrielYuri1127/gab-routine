@@ -45,12 +45,12 @@ export function DataTools() {
   }
 
   function restoreExamples() {
-    if (!window.confirm("Restaurar os dados de exemplo do Gavium neste navegador?")) {
+    if (!window.confirm("Restaurar o modelo inicial do Gavium neste navegador?")) {
       return;
     }
 
     resetData();
-    setMessage("Dados de exemplo restaurados.");
+    setMessage("Modelo inicial restaurado.");
   }
 
   return (
@@ -123,7 +123,7 @@ export function DataTools() {
           </label>
           <Button onClick={restoreExamples} variant="danger">
             <RotateCcw aria-hidden className="h-4 w-4" />
-            Restaurar
+            Restaurar modelo
           </Button>
         </div>
 

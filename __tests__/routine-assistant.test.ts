@@ -52,9 +52,14 @@ const coachPreference: AppPreference = {
   accentColor: "#0f9f7a",
   appName: "Gavium",
   assistantAnswerStyle: "coach",
+  birthDate: "",
+  contextDetails: "",
+  contexts: ["faculdade", "produtividade"],
+  courseOrArea: "Engenharia da Computacao",
   defaultClassesQuantity: 2,
   defaultSemester: "2026/1",
   defaultWorkloadHours: 60,
+  discoverySource: "portfolio",
   displayName: "Gabriel",
   enabledModules: {
     assistant: true,
@@ -64,8 +69,11 @@ const coachPreference: AppPreference = {
     tasks: true,
     tutorial: true
   },
+  gender: "",
   id: "preference-1",
+  primaryContext: "faculdade",
   profileLabel: "rotina pessoal",
+  productivityGoal: "Organizar estudos e tarefas.",
   userId: "local-user"
 };
 

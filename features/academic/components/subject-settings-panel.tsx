@@ -162,7 +162,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
           <span className="flex items-center gap-2">
             <Palette aria-hidden className="h-5 w-5 text-mint" />
-            <span className="text-lg font-semibold text-ink">Personalizar disciplina</span>
+            <span className="text-lg font-semibold text-ink">Personalizar area</span>
           </span>
           <Badge tone={saved ? "mint" : "neutral"}>{saved ? "salvo" : "regras"}</Badge>
         </summary>
@@ -170,10 +170,10 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
         <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
           <div className="grid gap-3 sm:grid-cols-2">
             <TextField label="Nome" onChange={setName} value={name} />
-            <TextField label="Codigo" onChange={setCode} value={code} />
-            <TextField label="Professor" onChange={setProfessor} value={professor} />
-            <TextField label="Sala" onChange={setRoom} value={room} />
-            <TextField label="Semestre" onChange={setSemester} value={semester} />
+            <TextField label="Codigo ou sigla" onChange={setCode} value={code} />
+            <TextField label="Responsavel" onChange={setProfessor} value={professor} />
+            <TextField label="Local ou link" onChange={setRoom} value={room} />
+            <TextField label="Periodo" onChange={setSemester} value={semester} />
             <label>
               <span className="text-sm font-medium text-slate-700">Status</span>
               <select
@@ -204,15 +204,15 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
             <textarea
               className="mt-1 min-h-24 w-full resize-y rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-ink"
               onChange={(event) => setObservations(event.target.value)}
-              placeholder="Links, criterios, combinados com professor, conteudos importantes"
+              placeholder="Links, criterios, combinados, conteudos importantes ou observacoes da rotina"
               value={observations}
             />
           </label>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            <NumberField label="Carga horaria" onChange={setWorkloadHours} value={workloadHours} />
-            <NumberField label="Total de aulas" onChange={setTotalExpectedClasses} value={totalExpectedClasses} />
-            <NumberField label="Aulas por encontro" onChange={setClassesPerMeeting} value={classesPerMeeting} />
+            <NumberField label="Carga total" onChange={setWorkloadHours} value={workloadHours} />
+            <NumberField label="Total de encontros" onChange={setTotalExpectedClasses} value={totalExpectedClasses} />
+            <NumberField label="Registros por encontro" onChange={setClassesPerMeeting} value={classesPerMeeting} />
             <NumberField label="Frequencia minima" onChange={setMinimumAttendance} value={minimumAttendance} />
             <NumberField label="Aprovacao direta" onChange={setDirectApprovalGrade} step="0.1" value={directApprovalGrade} />
             <NumberField label="Media final minima" onChange={setMinimumFinalGrade} step="0.1" value={minimumFinalGrade} />
@@ -234,7 +234,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
 
           <div className="rounded-lg border border-dashed border-line p-3">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold text-ink">Horarios de aula</h3>
+              <h3 className="text-sm font-semibold text-ink">Horarios fixos</h3>
               <Badge tone="neutral">{subject.schedules.length} encontros</Badge>
             </div>
 
@@ -275,7 +275,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
                     />
                   </label>
                   <label>
-                    <span className="text-xs font-medium text-slate-500">Aulas</span>
+                    <span className="text-xs font-medium text-slate-500">Registros</span>
                     <input
                       className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm outline-none focus:border-ink"
                       min={1}
@@ -325,7 +325,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
                 />
               </label>
               <label>
-                <span className="text-xs font-medium text-slate-500">Aulas</span>
+                <span className="text-xs font-medium text-slate-500">Registros</span>
                 <input
                   className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm outline-none focus:border-ink"
                   min={1}
@@ -342,7 +342,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
           </div>
 
           <div className="rounded-lg border border-dashed border-line p-3">
-            <h3 className="text-sm font-semibold text-ink">Acoes da disciplina</h3>
+            <h3 className="text-sm font-semibold text-ink">Acoes da area</h3>
             <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               <Button onClick={() => setSubjectStatus("paused")} variant="secondary">
                 <PauseCircle aria-hidden className="h-4 w-4" />
@@ -368,7 +368,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
               </Button>
               <Button onClick={deleteSubject} variant="danger">
                 <Trash2 aria-hidden className="h-4 w-4" />
-                Excluir disciplina
+                Excluir area
               </Button>
             </div>
           </div>

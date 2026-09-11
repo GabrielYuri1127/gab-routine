@@ -28,12 +28,20 @@ export interface AppPreference {
   accentColor: string;
   appName: string;
   assistantAnswerStyle: AssistantAnswerStyle;
+  birthDate: string;
+  contextDetails: string;
+  contexts: string[];
+  courseOrArea: string;
   defaultClassesQuantity: number;
   defaultSemester: string;
   defaultWorkloadHours: number;
+  discoverySource: string;
   displayName: string;
   enabledModules: EnabledModules;
+  gender: string;
+  primaryContext: string;
   profileLabel: string;
+  productivityGoal: string;
 }
 
 export interface User {

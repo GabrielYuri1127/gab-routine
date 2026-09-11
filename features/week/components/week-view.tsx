@@ -19,9 +19,9 @@ export function WeekView() {
     <div className="space-y-5">
       <header>
         <p className="text-sm font-medium text-mint">Semana</p>
-        <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Aulas e rotina</h1>
+        <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Semana planejada</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          Visao semanal com aulas, tarefas, lembretes e prazos academicos.
+          Visao semanal com horarios fixos, tarefas, lembretes, compromissos e prazos.
         </p>
       </header>
 
@@ -73,7 +73,7 @@ export function WeekView() {
                           {subject.name}
                         </span>
                         <span className="block truncate text-xs text-slate-500">
-                          {subject.room ?? "Sala nao informada"} - {schedule.classesQuantity} aulas
+                          {subject.room ?? "Local nao informado"} - {schedule.classesQuantity} registros
                         </span>
                       </span>
                     </Link>

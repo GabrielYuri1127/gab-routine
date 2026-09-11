@@ -62,7 +62,7 @@ export function RoutineDataProvider({ children }: { children: ReactNode }) {
 
       try {
         const snapshot = await fetchCloudRoutineData(user.id);
-        const nextData = snapshot?.data ?? createEmptyRoutineData(user.id, user.email);
+        const nextData = snapshot?.data ?? createEmptyRoutineData(user.id, user.email, user.user_metadata);
         const synced = snapshot ?? (await upsertCloudRoutineData(nextData, user.id));
 
         if (!active) {

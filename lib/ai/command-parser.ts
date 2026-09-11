@@ -142,7 +142,7 @@ function buildAbsenceProposal(input: CommandParserInput): RegisterAbsenceProposa
   const quantity = getQuantity(input.question, subject.rules.classesPerMeeting, ["falta", "faltas", "aula", "aulas"]);
   const warnings = [
     quantity > subject.rules.classesPerMeeting
-      ? `Quantidade maior que o padrao da disciplina (${subject.rules.classesPerMeeting} aulas por encontro).`
+      ? `Quantidade maior que o padrao da area (${subject.rules.classesPerMeeting} registros por encontro).`
       : "",
     parsedDate.date > input.today ? "A data parece estar no futuro; confira antes de registrar." : "",
     !parsedDate.explicit ? "Nao encontrei data na frase, entao vou usar hoje." : ""

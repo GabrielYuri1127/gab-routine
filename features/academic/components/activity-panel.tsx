@@ -134,7 +134,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-ink">Atividades</h2>
-          <p className="mt-1 text-sm text-slate-500">Crie, filtre e edite prazos sem sair da disciplina.</p>
+          <p className="mt-1 text-sm text-slate-500">Crie, filtre e edite prazos sem sair desta area.</p>
         </div>
         <div className="grid grid-cols-3 gap-2 sm:w-80">
           <Mini label="Pendentes" value={summary.pending.toString()} />
