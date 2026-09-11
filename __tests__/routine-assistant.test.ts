@@ -70,6 +70,23 @@ const coachPreference: AppPreference = {
 };
 
 describe("routine assistant", () => {
+  it("answers greetings as a conversation instead of a random summary", () => {
+    const response = buildRoutineAssistantResponse({
+      appPreference: coachPreference,
+      events: [],
+      question: "oii",
+      reminders: [],
+      subjects: [baseSubject],
+      tasks: [urgentTask],
+      today: "2026-09-08"
+    });
+
+    assert.equal(response.intent, "conversation");
+    assert.match(response.answer, /Oi, Gabriel/);
+    assert.match(response.answer, /criar tarefas|registrar faltas/);
+    assert.equal(response.quickLinks.some((link) => link.href === "/configuracoes"), true);
+  });
+
   it("answers with today's priority when asked what to do now", () => {
     const response = buildRoutineAssistantResponse({
       events: [],

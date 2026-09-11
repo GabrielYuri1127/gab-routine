@@ -12,6 +12,7 @@ import { buildRoutineAssistantResponse, type RoutineAssistantResponse } from "@/
 import { getTodayInAppTimeZone } from "@/lib/date";
 
 const promptSuggestions: Array<{ icon: LucideIcon; label: string }> = [
+  { icon: Bot, label: "Oi, o que voce consegue fazer?" },
   { icon: Sparkles, label: "O que devo fazer agora?" },
   { icon: ClipboardCheck, label: "O que falta para publicar o app?" },
   { icon: GraduationCap, label: "Como estao minhas faltas?" },
@@ -346,6 +347,7 @@ export function AssistantPanel() {
 const intentLabels: Record<RoutineAssistantResponse["intent"], string> = {
   attendance: "faltas",
   command: "acao",
+  conversation: "conversa",
   deadlines: "prazos",
   grades: "notas",
   now: "agora",

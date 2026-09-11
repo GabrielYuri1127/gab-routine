@@ -8,7 +8,7 @@ import type { AppPreference, Event, Reminder, Task } from "@/types/domain";
 import type { IntegrationStatusItem, IntegrationStatusReport } from "../integrations/status";
 import { buildAssistantCommandProposal, type AssistantCommandProposal } from "./command-parser";
 
-export type AssistantIntent = "now" | "attendance" | "command" | "grades" | "deadlines" | "readiness" | "summary";
+export type AssistantIntent = "now" | "attendance" | "command" | "grades" | "deadlines" | "readiness" | "summary" | "conversation";
 export type AssistantTone = "mint" | "sky" | "gold" | "coral" | "neutral";
 
 export interface RoutineAssistantInput {
@@ -92,7 +92,9 @@ export function buildRoutineAssistantResponse(input: RoutineAssistantInput): Rou
           ? buildDeadlineAnswer(safeInput)
           : intent === "now"
             ? buildNowAnswer(safeInput)
-            : buildSummaryAnswer(safeInput);
+            : intent === "conversation"
+              ? buildConversationAnswer(safeInput)
+              : buildSummaryAnswer(safeInput);
 
   return applyAnswerStyle(response, safeInput.appPreference?.assistantAnswerStyle ?? "balanced");
 }
@@ -101,6 +103,10 @@ function detectIntent(question: string): AssistantIntent {
   const normalized = normalizeText(question);
   const attendanceQuestion = isAttendanceQuestion(normalized);
   const readinessQuestion = isReadinessQuestion(normalized);
+
+  if (isConversationQuestion(normalized)) {
+    return "conversation";
+  }
 
   if (readinessQuestion && !attendanceQuestion) {
     return "readiness";
@@ -127,6 +133,33 @@ function detectIntent(question: string): AssistantIntent {
   }
 
   return "summary";
+}
+
+function isConversationQuestion(normalized: string) {
+  const compact = normalized.replace(/[^a-z0-9]+/g, " ").trim();
+  const tokens = compact.split(/\s+/).filter(Boolean);
+  const onlyGreeting = tokens.length <= 4 && tokens.some((token) => ["oi", "oii", "ola", "olaa", "hey", "eai"].includes(token));
+
+  return (
+    onlyGreeting ||
+    includesAny(compact, [
+      "bom dia",
+      "boa tarde",
+      "boa noite",
+      "tudo bem",
+      "como voce esta",
+      "como vc esta",
+      "o que voce faz",
+      "o que vc faz",
+      "como voce pode ajudar",
+      "como vc pode ajudar",
+      "me ajuda",
+      "ajuda",
+      "como usar a ia",
+      "como funciona a ia",
+      "o que consigo fazer"
+    ])
+  );
 }
 
 function buildCommandAnswer(commandProposal: AssistantCommandProposal): RoutineAssistantResponse {
@@ -218,6 +251,47 @@ function buildCommandLinks(commandProposal: AssistantCommandProposal): Assistant
     { href: `/faculdade/${commandProposal.subject.id}`, label: "Abrir disciplina" },
     { href: "/faculdade", label: "Faculdade" }
   ];
+}
+
+function buildConversationAnswer(input: RoutineAssistantInput): RoutineAssistantResponse {
+  const name = input.appPreference?.displayName?.trim();
+  const openTasks = input.tasks.filter((task) => task.status !== "done" && task.status !== "cancelled").length;
+  const pendingActivities = getPendingActivities(input.subjects).length;
+  const attendanceRisks = input.subjects.filter(
+    (subject) => calculateAttendanceSummary(subject.attendance, subject.rules, subject.name).alertLevel !== "normal"
+  ).length;
+  const greeting = name ? `Oi, ${name}.` : "Oi.";
+
+  return {
+    answer: `${greeting} Eu sou o assistente do Gavium. Posso conversar sobre sua rotina e tambem agir direto: criar tarefas, lembretes e compromissos, registrar faltas, notas e atividades, priorizar o que fazer agora e dizer o que ainda falta para o app ficar pronto. Se quiser, escreva natural, tipo "prova de redes amanha" ou "me lembre de levar o carregador as 8h".`,
+    dataGaps: buildGaps(input, {
+      noGrades: input.subjects.every((subject) => subject.grades.length === 0),
+      noSchedules: input.subjects.every((subject) => subject.schedules.length === 0),
+      noTasks: input.tasks.length === 0
+    }),
+    evidence: [
+      `${input.subjects.length} disciplina(s) cadastrada(s).`,
+      `${openTasks} tarefa(s) aberta(s).`,
+      `${pendingActivities} atividade(s) academica(s) pendente(s).`,
+      attendanceRisks ? `${attendanceRisks} materia(s) com alerta de faltas.` : "Nenhum alerta forte de faltas agora."
+    ],
+    highlights: [
+      { label: "Tarefas", tone: openTasks ? "gold" : "neutral", value: String(openTasks) },
+      { label: "Atividades", tone: pendingActivities ? "gold" : "neutral", value: String(pendingActivities) },
+      { label: "Faltas", tone: attendanceRisks ? "coral" : "mint", value: String(attendanceRisks) }
+    ],
+    intent: "conversation",
+    quickLinks: [
+      { href: "/tarefas", label: "Tarefas" },
+      { href: "/faculdade", label: "Faculdade" },
+      { href: "/configuracoes", label: "Configuracoes" }
+    ],
+    suggestions: [
+      "Perguntar: o que devo fazer agora?",
+      "Comandar: me lembre de estudar redes amanha as 19h",
+      "Perguntar: o que falta para o app ficar pronto?"
+    ]
+  };
 }
 
 function isAttendanceQuestion(normalized: string) {
