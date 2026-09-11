@@ -6,7 +6,12 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRoutineData } from "@/features/data/routine-store";
-import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import {
+  createSupabaseBrowserClient,
+  getRememberLoginPreference,
+  isSupabaseConfigured,
+  setRememberLoginPreference
+} from "@/lib/supabase/client";
 
 type AuthMode = "sign-in" | "sign-up";
 
@@ -59,9 +64,12 @@ export function LoginCard() {
   const [message, setMessage] = useState("");
   const [currentEmail, setCurrentEmail] = useState<string | null>(null);
   const [currentName, setCurrentName] = useState<string | null>(null);
+  const [rememberLogin, setRememberLogin] = useState(true);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    setRememberLogin(getRememberLoginPreference());
+
     if (!configured) {
       return;
     }
@@ -89,6 +97,7 @@ export function LoginCard() {
         return;
       }
 
+      setRememberLoginPreference(rememberLogin);
       const client = createSupabaseBrowserClient();
       const result =
         mode === "sign-in"
@@ -110,8 +119,8 @@ export function LoginCard() {
       setCurrentName(readProfileName(result.data.user?.user_metadata) ?? profile.fullName.trim() ?? null);
       setMessage(
         mode === "sign-up"
-          ? "Cadastro criado com perfil inicial salvo. Confira o email se o Supabase pedir confirmacao."
-          : "Login feito."
+          ? `Cadastro criado com perfil inicial salvo. ${getLoginPersistenceMessage(rememberLogin)}`
+          : `Login feito. ${getLoginPersistenceMessage(rememberLogin)}`
       );
       setPassword("");
     } finally {
@@ -160,6 +169,9 @@ export function LoginCard() {
           Esta conta tem um espaco proprio no Gavium. Disciplinas, faltas, notas, tarefas, lembretes e Classroom ficam separados dos outros usuarios.
         </p>
         <p className="mt-2 text-xs font-medium text-slate-500">{getSyncLabel(cloud.status)}</p>
+        <p className="mt-2 text-xs text-slate-500">
+          {getRememberLoginPreference() ? "Login salvo neste dispositivo." : "Sessao temporaria neste navegador."}
+        </p>
         {message ? <p className="mt-3 text-sm text-slate-600">{message}</p> : null}
         <Button className="mt-4 w-full" disabled={loading} onClick={signOut} variant="secondary">
           <LogOut aria-hidden className="h-4 w-4" />
@@ -194,6 +206,21 @@ export function LoginCard() {
           <input className={inputClass} minLength={6} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
         </label>
       </div>
+
+      <label className="mt-3 flex items-start gap-3 rounded-lg border border-line bg-slate-50 px-3 py-3 text-sm text-ink">
+        <input
+          checked={rememberLogin}
+          className="mt-1"
+          onChange={(event) => setRememberLogin(event.target.checked)}
+          type="checkbox"
+        />
+        <span>
+          <span className="block font-medium">Manter login neste dispositivo</span>
+          <span className="mt-1 block text-xs leading-5 text-slate-500">
+            Desmarque em computador compartilhado. Marcado, o Gavium abre sua conta automaticamente neste aparelho.
+          </span>
+        </span>
+      </label>
 
       {mode === "sign-up" ? <SignUpProfileFields onChange={setProfile} profile={profile} /> : null}
 
@@ -380,6 +407,10 @@ function readProfileName(metadata: unknown) {
 
   const fullName = (metadata as { full_name?: unknown }).full_name;
   return typeof fullName === "string" && fullName.trim() ? fullName.trim() : null;
+}
+
+function getLoginPersistenceMessage(rememberLogin: boolean) {
+  return rememberLogin ? "Login salvo neste dispositivo." : "Sessao temporaria neste navegador.";
 }
 
 function getSyncLabel(status: string) {
