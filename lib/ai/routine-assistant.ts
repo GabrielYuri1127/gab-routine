@@ -151,6 +151,8 @@ function isConversationQuestion(normalized: string) {
       "como vc esta",
       "o que voce faz",
       "o que vc faz",
+      "o que voce consegue fazer",
+      "o que vc consegue fazer",
       "como voce pode ajudar",
       "como vc pode ajudar",
       "me ajuda",
