@@ -24,10 +24,17 @@ type IntegrationEnv = Record<string, string | undefined>;
 export function buildIntegrationStatus(env: IntegrationEnv = process.env, requestUrl = "http://localhost:3000") {
   const aiProvider = (env.AI_PROVIDER ?? "none").toLowerCase();
   const aiReady = aiProvider === "openai" && Boolean(env.AI_API_KEY);
-  const classroomReady = isClassroomConfigured(env);
+  const classroomOAuthReady = isClassroomConfigured(env);
   const supabaseReady = Boolean(
     env.NEXT_PUBLIC_SUPABASE_URL && (env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   );
+  const supabaseServerReady = supabaseReady && Boolean(env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY);
+  const classroomReady = classroomOAuthReady && supabaseServerReady;
+  const classroomMissing = [
+    ...(!classroomOAuthReady ? ["GOOGLE_CLASSROOM_CLIENT_ID", "GOOGLE_CLASSROOM_CLIENT_SECRET"] : []),
+    ...(!supabaseReady ? ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"] : []),
+    ...(!supabaseServerReady ? ["SUPABASE_SECRET_KEY"] : [])
+  ];
   const vercelReady = Boolean(env.VERCEL || env.VERCEL_URL);
   const pushMissing = getPushMissingConfig(env);
   const pushReady = pushMissing.length === 0;
@@ -65,11 +72,17 @@ export function buildIntegrationStatus(env: IntegrationEnv = process.env, reques
       {
         category: "agora",
         detail: classroomReady
-          ? "Chaves do Classroom configuradas para conexao OAuth."
-          : `Redirect esperado: ${getClassroomRedirectUri(requestUrl, env)}`,
+          ? "OAuth e armazenamento seguro estao configurados para varias contas por usuario."
+          : classroomOAuthReady
+            ? "OAuth configurado; falta o servidor Supabase para manter e ressincronizar as contas."
+            : `Redirect esperado: ${getClassroomRedirectUri(requestUrl, env)}`,
         id: "classroom",
-        missing: classroomReady ? [] : ["GOOGLE_CLASSROOM_CLIENT_ID", "GOOGLE_CLASSROOM_CLIENT_SECRET"],
-        nextStep: classroomReady ? "Conectar uma ou mais contas em /configuracoes." : "Criar OAuth Client no Google Cloud e adicionar as variaveis.",
+        missing: classroomReady ? [] : [...new Set(classroomMissing)],
+        nextStep: classroomReady
+          ? "Conectar, sincronizar e testar mais de uma conta em /configuracoes."
+          : classroomOAuthReady
+            ? "Aplicar o schema e configurar a chave secreta do Supabase."
+            : "Criar OAuth Client no Google Cloud e adicionar as variaveis.",
         state: classroomReady ? "ready" : "needs_setup",
         title: "Google Classroom"
       },

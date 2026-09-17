@@ -12,6 +12,9 @@ describe("integration status", () => {
         AI_PROVIDER: "openai",
         GOOGLE_CLASSROOM_CLIENT_ID: "classroom-client",
         GOOGLE_CLASSROOM_CLIENT_SECRET: "classroom-secret",
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "public-key",
+        NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
+        SUPABASE_SECRET_KEY: "server-key",
         VERCEL: "1"
       },
       "https://gab-routine.vercel.app/configuracoes"
@@ -41,5 +44,17 @@ describe("integration status", () => {
     assert.equal(ai?.missing.includes("AI_API_KEY"), true);
     assert.equal(push?.state, "needs_setup");
     assert.equal(push?.missing.includes("CRON_SECRET"), true);
+  });
+
+  it("requires secure Supabase storage for persistent Classroom sync", () => {
+    const report = buildIntegrationStatus({
+      GOOGLE_CLASSROOM_CLIENT_ID: "classroom-client",
+      GOOGLE_CLASSROOM_CLIENT_SECRET: "classroom-secret"
+    });
+    const classroom = report.items.find((item) => item.id === "classroom");
+
+    assert.equal(classroom?.state, "needs_setup");
+    assert.equal(classroom?.missing.includes("SUPABASE_SECRET_KEY"), true);
+    assert.equal(JSON.stringify(report).includes("classroom-secret"), false);
   });
 });
