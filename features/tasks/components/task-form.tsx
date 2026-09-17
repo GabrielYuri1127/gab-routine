@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getTodayInAppTimeZone } from "@/lib/date";
 import { useRoutineData } from "@/features/data/routine-store";
-import type { Priority } from "@/types/domain";
+import type { Priority, TaskStatus } from "@/types/domain";
 
 const categories = ["Produtividade", "Rotina", "Estudo", "Trabalho", "Pessoal", "Faculdade"];
 
@@ -23,10 +23,13 @@ export function TaskForm({ afterCreateHref, compact = false }: TaskFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
+  const [status, setStatus] = useState<TaskStatus>("open");
   const [category, setCategory] = useState(categories[0]);
   const [date, setDate] = useState(today);
   const [time, setTime] = useState("");
   const [estimatedMinutes, setEstimatedMinutes] = useState("25");
+  const [dependencyNotes, setDependencyNotes] = useState("");
+  const [blockedReason, setBlockedReason] = useState("");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,16 +48,21 @@ export function TaskForm({ afterCreateHref, compact = false }: TaskFormProps) {
       dueDate: date || undefined,
       time: time || undefined,
       estimatedMinutes: Number.isFinite(minutes) && minutes > 0 ? minutes : undefined,
-      status: "open"
+      blockedReason: blockedReason.trim() || undefined,
+      dependencyNotes: dependencyNotes.trim() || undefined,
+      status
     });
 
     setTitle("");
     setDescription("");
     setPriority("medium");
+    setStatus("open");
     setCategory(categories[0]);
     setDate(today);
     setTime("");
     setEstimatedMinutes("25");
+    setDependencyNotes("");
+    setBlockedReason("");
 
     if (afterCreateHref) {
       router.push(afterCreateHref);
@@ -101,7 +109,7 @@ export function TaskForm({ afterCreateHref, compact = false }: TaskFormProps) {
           </label>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-4">
           <label className="block">
             <span className="text-xs font-semibold uppercase text-slate-500">Prioridade</span>
             <select
@@ -113,6 +121,19 @@ export function TaskForm({ afterCreateHref, compact = false }: TaskFormProps) {
               <option value="medium">Media</option>
               <option value="high">Alta</option>
               <option value="urgent">Urgente</option>
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-xs font-semibold uppercase text-slate-500">Status</span>
+            <select
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-mint"
+              onChange={(event) => setStatus(event.target.value as TaskStatus)}
+              value={status}
+            >
+              <option value="open">Aberta</option>
+              <option value="blocked">Bloqueada</option>
+              <option value="snoozed">Adiada</option>
+              <option value="done">Feita</option>
             </select>
           </label>
           <label className="block">
@@ -141,6 +162,30 @@ export function TaskForm({ afterCreateHref, compact = false }: TaskFormProps) {
             />
           </label>
         </div>
+
+        <details className="rounded-lg border border-dashed border-line p-3">
+          <summary className="cursor-pointer text-sm font-medium text-slate-600">Dependencias e bloqueios</summary>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="text-xs font-semibold uppercase text-slate-500">Depende de</span>
+              <input
+                className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-mint"
+                onChange={(event) => setDependencyNotes(event.target.value)}
+                placeholder="Ex.: professor liberar material"
+                value={dependencyNotes}
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase text-slate-500">Motivo do bloqueio</span>
+              <input
+                className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-mint"
+                onChange={(event) => setBlockedReason(event.target.value)}
+                placeholder="Ex.: aguardando resposta"
+                value={blockedReason}
+              />
+            </label>
+          </div>
+        </details>
 
         <label className="block">
           <span className="text-xs font-semibold uppercase text-slate-500">Descricao</span>

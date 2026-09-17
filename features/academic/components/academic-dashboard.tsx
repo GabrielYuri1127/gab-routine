@@ -85,6 +85,7 @@ export function AcademicDashboard() {
             status: "active",
             room: draft.room,
             rules: createUfamRules(),
+            resources: [],
             schedules: draft.firstSchedule
               ? [
                   {

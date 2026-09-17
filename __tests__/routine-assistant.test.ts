@@ -190,4 +190,33 @@ describe("routine assistant", () => {
     assert.equal(response.suggestions.every((suggestion) => suggestion.startsWith("Fazer: ")), true);
     assert.equal(response.highlights.some((highlight) => highlight.label === "Atrasados" && highlight.value === "2"), true);
   });
+
+  it("answers material and link questions from saved resources", () => {
+    const response = buildRoutineAssistantResponse({
+      events: [],
+      question: "cadê o link do classroom de redes?",
+      reminders: [],
+      subjects: [
+        {
+          ...baseSubject,
+          resources: [
+            {
+              createdAt: "2026-09-08T12:00:00.000Z",
+              id: "resource-1",
+              subjectId: "redes",
+              title: "Classroom - Redes",
+              type: "classroom",
+              url: "https://classroom.google.com/c/example"
+            }
+          ]
+        }
+      ],
+      tasks: [],
+      today: "2026-09-08"
+    });
+
+    assert.equal(response.intent, "resources");
+    assert.match(response.answer, /Classroom - Redes/);
+    assert.equal(response.quickLinks.some((link) => link.href === "/faculdade/redes"), true);
+  });
 });

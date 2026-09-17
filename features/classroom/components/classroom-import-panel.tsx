@@ -13,7 +13,7 @@ import {
   toDateKeyFromClassroomDueDate,
   toTimeFromClassroomDueTime
 } from "@/lib/classroom/google-classroom";
-import type { AcademicActivity } from "@/types/academic";
+import type { AcademicActivity, AcademicResource } from "@/types/academic";
 import type { ClassroomAccount, ClassroomCourse, ClassroomCourseWork, ClassroomImportPayload } from "@/types/classroom";
 
 const CLASSROOM_IMPORT_STORAGE_KEY = "gab-routine:classroom:last-import";
@@ -27,6 +27,7 @@ interface ClassroomStatus {
 
 interface ImportResult {
   activities: number;
+  resources: number;
   skipped: number;
   subjects: number;
 }
@@ -106,10 +107,11 @@ export function ClassroomImportPanel() {
   }
 
   function importAll() {
-    const total: ImportResult = { activities: 0, skipped: 0, subjects: 0 };
+    const total: ImportResult = { activities: 0, resources: 0, skipped: 0, subjects: 0 };
     const mergedData = imports.reduce((currentData, item) => {
       const result = mergeClassroomPayload(currentData, item);
       total.activities += result.summary.activities;
+      total.resources += result.summary.resources;
       total.skipped += result.summary.skipped;
       total.subjects += result.summary.subjects;
       return result.data;
@@ -304,7 +306,7 @@ function isImportPayload(value: ClassroomImportPayload) {
 
 function mergeClassroomPayload(data: RoutineData, payload: ClassroomImportPayload) {
   const nextSubjects = [...data.subjects];
-  const summary: ImportResult = { activities: 0, skipped: 0, subjects: 0 };
+  const summary: ImportResult = { activities: 0, resources: 0, skipped: 0, subjects: 0 };
 
   payload.courses.forEach((item, index) => {
     const marker = getCourseMarker(item.course, payload.account);
@@ -318,16 +320,29 @@ function mergeClassroomPayload(data: RoutineData, payload: ClassroomImportPayloa
     const existingSubject = existingIndex >= 0 ? nextSubjects[existingIndex] : undefined;
     const subjectId = existingSubject?.id ?? createId("classroom-subject");
     const activities = [...(existingSubject?.activities ?? [])];
+    const resources = [...(existingSubject?.resources ?? [])];
+    const courseResource = buildResourceFromCourse(item.course, subjectId, payload.account, resources);
+
+    if (courseResource) {
+      resources.unshift(courseResource);
+      summary.resources += 1;
+    }
 
     item.courseWork.forEach((work) => {
       const activity = buildActivityFromCourseWork(work, subjectId, payload.account, activities);
-      if (!activity) {
-        summary.skipped += 1;
+      if (activity) {
+        activities.unshift(activity);
+        summary.activities += 1;
         return;
       }
 
-      activities.unshift(activity);
-      summary.activities += 1;
+      const resource = buildResourceFromCourseWork(work, subjectId, payload.account, resources);
+      if (resource) {
+        resources.unshift(resource);
+        summary.resources += 1;
+      } else {
+        summary.skipped += 1;
+      }
     });
 
     if (existingSubject) {
@@ -336,7 +351,8 @@ function mergeClassroomPayload(data: RoutineData, payload: ClassroomImportPayloa
         code: existingSubject.code ?? item.course.section,
         observations: mergeNotes(existingSubject.observations, buildCourseNotes(item.course, payload.account)),
         room: existingSubject.room ?? item.course.room,
-        activities
+        activities,
+        resources
       };
       return;
     }
@@ -355,6 +371,7 @@ function mergeClassroomPayload(data: RoutineData, payload: ClassroomImportPayloa
       attendance: [],
       grades: [],
       activities,
+      resources,
       observations: buildCourseNotes(item.course, payload.account)
     });
     summary.subjects += 1;
@@ -368,6 +385,32 @@ function mergeClassroomPayload(data: RoutineData, payload: ClassroomImportPayloa
     },
     summary
   };
+}
+
+function buildResourceFromCourse(
+  course: ClassroomCourse,
+  subjectId: string,
+  account: ClassroomAccount | undefined,
+  currentResources: AcademicResource[]
+) {
+  if (!course.alternateLink) {
+    return undefined;
+  }
+
+  const marker = getCourseMarker(course, account);
+  if (hasResourceMarker(currentResources, marker) || currentResources.some((resource) => resource.url === course.alternateLink)) {
+    return undefined;
+  }
+
+  return {
+    createdAt: new Date().toISOString(),
+    id: createId("classroom-resource"),
+    notes: buildCourseNotes(course, account),
+    subjectId,
+    title: `Classroom - ${course.name}`,
+    type: "classroom",
+    url: course.alternateLink
+  } satisfies AcademicResource;
 }
 
 function buildActivityFromCourseWork(
@@ -406,6 +449,35 @@ function buildActivityFromCourseWork(
     description: work.description,
     notes: [marker, work.alternateLink ? `Link: ${work.alternateLink}` : ""].filter(Boolean).join("\n")
   } satisfies AcademicActivity;
+}
+
+function buildResourceFromCourseWork(
+  work: ClassroomCourseWork,
+  subjectId: string,
+  account: ClassroomAccount | undefined,
+  currentResources: AcademicResource[]
+) {
+  if (!work.alternateLink && !work.description) {
+    return undefined;
+  }
+
+  const marker = getCourseWorkMarker(work, account);
+  const legacyMarker = `Google Classroom: ${work.courseId}/${work.id}`;
+  const duplicated = hasResourceMarker(currentResources, marker) || hasResourceMarker(currentResources, legacyMarker);
+
+  if (duplicated) {
+    return undefined;
+  }
+
+  return {
+    createdAt: new Date().toISOString(),
+    id: createId("classroom-resource"),
+    notes: [marker, work.description].filter(Boolean).join("\n"),
+    subjectId,
+    title: work.title,
+    type: work.workType === "MATERIAL" ? "document" : "classroom",
+    url: work.alternateLink
+  } satisfies AcademicResource;
 }
 
 function buildCourseNotes(course: ClassroomCourse, account?: ClassroomAccount) {
@@ -456,7 +528,7 @@ function getImportTotals(payload: ClassroomImportPayload) {
 }
 
 function formatImportMessage(summary: ImportResult, accountLabel: string) {
-  return `Importei ${summary.subjects} disciplina(s) e ${summary.activities} atividade(s) de ${accountLabel}. ${summary.skipped} item(ns) ja existiam ou nao tinham data.`;
+  return `Importei ${summary.subjects} disciplina(s), ${summary.activities} atividade(s) e ${summary.resources} material(is) de ${accountLabel}. ${summary.skipped} item(ns) ja existiam ou nao tinham dado util.`;
 }
 
 function mergeNotes(current: string | undefined, next: string) {
@@ -478,6 +550,10 @@ function normalizeName(value: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .toLowerCase();
+}
+
+function hasResourceMarker(resources: AcademicResource[], marker: string) {
+  return resources.some((resource) => resource.notes?.includes(marker));
 }
 
 function Mini({ label, value }: { label: string; value: string }) {

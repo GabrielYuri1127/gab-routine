@@ -33,6 +33,8 @@ export type ActivityStatus =
   | "corrected"
   | "late";
 
+export type ResourceType = "link" | "document" | "video" | "note" | "classroom" | "other";
+
 export interface SubjectSchedule {
   id: string;
   subjectId: string;
@@ -87,6 +89,16 @@ export interface AcademicActivity {
   notes?: string;
 }
 
+export interface AcademicResource {
+  id: string;
+  subjectId: string;
+  title: string;
+  type: ResourceType;
+  url?: string;
+  notes?: string;
+  createdAt: string;
+}
+
 export interface Subject {
   id: string;
   name: string;
@@ -102,5 +114,6 @@ export interface Subject {
   attendance: AttendanceRecord[];
   grades: Grade[];
   activities: AcademicActivity[];
+  resources?: AcademicResource[];
   observations?: string;
 }

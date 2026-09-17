@@ -1,7 +1,7 @@
 import { addDays, getTodayInAppTimeZone, parseDateKey, toDateKey } from "../date";
 import type { Priority, Task } from "@/types/domain";
 
-export type TaskUrgency = "done" | "overdue" | "today" | "snoozed" | "upcoming" | "later";
+export type TaskUrgency = "blocked" | "done" | "overdue" | "today" | "snoozed" | "upcoming" | "later";
 
 const priorityWeight: Record<Priority, number> = {
   urgent: 40,
@@ -15,6 +15,7 @@ const urgencyWeight: Record<TaskUrgency, number> = {
   today: 500,
   snoozed: 350,
   upcoming: 250,
+  blocked: 150,
   later: 100,
   done: 0
 };
@@ -30,6 +31,10 @@ export function getTaskDate(task: Task) {
 export function getTaskUrgency(task: Task, today = getTodayInAppTimeZone()): TaskUrgency {
   if (task.status === "done") {
     return "done";
+  }
+
+  if (task.status === "blocked") {
+    return "blocked";
   }
 
   const taskDate = getTaskDate(task);

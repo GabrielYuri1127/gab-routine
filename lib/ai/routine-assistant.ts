@@ -8,7 +8,16 @@ import type { AppPreference, Event, Reminder, Task } from "@/types/domain";
 import type { IntegrationStatusItem, IntegrationStatusReport } from "../integrations/status";
 import { buildAssistantCommandProposal, type AssistantCommandProposal } from "./command-parser";
 
-export type AssistantIntent = "now" | "attendance" | "command" | "grades" | "deadlines" | "readiness" | "summary" | "conversation";
+export type AssistantIntent =
+  | "now"
+  | "attendance"
+  | "command"
+  | "grades"
+  | "resources"
+  | "deadlines"
+  | "readiness"
+  | "summary"
+  | "conversation";
 export type AssistantTone = "mint" | "sky" | "gold" | "coral" | "neutral";
 
 export interface RoutineAssistantInput {
@@ -88,13 +97,15 @@ export function buildRoutineAssistantResponse(input: RoutineAssistantInput): Rou
       ? buildAttendanceAnswer(safeInput)
       : intent === "grades"
         ? buildGradeAnswer(safeInput)
-        : intent === "deadlines"
-          ? buildDeadlineAnswer(safeInput)
-          : intent === "now"
-            ? buildNowAnswer(safeInput)
-            : intent === "conversation"
-              ? buildConversationAnswer(safeInput)
-              : buildSummaryAnswer(safeInput);
+        : intent === "resources"
+          ? buildResourceAnswer(safeInput)
+          : intent === "deadlines"
+            ? buildDeadlineAnswer(safeInput)
+            : intent === "now"
+              ? buildNowAnswer(safeInput)
+              : intent === "conversation"
+                ? buildConversationAnswer(safeInput)
+                : buildSummaryAnswer(safeInput);
 
   return applyAnswerStyle(response, safeInput.appPreference?.assistantAnswerStyle ?? "balanced");
 }
@@ -103,9 +114,14 @@ function detectIntent(question: string): AssistantIntent {
   const normalized = normalizeText(question);
   const attendanceQuestion = isAttendanceQuestion(normalized);
   const readinessQuestion = isReadinessQuestion(normalized);
+  const resourceQuestion = isResourceQuestion(normalized);
 
   if (isConversationQuestion(normalized)) {
     return "conversation";
+  }
+
+  if (resourceQuestion) {
+    return "resources";
   }
 
   if (readinessQuestion && !attendanceQuestion) {
@@ -259,13 +275,14 @@ function buildConversationAnswer(input: RoutineAssistantInput): RoutineAssistant
   const name = input.appPreference?.displayName?.trim();
   const openTasks = input.tasks.filter((task) => task.status !== "done" && task.status !== "cancelled").length;
   const pendingActivities = getPendingActivities(input.subjects).length;
+  const resources = input.subjects.reduce((sum, subject) => sum + (subject.resources?.length ?? 0), 0);
   const attendanceRisks = input.subjects.filter(
     (subject) => calculateAttendanceSummary(subject.attendance, subject.rules, subject.name).alertLevel !== "normal"
   ).length;
   const greeting = name ? `Oi, ${name}.` : "Oi.";
 
   return {
-    answer: `${greeting} Eu sou o assistente do Gavium. Posso conversar sobre sua rotina e tambem agir direto: criar tarefas, lembretes e compromissos, registrar faltas, notas e atividades quando voce usa estudos, priorizar o que fazer agora e dizer o que ainda falta para o app ficar pronto. Se quiser, escreva natural, tipo "prova de redes amanha" ou "me lembre de levar o carregador as 8h".`,
+    answer: `${greeting} Eu sou o assistente do Gavium. Posso conversar sobre sua rotina e tambem agir direto: criar tarefas, lembretes e compromissos, registrar faltas, notas e atividades quando voce usa estudos, encontrar materiais salvos, priorizar o que fazer agora e dizer o que ainda falta para o app ficar pronto. Se quiser, escreva natural, tipo "prova de redes amanha" ou "me lembre de levar o carregador as 8h".`,
     dataGaps: buildGaps(input, {
       noGrades: input.subjects.every((subject) => subject.grades.length === 0),
       noSchedules: input.subjects.every((subject) => subject.schedules.length === 0),
@@ -275,6 +292,7 @@ function buildConversationAnswer(input: RoutineAssistantInput): RoutineAssistant
       `${input.subjects.length} area(s) cadastrada(s).`,
       `${openTasks} tarefa(s) aberta(s).`,
       `${pendingActivities} atividade(s) pendente(s).`,
+      `${resources} material(is) salvo(s).`,
       attendanceRisks ? `${attendanceRisks} area(s) com alerta de faltas.` : "Nenhum alerta forte de faltas agora."
     ],
     highlights: [
@@ -307,6 +325,22 @@ function isAttendanceQuestion(normalized: string) {
     "posso faltar",
     "quantas aulas posso faltar",
     "limite de falta"
+  ]);
+}
+
+function isResourceQuestion(normalized: string) {
+  return includesAny(normalized, [
+    "material",
+    "materiais",
+    "link",
+    "links",
+    "slide",
+    "slides",
+    "apostila",
+    "pdf",
+    "drive",
+    "video",
+    "aula gravada"
   ]);
 }
 
@@ -506,6 +540,58 @@ function buildGradeAnswer(input: RoutineAssistantInput): RoutineAssistantRespons
       `Simular a proxima nota em ${lowest.subject.name}`,
       "Conferir pesos antes de confiar na media",
       "Priorizar materias abaixo da aprovacao direta"
+    ]
+  };
+}
+
+function buildResourceAnswer(input: RoutineAssistantInput): RoutineAssistantResponse {
+  const targetSubjects = getTargetSubjects(input);
+  const resourceGroups = targetSubjects
+    .map((subject) => ({
+      resources: subject.resources ?? [],
+      subject
+    }))
+    .filter((group) => group.resources.length > 0);
+  const first = resourceGroups[0];
+
+  if (!first) {
+    const subject = targetSubjects[0];
+    return emptyAnswer(
+      "resources",
+      subject
+        ? `Ainda nao ha materiais salvos em ${subject.name}. Abra a area e adicione Classroom, PDFs, videos, Drive ou anotacoes importantes.`
+        : "Ainda nao ha materiais salvos. Cadastre uma area e depois salve os links importantes nela.",
+      subject ? `/faculdade/${subject.id}` : "/faculdade",
+      subject ? "Abrir area" : "Estudos",
+      ["Materiais precisam ser cadastrados na area para a IA conseguir apontar links e documentos."]
+    );
+  }
+
+  const total = resourceGroups.reduce((sum, group) => sum + group.resources.length, 0);
+  const examples = first.resources.slice(0, 3);
+
+  return {
+    answer: `Encontrei ${total} material(is) salvo(s). Em ${first.subject.name}, os principais sao: ${examples
+      .map((resource) => resource.title)
+      .join(", ")}.`,
+    dataGaps: targetSubjects.length !== input.subjects.length ? [] : ["Pergunte por uma area especifica para eu filtrar melhor os materiais."],
+    evidence: resourceGroups
+      .slice(0, 4)
+      .map(({ subject, resources }) => `${subject.name}: ${resources.length} material(is), incluindo ${resources[0]?.title}.`),
+    highlights: resourceGroups.slice(0, 3).map(({ subject, resources }) => ({
+      label: subject.name,
+      tone: resources.some((resource) => resource.type === "classroom") ? "mint" : "sky",
+      value: String(resources.length)
+    })),
+    intent: "resources",
+    quickLinks: [
+      { href: `/faculdade/${first.subject.id}`, label: "Abrir materiais" },
+      { href: "/faculdade", label: "Estudos" }
+    ],
+    suggestions: [
+      `Abrir ${first.subject.name} e conferir Materiais`,
+      "Salvar links do Classroom ou Drive nas areas mais usadas",
+      "Adicionar notas curtas explicando para que serve cada material"
     ]
   };
 }

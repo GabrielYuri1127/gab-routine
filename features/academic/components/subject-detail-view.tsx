@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ActivityPanel } from "@/features/academic/components/activity-panel";
 import { AttendanceQuickActions } from "@/features/academic/components/attendance-quick-actions";
 import { GradePanel } from "@/features/academic/components/grade-panel";
+import { ResourcePanel } from "@/features/academic/components/resource-panel";
 import { SubjectSettingsPanel } from "@/features/academic/components/subject-settings-panel";
 import { getSubjectScheduleLabel } from "@/features/academic/data/mock";
 import { useRoutineData } from "@/features/data/routine-store";
@@ -81,11 +82,12 @@ export function SubjectDetailView({ subjectId }: { subjectId: string }) {
             <TopMetric label="Faltas" value={`${attendance.usedAbsences}/${attendance.absenceLimit}`} />
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
             <QuickLink href="#editar" icon={Edit3} label="Editar" />
             <QuickLink href="#faltas" icon={ClipboardList} label="Faltas" />
             <QuickLink href="#notas" icon={NotebookTabs} label="Notas" />
             <QuickLink href="#atividades" icon={CalendarClock} label="Atividades" />
+            <QuickLink href="#materiais" icon={NotebookTabs} label="Materiais" />
           </div>
         </div>
       </header>
@@ -94,6 +96,7 @@ export function SubjectDetailView({ subjectId }: { subjectId: string }) {
       <AttendanceQuickActions subject={subject} />
       <GradePanel subject={subject} />
       <ActivityPanel subject={subject} />
+      <ResourcePanel subject={subject} />
     </div>
   );
 }

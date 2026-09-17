@@ -16,6 +16,7 @@ interface TaskListProps {
 }
 
 const urgencyLabel = {
+  blocked: "bloqueada",
   done: "feito",
   overdue: "atrasada",
   today: "hoje",
@@ -25,6 +26,7 @@ const urgencyLabel = {
 } as const;
 
 const urgencyTone = {
+  blocked: "gold",
   done: "neutral",
   overdue: "coral",
   today: "gold",
@@ -41,6 +43,7 @@ const priorityLabels: Record<Priority, string> = {
 };
 
 const statusLabels: Record<TaskStatus, string> = {
+  blocked: "Bloqueada",
   open: "Aberta",
   done: "Feita",
   snoozed: "Adiada",
@@ -90,6 +93,11 @@ export function TaskList({ tasks, limit, emptyLabel = "Nenhuma tarefa nesse filt
                   {task.time ? <span>{task.time}</span> : null}
                   {task.estimatedMinutes ? <span>{task.estimatedMinutes} min</span> : null}
                 </div>
+                {task.status === "blocked" && (task.blockedReason || task.dependencyNotes) ? (
+                  <p className="mt-2 line-clamp-2 text-xs leading-5 text-amber-700">
+                    {task.blockedReason ? `Bloqueio: ${task.blockedReason}` : `Depende de: ${task.dependencyNotes}`}
+                  </p>
+                ) : null}
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
@@ -186,6 +194,27 @@ export function TaskList({ tasks, limit, emptyLabel = "Nenhuma tarefa nesse filt
                     step={5}
                     type="number"
                     value={task.estimatedMinutes ?? ""}
+                  />
+                </label>
+              </div>
+
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <label className="text-xs text-slate-500">
+                  Depende de
+                  <input
+                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                    onChange={(event) => updateTask(task.id, { dependencyNotes: event.target.value || undefined })}
+                    placeholder="Ex.: professor liberar material, cliente responder"
+                    value={task.dependencyNotes ?? ""}
+                  />
+                </label>
+                <label className="text-xs text-slate-500">
+                  Motivo do bloqueio
+                  <input
+                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                    onChange={(event) => updateTask(task.id, { blockedReason: event.target.value || undefined })}
+                    placeholder="Ex.: aguardando Classroom"
+                    value={task.blockedReason ?? ""}
                   />
                 </label>
               </div>

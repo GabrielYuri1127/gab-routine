@@ -5,7 +5,7 @@ export interface AssistantContext {
   events: Event[];
   reminders: Reminder[];
   today: string;
-  subjects: Pick<Subject, "id" | "name" | "schedules" | "activities" | "grades" | "attendance">[];
+  subjects: Pick<Subject, "id" | "name" | "schedules" | "activities" | "grades" | "attendance" | "resources">[];
   tasks: Task[];
 }
 
@@ -26,7 +26,8 @@ export function buildAssistantContext(
       schedules: subject.schedules,
       activities: subject.activities,
       grades: subject.grades,
-      attendance: subject.attendance
+      attendance: subject.attendance,
+      resources: subject.resources ?? []
     })),
     tasks
   };

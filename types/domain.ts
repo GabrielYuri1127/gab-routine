@@ -8,7 +8,7 @@ import type {
 } from "@/types/academic";
 
 export type Priority = "low" | "medium" | "high" | "urgent";
-export type TaskStatus = "open" | "done" | "snoozed" | "cancelled";
+export type TaskStatus = "open" | "blocked" | "done" | "snoozed" | "cancelled";
 export type ProjectStatus = "idea" | "planning" | "in_progress" | "paused" | "completed";
 export type HabitFrequency = "daily" | "specific_days" | "times_per_week";
 export type AssistantAnswerStyle = "direct" | "balanced" | "coach";
@@ -69,6 +69,8 @@ export interface Task {
   time?: string;
   dueDate?: string;
   estimatedMinutes?: number;
+  blockedReason?: string;
+  dependencyNotes?: string;
   completedAt?: string;
   snoozedUntil?: string;
   status: TaskStatus;

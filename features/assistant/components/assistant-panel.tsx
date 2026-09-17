@@ -350,6 +350,7 @@ const intentLabels: Record<RoutineAssistantResponse["intent"], string> = {
   conversation: "conversa",
   deadlines: "prazos",
   grades: "notas",
+  resources: "materiais",
   now: "agora",
   readiness: "status",
   summary: "resumo"
