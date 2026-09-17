@@ -26,6 +26,7 @@ O apoio de ChatGPT/Codex foi usado para transformar a ideia do Gavium em um apli
 - Persistencia local com `localStorage`.
 - PWA com manifest, service worker e shortcuts.
 - Preparacao de Supabase.
+- Cadastro, login, sessao opcional, confirmacao por email e recuperacao/troca de senha.
 - Integracao Google Classroom por OAuth, com tokens criptografados apenas no servidor.
 - Suporte a varias contas institucionais, sincronizacao posterior e desconexao individual.
 - Assistente hibrido com regras locais, contexto da rotina e memoria curta de conversa.

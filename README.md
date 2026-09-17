@@ -177,7 +177,7 @@ O material apresentavel fica em `portfolio/`, com case study, ferramentas do pro
 - Suporte por WhatsApp em `/configuracoes`, `/mais` e `/tutorial`.
 - Marca visual propria com icone PWA, icone maskable e logo horizontal em SVG.
 - Perfil personalizavel com nome do app, usuario, cor, padroes academicos, modulos e estilo da IA.
-- `/login` com Supabase Auth real, cadastro e dados separados por usuario quando configurado.
+- `/login` com Supabase Auth real, cadastro, confirmacao de email, recuperacao/troca de senha e dados separados por usuario.
 - Notificacoes push no Android com inscricao de dispositivo, teste manual e dispatch seguro de lembretes.
 - Persistencia local via `localStorage`.
 - Calculos academicos reutilizaveis em `lib/academic-rules`.

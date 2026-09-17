@@ -30,6 +30,7 @@ O Gavium ja tem uma versao funcional para uso pessoal, testes com outras pessoas
 - Notificacoes push no Android com inscricao de aparelho, teste manual e dispatch seguro.
 - Google Classroom com OAuth somente leitura, multiplas contas persistentes, sincronizacao manual e desconexao individual.
 - Login Supabase com dados separados por usuario quando configurado.
+- Cadastro com perfil inicial, sessao opcional por dispositivo e recuperacao/troca de senha.
 - Deploy via GitHub e Vercel.
 
 ## Em Andamento Ou Preparado

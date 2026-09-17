@@ -13,6 +13,7 @@ Use este checklist antes de compartilhar o Gavium com amigos, familiares ou no p
 - Testar o botao de suporte pelo WhatsApp.
 - Testar a tela `/assistente`.
 - Testar cadastro de uma disciplina nova.
+- Testar confirmacao de email, recuperacao e troca de senha.
 - Testar registro de falta em data passada.
 - Testar criacao de tarefa e lembrete.
 - Testar ativacao de notificacoes no Android quando push estiver configurado.
@@ -24,6 +25,13 @@ Use este checklist antes de compartilhar o Gavium com amigos, familiares ou no p
 - Conferir se a URL de producao abre no celular.
 - Conferir se o manifesto PWA aparece corretamente.
 - Instalar no Android pelo navegador.
+
+## Contas E Email
+
+- Configurar `Site URL` e a URL de recuperacao no Supabase Auth.
+- Configurar SMTP proprio antes de convidar pessoas fora da equipe do Supabase.
+- Criar conta com um email externo, confirmar, sair e entrar novamente.
+- Recuperar a senha pelo link recebido.
 
 ## Google Classroom
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Lock, LogIn, LogOut, UserPlus } from "lucide-react";
+import { KeyRound, Lock, LogIn, LogOut, MailCheck, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ import {
   setRememberLoginPreference
 } from "@/lib/supabase/client";
 
-type AuthMode = "sign-in" | "sign-up";
+type AuthMode = "forgot" | "recovery" | "sign-in" | "sign-up";
 
 interface SignUpProfile {
   assistantStyle: string;
@@ -58,8 +58,11 @@ export function LoginCard() {
   const { cloud } = useRoutineData();
   const configured = isSupabaseConfigured();
   const [mode, setMode] = useState<AuthMode>("sign-in");
+  const [currentPassword, setCurrentPassword] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [passwordRecoverySession, setPasswordRecoverySession] = useState(false);
   const [profile, setProfile] = useState<SignUpProfile>(defaultSignUpProfile);
   const [message, setMessage] = useState("");
   const [currentEmail, setCurrentEmail] = useState<string | null>(null);
@@ -74,8 +77,15 @@ export function LoginCard() {
       return;
     }
 
-    createSupabaseBrowserClient()
-      .auth.getUser()
+    const client = createSupabaseBrowserClient();
+    const recoveryRequested = new URLSearchParams(window.location.search).get("recovery") === "1";
+    if (recoveryRequested) {
+      setPasswordRecoverySession(true);
+      setMode("recovery");
+    }
+
+    client.auth
+      .getUser()
       .then(({ data }) => {
         setCurrentEmail(data.user?.email ?? null);
         setCurrentName(readProfileName(data.user?.user_metadata));
@@ -84,6 +94,18 @@ export function LoginCard() {
         setCurrentEmail(null);
         setCurrentName(null);
       });
+
+    const {
+      data: { subscription }
+    } = client.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setCurrentEmail(session?.user.email ?? null);
+        setPasswordRecoverySession(true);
+        setMode("recovery");
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [configured]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -92,13 +114,56 @@ export function LoginCard() {
     setMessage("");
 
     try {
+      const client = createSupabaseBrowserClient();
+
+      if (mode === "forgot") {
+        const result = await client.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: `${window.location.origin}/login?recovery=1`
+        });
+        setMessage(
+          result.error
+            ? formatAuthError(result.error.message)
+            : "Confira seu email. Enviamos um link seguro para criar uma nova senha."
+        );
+        return;
+      }
+
+      if (mode === "recovery") {
+        if (!passwordRecoverySession && !currentPassword) {
+          setMessage("Informe a senha atual antes de escolher a nova.");
+          return;
+        }
+
+        if (password !== passwordConfirmation) {
+          setMessage("As duas senhas precisam ser iguais.");
+          return;
+        }
+
+        const result = await client.auth.updateUser(
+          passwordRecoverySession ? { password } : { current_password: currentPassword, password }
+        );
+        if (result.error) {
+          setMessage(formatAuthError(result.error.message));
+          return;
+        }
+
+        setCurrentPassword("");
+        setPassword("");
+        setPasswordConfirmation("");
+        setPasswordRecoverySession(false);
+        setCurrentEmail(result.data.user.email ?? currentEmail);
+        setMode("sign-in");
+        window.history.replaceState({}, "", "/login");
+        setMessage("Senha atualizada. Sua conta continua conectada.");
+        return;
+      }
+
       if (mode === "sign-up" && profile.contexts.length === 0) {
         setMessage("Escolha pelo menos uma area de uso do Gavium.");
         return;
       }
 
       setRememberLoginPreference(rememberLogin);
-      const client = createSupabaseBrowserClient();
       const result =
         mode === "sign-in"
           ? await client.auth.signInWithPassword({ email, password })
@@ -111,7 +176,16 @@ export function LoginCard() {
             });
 
       if (result.error) {
-        setMessage(result.error.message);
+        setMessage(formatAuthError(result.error.message));
+        return;
+      }
+
+      if (mode === "sign-up" && !result.data.session) {
+        setCurrentEmail(null);
+        setCurrentName(null);
+        setMode("sign-in");
+        setPassword("");
+        setMessage("Cadastro criado. Confirme o email recebido e depois entre no Gavium.");
         return;
       }
 
@@ -156,7 +230,7 @@ export function LoginCard() {
     );
   }
 
-  if (currentEmail) {
+  if (currentEmail && mode !== "recovery") {
     return (
       <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-3">
@@ -173,10 +247,24 @@ export function LoginCard() {
           {getRememberLoginPreference() ? "Login salvo neste dispositivo." : "Sessao temporaria neste navegador."}
         </p>
         {message ? <p className="mt-3 text-sm text-slate-600">{message}</p> : null}
-        <Button className="mt-4 w-full" disabled={loading} onClick={signOut} variant="secondary">
-          <LogOut aria-hidden className="h-4 w-4" />
-          Sair
-        </Button>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          <Button
+            disabled={loading}
+            onClick={() => {
+              setPasswordRecoverySession(false);
+              setMode("recovery");
+              setMessage("");
+            }}
+            variant="secondary"
+          >
+            <KeyRound aria-hidden className="h-4 w-4" />
+            Trocar senha
+          </Button>
+          <Button disabled={loading} onClick={signOut} variant="secondary">
+            <LogOut aria-hidden className="h-4 w-4" />
+            Sair
+          </Button>
+        </div>
       </div>
     );
   }
@@ -184,30 +272,70 @@ export function LoginCard() {
   return (
     <form className="rounded-lg border border-line bg-white p-4 shadow-sm sm:p-5" onSubmit={handleSubmit}>
       <div className="mb-3 flex items-center justify-between gap-3">
-        {mode === "sign-in" ? (
-          <LogIn aria-hidden className="h-5 w-5 text-mint" />
-        ) : (
-          <UserPlus aria-hidden className="h-5 w-5 text-mint" />
-        )}
+        {mode === "sign-in" ? <LogIn aria-hidden className="h-5 w-5 text-mint" /> : null}
+        {mode === "sign-up" ? <UserPlus aria-hidden className="h-5 w-5 text-mint" /> : null}
+        {mode === "forgot" ? <MailCheck aria-hidden className="h-5 w-5 text-mint" /> : null}
+        {mode === "recovery" ? <KeyRound aria-hidden className="h-5 w-5 text-mint" /> : null}
         <Badge tone="mint">Supabase</Badge>
       </div>
-      <h2 className="text-lg font-semibold text-ink">{mode === "sign-in" ? "Entrar" : "Criar conta"}</h2>
+      <h2 className="text-lg font-semibold text-ink">{getAuthTitle(mode)}</h2>
       <p className="mt-2 text-sm leading-6 text-slate-600">
-        Cada pessoa deve usar o proprio email. Assim os dados ficam isolados e sincronizados pela conta dela.
+        {getAuthDescription(mode)}
       </p>
 
       <div className="mt-4 space-y-3">
-        <label className="block">
-          <span className="text-xs font-semibold uppercase text-slate-500">Email</span>
-          <input className={inputClass} onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
-        </label>
-        <label className="block">
-          <span className="text-xs font-semibold uppercase text-slate-500">Senha</span>
-          <input className={inputClass} minLength={6} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
-        </label>
+        {mode !== "recovery" ? (
+          <label className="block">
+            <span className="text-xs font-semibold uppercase text-slate-500">Email</span>
+            <input className={inputClass} onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
+          </label>
+        ) : null}
+        {mode === "recovery" && !passwordRecoverySession ? (
+          <label className="block">
+            <span className="text-xs font-semibold uppercase text-slate-500">Senha atual</span>
+            <input
+              autoComplete="current-password"
+              className={inputClass}
+              minLength={6}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              required
+              type="password"
+              value={currentPassword}
+            />
+          </label>
+        ) : null}
+        {mode !== "forgot" ? (
+          <label className="block">
+            <span className="text-xs font-semibold uppercase text-slate-500">{mode === "recovery" ? "Nova senha" : "Senha"}</span>
+            <input
+              autoComplete={mode === "recovery" ? "new-password" : "current-password"}
+              className={inputClass}
+              minLength={6}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              type="password"
+              value={password}
+            />
+          </label>
+        ) : null}
+        {mode === "recovery" ? (
+          <label className="block">
+            <span className="text-xs font-semibold uppercase text-slate-500">Confirmar nova senha</span>
+            <input
+              className={inputClass}
+              autoComplete="new-password"
+              minLength={6}
+              onChange={(event) => setPasswordConfirmation(event.target.value)}
+              required
+              type="password"
+              value={passwordConfirmation}
+            />
+          </label>
+        ) : null}
       </div>
 
-      <label className="mt-3 flex items-start gap-3 rounded-lg border border-line bg-slate-50 px-3 py-3 text-sm text-ink">
+      {mode === "sign-in" || mode === "sign-up" ? (
+        <label className="mt-3 flex items-start gap-3 rounded-lg border border-line bg-slate-50 px-3 py-3 text-sm text-ink">
         <input
           checked={rememberLogin}
           className="mt-1"
@@ -220,29 +348,85 @@ export function LoginCard() {
             Desmarque em computador compartilhado. Marcado, o Gavium abre sua conta automaticamente neste aparelho.
           </span>
         </span>
-      </label>
+        </label>
+      ) : null}
 
       {mode === "sign-up" ? <SignUpProfileFields onChange={setProfile} profile={profile} /> : null}
 
       {message ? <p className="mt-3 text-sm text-slate-600">{message}</p> : null}
 
       <Button className="mt-4 w-full" disabled={loading} type="submit">
-        {mode === "sign-in" ? <LogIn aria-hidden className="h-4 w-4" /> : <UserPlus aria-hidden className="h-4 w-4" />}
-        {mode === "sign-in" ? "Entrar" : "Cadastrar"}
+        {mode === "sign-in" ? <LogIn aria-hidden className="h-4 w-4" /> : null}
+        {mode === "sign-up" ? <UserPlus aria-hidden className="h-4 w-4" /> : null}
+        {mode === "forgot" ? <MailCheck aria-hidden className="h-4 w-4" /> : null}
+        {mode === "recovery" ? <KeyRound aria-hidden className="h-4 w-4" /> : null}
+        {getAuthSubmitLabel(mode, loading)}
       </Button>
 
-      <button
-        className="mt-3 w-full text-center text-sm font-medium text-mint"
-        onClick={() => {
-          setMode((current) => (current === "sign-in" ? "sign-up" : "sign-in"));
-          setMessage("");
-        }}
-        type="button"
-      >
-        {mode === "sign-in" ? "Criar uma conta" : "Ja tenho conta"}
-      </button>
+      {mode !== "recovery" ? (
+        <div className="mt-3 flex flex-col items-center gap-2 text-sm font-medium">
+          {mode === "sign-in" || mode === "sign-up" ? (
+            <button
+              className="text-mint"
+              onClick={() => {
+                setMode((current) => (current === "sign-up" ? "sign-in" : "sign-up"));
+                setMessage("");
+              }}
+              type="button"
+            >
+              {mode === "sign-up" ? "Ja tenho conta" : "Criar uma conta"}
+            </button>
+          ) : null}
+          {mode === "sign-in" ? (
+            <button className="text-slate-600" onClick={() => setMode("forgot")} type="button">
+              Esqueci minha senha
+            </button>
+          ) : null}
+          {mode === "forgot" ? (
+            <button className="text-slate-600" onClick={() => setMode("sign-in")} type="button">
+              Voltar para entrar
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </form>
   );
+}
+
+function getAuthTitle(mode: AuthMode) {
+  if (mode === "sign-up") return "Criar conta";
+  if (mode === "forgot") return "Recuperar senha";
+  if (mode === "recovery") return "Criar nova senha";
+  return "Entrar";
+}
+
+function getAuthDescription(mode: AuthMode) {
+  if (mode === "forgot") return "Informe seu email para receber um link seguro de recuperacao.";
+  if (mode === "recovery") return "Escolha uma nova senha com pelo menos seis caracteres.";
+  return "Cada pessoa deve usar o proprio email. Assim os dados ficam isolados e sincronizados pela conta dela.";
+}
+
+function getAuthSubmitLabel(mode: AuthMode, loading: boolean) {
+  if (loading) return "Aguarde...";
+  if (mode === "sign-up") return "Cadastrar";
+  if (mode === "forgot") return "Enviar link";
+  if (mode === "recovery") return "Salvar nova senha";
+  return "Entrar";
+}
+
+function formatAuthError(message: string) {
+  const normalized = message.toLowerCase();
+  if (normalized.includes("invalid api key")) return "A chave publica do Supabase esta incorreta na configuracao do app.";
+  if (normalized.includes("invalid login credentials")) return "Email ou senha incorretos.";
+  if (normalized.includes("email not confirmed")) return "Confirme o email recebido antes de entrar.";
+  if (normalized.includes("email address not authorized")) {
+    return "O envio de email do Supabase ainda nao aceita este endereco. Configure um SMTP proprio no projeto.";
+  }
+  if (normalized.includes("already registered")) return "Este email ja possui uma conta.";
+  if (normalized.includes("password") && normalized.includes("characters")) return "A senha nao atende ao tamanho minimo exigido.";
+  if (normalized.includes("rate limit")) return "Muitas tentativas em pouco tempo. Aguarde alguns minutos.";
+  if (normalized.includes("auth session missing")) return "O link expirou. Solicite uma nova recuperacao de senha.";
+  return message;
 }
 
 function SignUpProfileFields({
