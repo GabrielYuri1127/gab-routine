@@ -34,6 +34,7 @@ Para Google Classroom:
 GOOGLE_CLASSROOM_CLIENT_ID=seu_client_id
 GOOGLE_CLASSROOM_CLIENT_SECRET=seu_client_secret
 GOOGLE_CLASSROOM_REDIRECT_URI=https://gab-routine.vercel.app/api/classroom/callback
+CLASSROOM_TOKEN_ENCRYPTION_KEY=um_segredo_longo_e_estavel
 ```
 
 Para Supabase:
@@ -44,7 +45,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sua_chave_publicavel
 SUPABASE_SECRET_KEY=sua_chave_secreta
 ```
 
-Depois de criar ou trocar essas variaveis, aplique `supabase/schema.sql` no SQL Editor do Supabase. A tabela `routine_snapshots` e as politicas RLS sao necessarias para cada usuario ver somente os proprios dados.
+Depois de criar ou trocar essas variaveis, aplique `supabase/schema.sql` no SQL Editor do Supabase. `routine_snapshots`, `classroom_connections` e as politicas RLS sao necessarias para separar os dados e conexoes de cada usuario.
 
 Para notificacoes push no Android:
 
@@ -85,7 +86,7 @@ http://localhost:3000/api/classroom/callback
 4. Adicionar as variaveis necessarias.
 5. Fazer novo deploy.
 6. Abrir `/login`, criar duas contas de teste e confirmar que cada uma tem dados separados.
-7. Abrir `/configuracoes` e testar Google Classroom.
+7. Abrir `/configuracoes`, conectar duas contas do Classroom, sincronizar, importar e desconectar uma delas.
 8. Abrir `/assistente` e testar a IA.
 9. Abrir o site no Android e usar `Adicionar a tela inicial`.
 10. Ativar notificacoes em `/configuracoes` e enviar um teste.

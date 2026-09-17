@@ -31,8 +31,11 @@ Use este checklist antes de compartilhar o Gavium com amigos, familiares ou no p
 - Configurar OAuth Client ID.
 - Adicionar redirect local e de producao.
 - Configurar variaveis na Vercel.
+- Configurar `CLASSROOM_TOKEN_ENCRYPTION_KEY` e rodar o `supabase/schema.sql` atualizado.
 - Conectar uma conta institucional.
 - Conectar uma segunda conta institucional se necessario.
+- Sincronizar novamente sem refazer o OAuth.
+- Desconectar uma conta de teste e confirmar a remocao.
 - Verificar se as contas aparecem separadas antes da importacao.
 
 ## IA

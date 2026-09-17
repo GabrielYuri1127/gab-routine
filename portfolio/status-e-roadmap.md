@@ -28,13 +28,13 @@ O Gavium ja tem uma versao funcional para uso pessoal, testes com outras pessoas
 - Backup local.
 - PWA instalavel no Android.
 - Notificacoes push no Android com inscricao de aparelho, teste manual e dispatch seguro.
-- Preparacao para Google Classroom.
+- Google Classroom com OAuth somente leitura, multiplas contas persistentes, sincronizacao manual e desconexao individual.
 - Login Supabase com dados separados por usuario quando configurado.
 - Deploy via GitHub e Vercel.
 
 ## Em Andamento Ou Preparado
 
-- Teste real com Google Classroom usando contas institucionais.
+- Ativacao do Google Classroom em producao e teste real com contas institucionais.
 - Configuracao final das variaveis no ambiente de producao.
 - Ativacao e teste da IA online com uma chave real apenas no servidor.
 - Validacao com amigos e familiares.

@@ -15,7 +15,7 @@ O projeto agora se chama Gavium. O nome anterior, Gab Routine, era apenas provis
 - Persistencia atual: `localStorage`.
 - Persistencia futura preparada: Supabase.
 - IA: arquitetura hibrida com regras locais, OpenAI Responses API, contexto da rotina, memoria curta, saida estruturada, fallback e limite por usuario. A ativacao online depende das variaveis de ambiente.
-- Google Classroom: OAuth preparado, importacao de cursos ativos e trabalhos com data, com suporte a mais de uma conta institucional.
+- Google Classroom: OAuth somente leitura, varias contas persistentes por usuario, refresh token criptografado no servidor, sincronizacao posterior, previa e importacao assistida.
 
 ## Funcionalidades Implementadas
 
@@ -54,6 +54,7 @@ AI_MODEL=gpt-5
 GOOGLE_CLASSROOM_CLIENT_ID=
 GOOGLE_CLASSROOM_CLIENT_SECRET=
 GOOGLE_CLASSROOM_REDIRECT_URI=https://gab-routine.vercel.app/api/classroom/callback
+CLASSROOM_TOKEN_ENCRYPTION_KEY=
 
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
@@ -62,8 +63,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ## Proximos Passos Possiveis
 
 - Terminar configuracao das variaveis na Vercel.
-- Testar Google Classroom com uma conta real.
+- Rodar o `supabase/schema.sql` atualizado e testar Google Classroom com contas reais.
 - Adicionar a chave no servidor e testar a IA online com uma conta autenticada.
 - Implementar notificacoes push completas.
-- Evoluir login e sincronizacao com Supabase.
+- Evoluir a persistencia granular alem do snapshot por usuario.
 - Criar wrapper Android nativo se um widget real for necessario no futuro.

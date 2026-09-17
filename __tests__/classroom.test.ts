@@ -8,6 +8,7 @@ import {
   toDateKeyFromClassroomDueDate,
   toTimeFromClassroomDueTime
 } from "../lib/classroom/google-classroom";
+import { createClassroomOAuthState, verifyClassroomOAuthState } from "../lib/classroom/oauth-state";
 
 describe("Google Classroom mapping", () => {
   it("formats Classroom due dates and due times", () => {
@@ -30,8 +31,27 @@ describe("Google Classroom mapping", () => {
       GOOGLE_CLASSROOM_REDIRECT_URI: "https://gab-routine.vercel.app/api/classroom/callback"
     });
 
-    assert.equal(authUrl.searchParams.get("prompt"), "select_account");
+    assert.equal(authUrl.searchParams.get("access_type"), "offline");
+    assert.match(authUrl.searchParams.get("prompt") ?? "", /consent/);
+    assert.match(authUrl.searchParams.get("prompt") ?? "", /select_account/);
     assert.equal(CLASSROOM_SCOPES.includes("openid"), true);
     assert.equal(CLASSROOM_SCOPES.includes("email"), true);
+  });
+
+  it("signs OAuth state and rejects tampering", () => {
+    const previousSecret = process.env.GOOGLE_CLASSROOM_CLIENT_SECRET;
+    process.env.GOOGLE_CLASSROOM_CLIENT_SECRET = "test-client-secret";
+
+    try {
+      const state = createClassroomOAuthState("user-123");
+      assert.equal(verifyClassroomOAuthState(state)?.userId, "user-123");
+      assert.equal(verifyClassroomOAuthState(`${state}changed`), null);
+    } finally {
+      if (previousSecret === undefined) {
+        delete process.env.GOOGLE_CLASSROOM_CLIENT_SECRET;
+      } else {
+        process.env.GOOGLE_CLASSROOM_CLIENT_SECRET = previousSecret;
+      }
+    }
   });
 });

@@ -13,8 +13,15 @@ import {
   toDateKeyFromClassroomDueDate,
   toTimeFromClassroomDueTime
 } from "@/lib/classroom/google-classroom";
+import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { AcademicActivity, AcademicResource } from "@/types/academic";
-import type { ClassroomAccount, ClassroomCourse, ClassroomCourseWork, ClassroomImportPayload } from "@/types/classroom";
+import type {
+  ClassroomAccount,
+  ClassroomConnectionSummary,
+  ClassroomCourse,
+  ClassroomCourseWork,
+  ClassroomImportPayload
+} from "@/types/classroom";
 
 const CLASSROOM_IMPORT_STORAGE_KEY = "gab-routine:classroom:last-import";
 const CLASSROOM_IMPORTS_STORAGE_KEY = "gab-routine:classroom:imports";
@@ -22,6 +29,7 @@ const CLASSROOM_IMPORTS_STORAGE_KEY = "gab-routine:classroom:imports";
 interface ClassroomStatus {
   callbackPath: string;
   configured: boolean;
+  persistentConfigured: boolean;
   scopes: string[];
 }
 
@@ -35,10 +43,13 @@ interface ImportResult {
 const subjectColors = ["#0f9f7a", "#2b7fff", "#e35d45", "#b7791f", "#7c3aed", "#0891b2"];
 
 export function ClassroomImportPanel() {
-  const { data, replaceData } = useRoutineData();
+  const { cloud, data, hydrated, replaceData } = useRoutineData();
+  const storageUserId = cloud.userId ?? data.userId ?? LOCAL_USER_ID;
   const [status, setStatus] = useState<ClassroomStatus | null>(null);
+  const [connections, setConnections] = useState<ClassroomConnectionSummary[]>([]);
   const [imports, setImports] = useState<ClassroomImportPayload[]>([]);
   const [message, setMessage] = useState("");
+  const [workingId, setWorkingId] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -52,17 +63,46 @@ export function ClassroomImportPanel() {
       })
       .catch(() => {
         if (active) {
-          setStatus({ callbackPath: "/api/classroom/callback", configured: false, scopes: [] });
+          setStatus({ callbackPath: "/api/classroom/callback", configured: false, persistentConfigured: false, scopes: [] });
         }
       });
 
-    const storedImports = readStoredImports(data.userId);
-    saveStoredImports(data.userId, storedImports);
+    if (!hydrated) {
+      return () => {
+        active = false;
+      };
+    }
+
+    if (isSupabaseConfigured()) {
+      void getClassroomAccessToken()
+        .then((token) =>
+          token
+            ? fetch("/api/classroom/connections", { headers: { Authorization: `Bearer ${token}` } })
+            : Promise.resolve(null)
+        )
+        .then((response) => (response?.ok ? response.json() : null))
+        .then((payload: { connections?: ClassroomConnectionSummary[] } | null) => {
+          if (active) {
+            setConnections(payload?.connections ?? []);
+          }
+        })
+        .catch(() => {
+          if (active) {
+            setConnections([]);
+          }
+        });
+    }
+
+    const storedImports = readStoredImports(storageUserId);
+    saveStoredImports(storageUserId, storedImports);
     setImports(storedImports);
 
     const query = new URLSearchParams(window.location.search).get("classroom");
     if (query === "import-ready") {
-      setMessage("Conta do Google Classroom conectada. Revise a previa e importe quando estiver pronto.");
+      setMessage("Conta conectada e salva. Revise a previa ou sincronize novamente quando precisar.");
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (query === "import-ready-local") {
+      setMessage("A previa foi carregada, mas a conexao permanente depende do schema e da chave secreta do Supabase.");
       window.history.replaceState({}, "", window.location.pathname);
     } else if (query === "missing") {
       setMessage("Configure as chaves do Google Classroom antes de conectar.");
@@ -75,7 +115,7 @@ export function ClassroomImportPanel() {
     return () => {
       active = false;
     };
-  }, [data.userId]);
+  }, [hydrated, storageUserId]);
 
   const totals = useMemo(() => {
     const courses = imports.reduce((total, item) => total + item.courses.length, 0);
@@ -95,7 +135,7 @@ export function ClassroomImportPanel() {
 
   function clearImport(target: ClassroomImportPayload) {
     const nextImports = imports.filter((item) => getImportKey(item) !== getImportKey(target));
-    saveStoredImports(data.userId, nextImports);
+    saveStoredImports(storageUserId, nextImports);
     setImports(nextImports);
     setMessage("Previa dessa conta removida.");
   }
@@ -121,6 +161,108 @@ export function ClassroomImportPanel() {
     setMessage(formatImportMessage(total, "todas as contas"));
   }
 
+  async function connectAccount() {
+    setWorkingId("connect");
+    setMessage("");
+
+    try {
+      const token = await getClassroomAccessToken();
+      if (!token) {
+        setMessage("Entre na sua conta do Gavium antes de conectar o Google Classroom.");
+        window.location.assign("/login");
+        return;
+      }
+
+      const response = await fetch("/api/classroom/connect", {
+        headers: { Authorization: `Bearer ${token}` },
+        method: "POST"
+      });
+      const payload = (await response.json().catch(() => null)) as { error?: string; url?: string } | null;
+
+      if (!response.ok || !payload?.url) {
+        throw new Error(payload?.error ?? "Nao foi possivel iniciar a conexao.");
+      }
+
+      window.location.assign(payload.url);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Nao foi possivel iniciar a conexao.");
+      setWorkingId("");
+    }
+  }
+
+  async function syncConnection(connection: ClassroomConnectionSummary) {
+    setWorkingId(connection.connectionId);
+    setMessage("");
+
+    try {
+      const token = await getClassroomAccessToken();
+      if (!token) {
+        throw new Error("Entre novamente no Gavium para sincronizar esta conta.");
+      }
+
+      const response = await fetch("/api/classroom/sync", {
+        body: JSON.stringify({ connectionId: connection.connectionId }),
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        method: "POST"
+      });
+      const payload = (await response.json().catch(() => null)) as { error?: string; import?: ClassroomImportPayload } | null;
+
+      if (!response.ok || !payload?.import) {
+        throw new Error(payload?.error ?? "Nao foi possivel sincronizar esta conta.");
+      }
+
+      const nextImports = [
+        payload.import,
+        ...imports.filter((item) => getImportKey(item) !== getImportKey(payload.import as ClassroomImportPayload))
+      ].slice(0, 8);
+      saveStoredImports(storageUserId, nextImports);
+      setImports(nextImports);
+      setConnections((current) =>
+        current.map((item) =>
+          item.connectionId === connection.connectionId ? { ...item, lastSyncedAt: new Date().toISOString() } : item
+        )
+      );
+      setMessage(`Sincronizei ${getAccountLabel(payload.import)}. A previa esta pronta para importar.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Nao foi possivel sincronizar esta conta.");
+    } finally {
+      setWorkingId("");
+    }
+  }
+
+  async function removeConnection(connection: ClassroomConnectionSummary) {
+    setWorkingId(connection.connectionId);
+    setMessage("");
+
+    try {
+      const token = await getClassroomAccessToken();
+      if (!token) {
+        throw new Error("Entre novamente no Gavium para desconectar esta conta.");
+      }
+
+      const response = await fetch("/api/classroom/connections", {
+        body: JSON.stringify({ connectionId: connection.connectionId }),
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        method: "DELETE"
+      });
+      const payload = (await response.json().catch(() => null)) as { error?: string; removed?: boolean } | null;
+
+      if (!response.ok || !payload?.removed) {
+        throw new Error(payload?.error ?? "Nao foi possivel desconectar esta conta.");
+      }
+
+      const nextImports = imports.filter((item) => item.account?.id !== connection.id);
+      saveStoredImports(storageUserId, nextImports);
+      setImports(nextImports);
+      setConnections((current) => current.filter((item) => item.connectionId !== connection.connectionId));
+      setMessage(`${connection.email ?? connection.name ?? "Conta Google"} foi desconectada.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Nao foi possivel desconectar esta conta.");
+    } finally {
+      setWorkingId("");
+    }
+  }
+
   return (
     <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -133,24 +275,23 @@ export function ClassroomImportPanel() {
             Conecte uma ou mais contas institucionais. Cada conta fica separada na previa e pode ser importada sem misturar origem.
           </p>
         </div>
-        <Badge tone={status?.configured ? "mint" : "gold"}>{status?.configured ? "Pronto para conectar" : "Aguardando chaves"}</Badge>
+        <Badge tone={status?.configured ? "mint" : "gold"}>
+          {status?.persistentConfigured ? "Sincronizacao pronta" : status?.configured ? "Importacao pronta" : "Aguardando chaves"}
+        </Badge>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <Mini label="Contas" value={imports.length.toString()} />
+        <Mini label="Contas" value={Math.max(connections.length, imports.length).toString()} />
         <Mini label="Turmas" value={totals.courses.toString()} />
         <Mini label="Itens com prazo" value={totals.datedCourseWork.toString()} />
       </div>
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {status?.configured ? (
-          <a
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-ink px-4 text-sm font-medium text-white transition hover:bg-black"
-            href="/api/classroom/connect"
-          >
+          <Button disabled={Boolean(workingId)} onClick={connectAccount}>
             <ExternalLink aria-hidden className="h-4 w-4" />
-            Adicionar conta Classroom
-          </a>
+            {workingId === "connect" ? "Abrindo Google..." : "Adicionar conta Classroom"}
+          </Button>
         ) : (
           <Button disabled>
             <AlertCircle aria-hidden className="h-4 w-4" />
@@ -168,6 +309,47 @@ export function ClassroomImportPanel() {
         <div className="mt-4 rounded-lg border border-dashed border-line bg-slate-50 p-3 text-sm leading-6 text-slate-600">
           Use <code>GOOGLE_CLASSROOM_CLIENT_ID</code>, <code>GOOGLE_CLASSROOM_CLIENT_SECRET</code> e{" "}
           <code>GOOGLE_CLASSROOM_REDIRECT_URI</code> no ambiente do app.
+        </div>
+      ) : null}
+
+      {connections.length ? (
+        <div className="mt-4 border-t border-line pt-4">
+          <h3 className="text-sm font-semibold text-ink">Contas conectadas</h3>
+          <div className="mt-2 divide-y divide-line rounded-lg border border-line">
+            {connections.map((connection) => (
+              <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between" key={connection.connectionId}>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-ink">{connection.name ?? connection.email ?? "Conta Google"}</p>
+                  <p className="truncate text-xs text-slate-500">
+                    {connection.email ?? "Email nao informado"}
+                    {connection.lastSyncedAt ? ` - sincronizada ${formatSyncDate(connection.lastSyncedAt)}` : " - ainda nao sincronizada"}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <Button
+                    disabled={Boolean(workingId)}
+                    onClick={() => syncConnection(connection)}
+                    size="sm"
+                    variant="secondary"
+                  >
+                    <RefreshCw aria-hidden className={`h-4 w-4 ${workingId === connection.connectionId ? "animate-spin" : ""}`} />
+                    Sincronizar
+                  </Button>
+                  <Button
+                    aria-label={`Desconectar ${connection.email ?? connection.name ?? "conta Google"}`}
+                    className="text-coral hover:bg-red-50 hover:text-red-700"
+                    disabled={Boolean(workingId)}
+                    onClick={() => removeConnection(connection)}
+                    size="icon"
+                    title="Desconectar conta"
+                    variant="ghost"
+                  >
+                    <Trash2 aria-hidden className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       ) : null}
 
@@ -234,6 +416,27 @@ export function ClassroomImportPanel() {
       ) : null}
     </section>
   );
+}
+
+async function getClassroomAccessToken() {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  const { data } = await createSupabaseBrowserClient().auth.getSession();
+  return data.session?.access_token ?? null;
+}
+
+function formatSyncDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "recentemente";
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short"
+  }).format(date);
 }
 
 function readStoredImports(userId: string) {

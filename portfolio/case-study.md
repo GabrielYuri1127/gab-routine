@@ -30,8 +30,8 @@ O Gavium organiza essas informacoes em uma interface pensada para uso diario no 
 - Lembretes dentro do app e notificacoes push preparadas para Android.
 - Calendario mensal com aulas, tarefas, prazos, lembretes e compromissos.
 - Assistente hibrido com regras locais confiaveis e IA online contextual, memoria curta, saida estruturada e comandos automaticos para criar, concluir e reagendar itens quando os dados estao claros.
-- Importacao do Google Classroom por conta.
-- Suporte a mais de uma conta institucional do Google Classroom.
+- Importacao revisavel do Google Classroom por conta.
+- Multiplas contas institucionais persistentes, com sincronizacao e desconexao individual.
 - Perfil personalizavel com nome do app, usuario, cor, semestre padrao, carga horaria e modulos visiveis.
 - Tutorial interno para amigos e familiares aprenderem a usar.
 - PWA instalavel no Android.
@@ -43,7 +43,7 @@ O projeto foi construido como uma aplicacao web moderna com Next.js, TypeScript 
 
 A parte academica foi separada em regras reutilizaveis para faltas, horarios, notas e prazos. A interface usa formularios editaveis para que o usuario consiga corrigir dados antigos, adaptar disciplinas e ajustar a rotina sem depender de alteracoes no codigo.
 
-A integracao com Google Classroom foi criada como importacao assistida: o usuario conecta a conta, revisa uma previa e decide quando importar. Isso evita misturar dados automaticamente e ajuda quem tem mais de uma conta institucional.
+A integracao com Google Classroom foi criada como sincronizacao assistida: o usuario autenticado conecta varias contas, o servidor criptografa os refresh tokens, e cada conta pode ser atualizada, revisada, importada ou desconectada separadamente. Isso evita misturar origens e mantem o usuario no controle.
 
 O assistente usa uma arquitetura hibrida. O motor local calcula prioridades, medias, frequencia, prazos e propostas de acao; a IA online recebe um contexto reduzido da rotina para responder perguntas livres. Alteracoes so sao executadas quando o parser deterministico encontra dados suficientes. Login, limite persistente por usuario, timeout, identificador anonimizado e fallback local protegem custo e disponibilidade.
 

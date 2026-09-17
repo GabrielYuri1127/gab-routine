@@ -17,7 +17,7 @@ Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, fa
 - Supabase free para cadastro, login e persistencia em nuvem por usuario
 - PWA com manifest, service worker e icone maskable para Android
 - Web Push para lembretes no Android quando VAPID, Supabase e agendamento estiverem configurados
-- Google Classroom preparado via OAuth somente leitura
+- Google Classroom via OAuth somente leitura, com varias contas persistentes por usuario
 - Tutorial interno e perfil personalizavel para uso por outras pessoas
 - Suporte por WhatsApp com link direto
 
@@ -71,6 +71,7 @@ Para importar turmas e atividades do Google Classroom:
 GOOGLE_CLASSROOM_CLIENT_ID=
 GOOGLE_CLASSROOM_CLIENT_SECRET=
 GOOGLE_CLASSROOM_REDIRECT_URI=http://localhost:3000/api/classroom/callback
+CLASSROOM_TOKEN_ENCRYPTION_KEY=
 ```
 
 ## Supabase
@@ -133,7 +134,7 @@ Veja `docs/ai-setup.md` antes de configurar a IA na Vercel.
 
 ## Google Classroom
 
-A tela `/configuracoes` tem um painel para conectar o Google Classroom e importar cursos ativos como disciplinas, com trabalhos datados virando atividades. Veja `docs/google-classroom.md` para configurar o OAuth no Google Cloud e na Vercel.
+A tela `/configuracoes` conecta varias contas do Google Classroom, salva os acessos de forma criptografada no servidor e permite sincronizar novamente, revisar a previa, importar e desconectar cada conta. Cursos ativos viram disciplinas e trabalhos datados viram atividades. Veja `docs/google-classroom.md` para configurar OAuth, Supabase e Vercel.
 
 ## Publicacao
 
@@ -171,7 +172,7 @@ O material apresentavel fica em `portfolio/`, com case study, ferramentas do pro
 - `/calendario` com aulas, prazos, tarefas, lembretes e compromissos editaveis.
 - `/configuracoes` com preferencias de lembrete, exportacao, importacao e restauracao de dados locais.
 - `/configuracoes` com status de publicacao separando pendencias atuais e melhorias futuras.
-- `/configuracoes` com conexao Google Classroom e importacao para Faculdade.
+- `/configuracoes` com varias contas Google Classroom, sincronizacao persistente e importacao revisavel para Faculdade.
 - `/tutorial` com guia de uso para compartilhar com amigos e familiares.
 - Suporte por WhatsApp em `/configuracoes`, `/mais` e `/tutorial`.
 - Marca visual propria com icone PWA, icone maskable e logo horizontal em SVG.

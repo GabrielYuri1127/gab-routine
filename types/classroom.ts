@@ -19,6 +19,11 @@ export interface ClassroomAccount {
   picture?: string;
 }
 
+export interface ClassroomConnectionSummary extends ClassroomAccount {
+  connectionId: string;
+  lastSyncedAt?: string;
+}
+
 export interface ClassroomCourse {
   alternateLink?: string;
   courseState?: string;

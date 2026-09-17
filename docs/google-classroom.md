@@ -1,6 +1,6 @@
 # Google Classroom
 
-O Gavium pode importar turmas e trabalhos do Google Classroom para a area Faculdade. A integracao usa OAuth, escopos somente de leitura e suporta mais de uma conta institucional.
+O Gavium pode importar turmas e trabalhos do Google Classroom para a area Faculdade. A integracao usa OAuth, escopos somente de leitura e suporta varias contas institucionais persistentes por usuario.
 
 ## Variaveis
 
@@ -10,7 +10,10 @@ Configure no `.env.local` durante desenvolvimento e na Vercel em producao:
 GOOGLE_CLASSROOM_CLIENT_ID=
 GOOGLE_CLASSROOM_CLIENT_SECRET=
 GOOGLE_CLASSROOM_REDIRECT_URI=https://seu-dominio.vercel.app/api/classroom/callback
+CLASSROOM_TOKEN_ENCRYPTION_KEY=um_segredo_longo_e_aleatorio
 ```
+
+O app tambem precisa das variaveis do Supabase, incluindo `SUPABASE_SECRET_KEY`, e do `supabase/schema.sql` atualizado. A chave `CLASSROOM_TOKEN_ENCRYPTION_KEY` criptografa os refresh tokens; use um valor proprio e estavel e nao o altere depois de conectar contas.
 
 ## Google Cloud
 
@@ -24,7 +27,8 @@ http://localhost:3000/api/classroom/callback
 https://seu-dominio.vercel.app/api/classroom/callback
 ```
 
-5. Preencha as variaveis do app e acesse `/configuracoes`.
+5. Preencha as variaveis do app e rode novamente `supabase/schema.sql`.
+6. Entre no Gavium e acesse `/configuracoes`.
 
 ## Mais De Uma Conta
 
@@ -32,10 +36,10 @@ O botao `Adicionar conta Classroom` sempre pede o seletor de conta do Google. Pa
 
 1. Clique em `Adicionar conta Classroom`.
 2. Escolha a primeira conta.
-3. Volte para `/configuracoes` e confira a previa.
+3. Volte para `/configuracoes`, clique em `Sincronizar` e confira a previa.
 4. Clique de novo em `Adicionar conta Classroom`.
 5. Escolha a segunda conta.
-6. Importe uma conta por vez ou use `Importar todas`.
+6. Sincronize e importe uma conta por vez ou use `Importar todas`.
 
 O app usa email/id da conta para separar as previas e marcadores nas disciplinas. Assim uma turma com o mesmo nome em contas diferentes nao fica sem origem.
 
@@ -46,7 +50,9 @@ O app usa email/id da conta para separar as previas e marcadores nas disciplinas
 - `dueTime` vira horario; sem horario, o app usa `23:59`.
 - Links do Classroom ficam guardados nas observacoes da disciplina ou atividade.
 - Cada conta conectada fica separada na previa antes da importacao.
+- `Sincronizar` busca as mudancas sem exigir um novo login no Google.
+- `Desconectar` revoga o acesso no Google e remove a conexao salva.
 - Ao conectar novamente, o Google mostra o seletor de conta.
 - Itens sem data nao viram atividades, porque nao entram bem na agenda.
 
-O token do Google e usado apenas no callback do servidor para buscar os dados e nao fica salvo no `localStorage`.
+O refresh token do Google nunca vai para o navegador. Ele fica criptografado no servidor, em `classroom_connections`, sem politica de acesso direto pelo cliente. O `localStorage` guarda apenas a previa dos cursos e trabalhos, nunca credenciais.

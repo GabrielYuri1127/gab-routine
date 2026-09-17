@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { saveClassroomConnection } from "@/lib/classroom/classroom-connections";
 import { exchangeClassroomCode, fetchClassroomImport, fetchGoogleUserInfo } from "@/lib/classroom/google-classroom";
+import { verifyClassroomOAuthState } from "@/lib/classroom/oauth-state";
 
 const CLASSROOM_IMPORT_STORAGE_KEY = "gab-routine:classroom:last-import";
 const CLASSROOM_STATE_COOKIE = "gab_classroom_oauth_state";
@@ -12,8 +14,9 @@ export async function GET(request: NextRequest) {
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   const storedState = request.cookies.get(CLASSROOM_STATE_COOKIE)?.value;
+  const verifiedState = state && storedState && state === storedState ? verifyClassroomOAuthState(state) : null;
 
-  if (!code || !state || !storedState || state !== storedState) {
+  if (!code || !verifiedState) {
     return redirectToSettings(request.url, "classroom=invalid-state");
   }
 
@@ -21,7 +24,18 @@ export async function GET(request: NextRequest) {
     const token = await exchangeClassroomCode(code, request.url);
     const account = await fetchGoogleUserInfo(token.access_token);
     const classroomImport = await fetchClassroomImport(token.access_token, account);
-    const response = new NextResponse(renderImportBridge(classroomImport), {
+    let connectionSaved = false;
+
+    if (account) {
+      try {
+        await saveClassroomConnection(verifiedState.userId, account, token);
+        connectionSaved = true;
+      } catch {
+        connectionSaved = false;
+      }
+    }
+
+    const response = new NextResponse(renderImportBridge(classroomImport, connectionSaved), {
       headers: {
         "Content-Type": "text/html; charset=utf-8"
       }
@@ -39,7 +53,7 @@ function redirectToSettings(requestUrl: string, query: string) {
   return response;
 }
 
-function renderImportBridge(payload: unknown) {
+function renderImportBridge(payload: unknown, connectionSaved: boolean) {
   const serializedPayload = JSON.stringify(payload).replace(/</g, "\\u003c");
 
   return `<!doctype html>
@@ -65,7 +79,9 @@ function renderImportBridge(payload: unknown) {
       ).slice(0, 8);
       localStorage.setItem(storageKey, JSON.stringify(nextImport));
       localStorage.setItem(importsKey, JSON.stringify(mergedImports));
-      window.location.replace("/configuracoes?classroom=import-ready");
+      window.location.replace(${JSON.stringify(
+        connectionSaved ? "/configuracoes?classroom=import-ready" : "/configuracoes?classroom=import-ready-local"
+      )});
     </script>
     <p>Google Classroom conectado. Voltando para as configuracoes...</p>
   </body>

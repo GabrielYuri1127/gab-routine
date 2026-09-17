@@ -21,7 +21,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sua_chave_publicavel
 SUPABASE_SECRET_KEY=sua_chave_secreta
 ```
 
-Use `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` no navegador. Use `SUPABASE_SECRET_KEY` somente no servidor, porque ela permite que as rotas protegidas do app salvem inscricoes de notificacao.
+Use `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` no navegador. Use `SUPABASE_SECRET_KEY` somente no servidor, porque ela permite que as rotas protegidas salvem notificacoes, limites da IA e conexoes do Classroom.
 
 ## Como Testar
 
@@ -41,10 +41,11 @@ Se os dados misturarem, pare e confira se `supabase/schema.sql` foi executado in
 
 - `routine_snapshots`: guarda o estado completo do app por usuario.
 - `push_subscriptions`: guarda os aparelhos que aceitaram notificacoes.
+- `classroom_connections`: guarda por usuario apenas os metadados e o refresh token criptografado das contas Google conectadas.
 - `tasks`, `reminders`, `subjects`, `grades` e outras tabelas ficam preparadas para sincronizacao granular futura.
 
 ## Regras De Seguranca
 
-Todas as tabelas principais usam `user_id` e Row Level Security. A politica `own rows` limita leitura e escrita para o dono dos dados.
+Todas as tabelas principais usam `user_id` e Row Level Security. A politica `own rows` limita leitura e escrita para o dono dos dados. `classroom_connections` nao tem politica para o navegador: somente rotas autenticadas do servidor podem acessa-la.
 
 Nunca coloque `SUPABASE_SECRET_KEY` no frontend, no README publico com valor real, nem em variavel `NEXT_PUBLIC_`.

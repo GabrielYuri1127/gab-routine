@@ -238,6 +238,26 @@ create table if not exists public.ai_usage (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.classroom_connections (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  google_account_id text not null,
+  email text,
+  name text,
+  picture text,
+  hosted_domain text,
+  refresh_token_encrypted text not null,
+  scope text,
+  token_expires_at timestamptz,
+  connected_at timestamptz not null default now(),
+  last_synced_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(user_id, google_account_id)
+);
+
+create index if not exists classroom_connections_user_id_idx on public.classroom_connections(user_id);
+
 alter table public.semesters enable row level security;
 alter table public.routine_snapshots enable row level security;
 alter table public.subjects enable row level security;
@@ -260,6 +280,9 @@ alter table public.habit_logs enable row level security;
 alter table public.routines enable row level security;
 alter table public.routine_items enable row level security;
 alter table public.ai_usage enable row level security;
+alter table public.classroom_connections enable row level security;
+
+-- Classroom refresh tokens are server-only; no browser RLS policy is created for this table.
 
 do $$
 declare

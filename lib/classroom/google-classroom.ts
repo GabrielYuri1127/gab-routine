@@ -18,10 +18,11 @@ export const CLASSROOM_SCOPES = [
 
 const CLASSROOM_API_ORIGIN = "https://classroom.googleapis.com/v1";
 const GOOGLE_OAUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+const GOOGLE_REVOKE_URL = "https://oauth2.googleapis.com/revoke";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 
-interface ClassroomTokenResponse {
+export interface ClassroomTokenResponse {
   access_token: string;
   expires_in?: number;
   refresh_token?: string;
@@ -55,9 +56,10 @@ export function buildClassroomAuthUrl(state: string, requestUrl: string, env: Cl
   }
 
   const authUrl = new URL(GOOGLE_OAUTH_URL);
+  authUrl.searchParams.set("access_type", "offline");
   authUrl.searchParams.set("client_id", clientId);
   authUrl.searchParams.set("include_granted_scopes", "true");
-  authUrl.searchParams.set("prompt", "select_account");
+  authUrl.searchParams.set("prompt", "consent select_account");
   authUrl.searchParams.set("redirect_uri", getClassroomRedirectUri(requestUrl, env));
   authUrl.searchParams.set("response_type", "code");
   authUrl.searchParams.set("scope", CLASSROOM_SCOPES.join(" "));
@@ -95,6 +97,49 @@ export async function exchangeClassroomCode(code: string, requestUrl: string, en
   }
 
   return payload as ClassroomTokenResponse;
+}
+
+export async function refreshClassroomAccessToken(refreshToken: string, env: ClassroomEnv = process.env) {
+  const clientId = env.GOOGLE_CLASSROOM_CLIENT_ID;
+  const clientSecret = env.GOOGLE_CLASSROOM_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    throw new Error("Google Classroom OAuth is not configured.");
+  }
+
+  const response = await fetch(GOOGLE_TOKEN_URL, {
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      grant_type: "refresh_token",
+      refresh_token: refreshToken
+    }),
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    method: "POST"
+  });
+  const payload = (await response.json().catch(() => null)) as (Partial<ClassroomTokenResponse> & { error_description?: string }) | null;
+
+  if (!response.ok || !payload?.access_token) {
+    throw new Error(payload?.error_description ?? "Google Classroom token refresh failed.");
+  }
+
+  return payload as ClassroomTokenResponse;
+}
+
+export async function revokeClassroomToken(token: string) {
+  const response = await fetch(GOOGLE_REVOKE_URL, {
+    body: new URLSearchParams({ token }),
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    method: "POST"
+  });
+
+  if (!response.ok) {
+    throw new Error("Google Classroom token revocation failed.");
+  }
 }
 
 export async function fetchGoogleUserInfo(accessToken: string): Promise<ClassroomAccount | undefined> {
