@@ -16,7 +16,9 @@ Essas variaveis devem ficar no servidor, como variaveis de ambiente da Vercel. N
 - O servidor calcula uma resposta segura com regras locais, incluindo base da resposta, avisos de dados faltantes e proximos passos.
 - Perguntas como "o que falta?" ou "o que falta para publicar?" usam o status real de Vercel, IA online, Google Classroom e Supabase, sem confundir com faltas de aula.
 - Comandos claros de alteracao viram uma acao automatica. O app salva falta, nota, atividade ou tarefa direto quando reconhece os dados essenciais, e pede complemento quando faltam disciplina, data, nota ou titulo.
-- Se `AI_PROVIDER=openai` e `AI_API_KEY` existirem, a API melhora o texto em JSON estruturado sem mudar numeros, datas ou links calculados.
+- Se `AI_PROVIDER=openai` e `AI_API_KEY` existirem, a API responde a pergunta usando o contexto real da rotina e as ultimas mensagens da conversa. Numeros, datas, links e acoes continuam ancorados no calculo local.
+- Quando Supabase esta configurado, somente usuarios autenticados consomem a IA online. Pessoas sem login continuam usando o modo local.
+- O servidor aplica limite temporario por usuario, timeout e identificador anonimizado. Quando a chave secreta do Supabase esta disponivel, o uso fica registrado em `ai_usage`; sem ela, existe contingencia em memoria. A requisicao usa `store: false`.
 - Se a API falhar, o app volta automaticamente para a resposta local.
 - O estilo em Configuracoes muda o tom do assistente entre direto, equilibrado e mais orientador.
 
@@ -34,10 +36,13 @@ tenho dentista sexta 15h
 reuniao do projeto sexta 15:30
 crie tarefa comprar livro amanha urgente
 comprar pilha amanha
+terminei o relatorio
+marque comprar livro como concluida
+mova comprar livro para amanha as 14h
 ```
 
-Depois de entender o comando, o app usa as mesmas funcoes internas das telas manuais para salvar faltas, notas, atividades, lembretes, compromissos ou tarefas no backup local e mostra uma mensagem de conclusao.
+Depois de entender o comando, o app usa as mesmas funcoes internas das telas manuais para salvar ou atualizar os dados e mostra uma mensagem de conclusao. Se duas tarefas tiverem nomes ambiguos, nenhuma alteracao e executada automaticamente.
 
 ## Limite Atual
 
-Sem `AI_API_KEY`, o app nao conversa com uma IA externa. Mesmo assim, ele responde usando regras locais para rotina, faltas, notas, prazos e status de publicacao. A IA online entra para deixar a resposta mais natural, menos repetitiva e mais parecida com um assistente real, mas os calculos continuam sendo feitos pelo sistema.
+Sem `AI_API_KEY`, o app nao conversa com uma IA externa. Mesmo assim, ele responde usando regras locais para rotina, faltas, notas, prazos e status de publicacao. A IA online interpreta perguntas livres, considera o contexto e mantem continuidade curta, enquanto calculos e alteracoes continuam validados pelo sistema.

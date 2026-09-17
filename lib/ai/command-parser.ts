@@ -1,6 +1,6 @@
 import { addDays, formatShortDate, parseDateKey, toDateKey } from "../date";
 import type { ActivityType, Subject } from "../../types/academic";
-import type { Event, Priority, Reminder } from "../../types/domain";
+import type { Event, Priority, Reminder, Task } from "../../types/domain";
 
 export type AssistantCommandProposal =
   | AddActivityProposal
@@ -8,6 +8,8 @@ export type AssistantCommandProposal =
   | AddGradeProposal
   | AddReminderProposal
   | AddTaskProposal
+  | CompleteTaskProposal
+  | RescheduleTaskProposal
   | RegisterAbsenceProposal;
 
 export interface RegisterAbsenceProposal extends BaseProposal {
@@ -64,6 +66,19 @@ export interface AddTaskProposal extends BaseProposal {
   title: string;
 }
 
+export interface CompleteTaskProposal extends BaseProposal {
+  intent: "complete_task";
+  task: TaskReference;
+}
+
+export interface RescheduleTaskProposal extends BaseProposal {
+  date: string;
+  dateLabel: string;
+  intent: "reschedule_task";
+  task: TaskReference;
+  time?: string;
+}
+
 interface BaseProposal {
   summary: string;
   warnings: string[];
@@ -72,6 +87,7 @@ interface BaseProposal {
 interface CommandParserInput {
   question: string;
   subjects: Subject[];
+  tasks?: Task[];
   today: string;
 }
 
@@ -81,6 +97,7 @@ interface DateParseResult {
 }
 
 type SubjectReference = Pick<Subject, "id" | "name">;
+type TaskReference = Pick<Task, "id" | "title">;
 
 const numberWords: Record<string, number> = {
   dez: 10,
@@ -116,6 +133,8 @@ export function buildAssistantCommandProposal(input: CommandParserInput): Assist
   return (
     buildAbsenceProposal(input) ??
     buildGradeProposal(input) ??
+    buildCompleteTaskProposal(input) ??
+    buildRescheduleTaskProposal(input) ??
     buildActivityProposal(input) ??
     buildReminderProposal(input) ??
     buildEventProposal(input) ??
@@ -378,6 +397,75 @@ function buildEventProposal(input: CommandParserInput): AddEventProposal | null 
   };
 }
 
+function buildCompleteTaskProposal(input: CommandParserInput): CompleteTaskProposal | null {
+  const normalized = normalizeText(input.question);
+  const wantsCompletion = includesAny(normalized, [
+    "completei",
+    "conclui",
+    "conclua",
+    "concluir tarefa",
+    "finalizei",
+    "marque como concluida",
+    "marque como concluido",
+    "marque como feita",
+    "marque como feito",
+    "terminei"
+  ]) || (normalized.includes("marque") && includesAny(normalized, ["como concluida", "como concluido", "como feita", "como feito"]));
+
+  if (!wantsCompletion || isLeadingQuestion(normalized)) {
+    return null;
+  }
+
+  const task = findBestTask(input.question, input.tasks ?? [], "complete");
+  if (!task) {
+    return null;
+  }
+
+  return {
+    intent: "complete_task",
+    summary: `tarefa "${task.title}" concluida`,
+    task: toTaskReference(task),
+    warnings: []
+  };
+}
+
+function buildRescheduleTaskProposal(input: CommandParserInput): RescheduleTaskProposal | null {
+  const normalized = normalizeText(input.question);
+  const wantsReschedule = includesAny(normalized, [
+    "adie",
+    "adiar",
+    "mova",
+    "mover",
+    "passe",
+    "reagende",
+    "reagendar",
+    "remarque"
+  ]);
+
+  if (!wantsReschedule || isLeadingQuestion(normalized)) {
+    return null;
+  }
+
+  const parsedDate = parseCommandDate(input.question, input.today, { defaultToday: false, preferFuture: true });
+  const task = findBestTask(input.question, input.tasks ?? [], "reschedule");
+  if (!parsedDate || !task) {
+    return null;
+  }
+
+  const time = parseCommandTime(input.question) ?? undefined;
+  return {
+    date: parsedDate.date,
+    dateLabel: formatShortDate(parsedDate.date),
+    intent: "reschedule_task",
+    summary: time
+      ? `tarefa "${task.title}" reagendada para ${formatShortDate(parsedDate.date)} as ${time}`
+      : `tarefa "${task.title}" reagendada para ${formatShortDate(parsedDate.date)}`,
+    task: toTaskReference(task),
+    time,
+    warnings: parsedDate.date < input.today ? ["A nova data detectada ja passou; confira o reagendamento."] : []
+  };
+}
+
 function findBestSubject(question: string, subjects: Subject[]) {
   const normalizedQuestion = normalizeText(question);
   return subjects
@@ -387,6 +475,54 @@ function findBestSubject(question: string, subjects: Subject[]) {
     }))
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score)[0]?.subject;
+}
+
+function findBestTask(question: string, tasks: Task[], operation: "complete" | "reschedule") {
+  const target = extractTaskMutationTarget(question, operation);
+  if (!target) {
+    return null;
+  }
+
+  const candidates = tasks
+    .filter((task) => task.status !== "cancelled" && (operation !== "complete" || task.status !== "done"))
+    .map((task) => ({ score: getTaskMatchScore(task.title, target), task }))
+    .filter((candidate) => candidate.score >= 45)
+    .sort((a, b) => b.score - a.score);
+
+  if (!candidates[0] || (candidates[1] && candidates[0].score === candidates[1].score)) {
+    return null;
+  }
+
+  return candidates[0].task;
+}
+
+function getTaskMatchScore(title: string, target: string) {
+  const normalizedTitle = normalizeForMatch(title);
+  const normalizedTarget = normalizeForMatch(target);
+  if (!normalizedTitle || !normalizedTarget) {
+    return 0;
+  }
+
+  if (normalizedTitle === normalizedTarget) {
+    return 140;
+  }
+
+  if (normalizedTarget.includes(normalizedTitle)) {
+    return 110 + Math.min(20, normalizedTitle.length);
+  }
+
+  if (normalizedTitle.includes(normalizedTarget) && normalizedTarget.length >= 4) {
+    return 95 + Math.min(20, normalizedTarget.length);
+  }
+
+  const titleTokens = getMatchTokens(normalizedTitle);
+  const targetTokens = getMatchTokens(normalizedTarget);
+  const matches = titleTokens.filter((token) => targetTokens.includes(token)).length;
+  if (!matches) {
+    return 0;
+  }
+
+  return Math.round((matches / Math.max(titleTokens.length, targetTokens.length)) * 80) + matches * 8;
 }
 
 function getSubjectScore(subject: Subject, normalizedQuestion: string) {
@@ -653,12 +789,39 @@ function extractTaskTitle(question: string) {
   return cleaned.length >= 3 ? capitalize(cleaned) : "";
 }
 
+function extractTaskMutationTarget(question: string, operation: "complete" | "reschedule") {
+  const quoted = extractQuotedText(question);
+  if (quoted) {
+    return quoted;
+  }
+
+  let cleaned = cleanCommandTitle(question);
+  if (operation === "complete") {
+    cleaned = cleaned
+      .replace(/^(eu\s+)?(completei|conclui|conclua|finalizei|terminei)\s*/i, "")
+      .replace(/^marque\s*/i, "")
+      .replace(/\s+como\s+(conclu[ií]d[ao]|feit[ao]|finalizad[ao])\s*$/i, "");
+  } else {
+    cleaned = cleaned.replace(/^(adie|adiar|mova|mover|passe|reagende|reagendar|remarque)\s*/i, "");
+  }
+
+  cleaned = cleaned
+    .replace(/^(a|o|uma|um)\s+tarefa\s*/i, "")
+    .replace(/^tarefa\s*/i, "")
+    .replace(/^(a|o|uma|um)\s+/i, "")
+    .replace(/\s+(pra|para|pro)\s*$/i, "")
+    .trim();
+
+  return cleaned.length >= 2 ? cleaned : "";
+}
+
 function cleanCommandTitle(question: string) {
   return question
     .replace(/\b(hoje|amanh[ãa]|depois de amanh[ãa]|semana que vem|pr[oó]xima semana)\b/gi, "")
     .replace(/\b(domingo|segunda(?:-feira)?|ter[cç]a(?:-feira)?|quarta(?:-feira)?|quinta(?:-feira)?|sexta(?:-feira)?|s[áa]bado)\b/gi, "")
     .replace(/\bdia\s+\d{1,2}\b/gi, "")
     .replace(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/g, "")
+    .replace(/\b20\d{2}-\d{2}-\d{2}\b/g, "")
     .replace(/\b(?:as|a|às)\s+\d{1,2}(?:(?::|h)\d{0,2})?\b/gi, "")
     .replace(/\b\d{1,2}h\d{0,2}\b/gi, "")
     .replace(/\b\d{1,2}:\d{2}\b/g, "")
@@ -690,6 +853,13 @@ function toSubjectReference(subject: Subject): SubjectReference {
   return {
     id: subject.id,
     name: subject.name
+  };
+}
+
+function toTaskReference(task: Task): TaskReference {
+  return {
+    id: task.id,
+    title: task.title
   };
 }
 
@@ -756,6 +926,10 @@ function isQuestionLike(normalized: string) {
   return /\?|\b(como|mostre|o que|posso|qual|quais|quando|quanto|quantas)\b/.test(normalized);
 }
 
+function isLeadingQuestion(normalized: string) {
+  return /\?|^(como|mostre|o que|posso|qual|quais|quando|quanto|quantas)\b/.test(normalized.trim());
+}
+
 function includesAny(value: string, candidates: string[]) {
   return candidates.some((candidate) => value.includes(normalizeText(candidate)));
 }
@@ -765,4 +939,16 @@ function normalizeText(value: string) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
+}
+
+function normalizeForMatch(value: string) {
+  return normalizeText(value)
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function getMatchTokens(value: string) {
+  const ignored = new Set(["a", "as", "da", "das", "de", "do", "dos", "e", "o", "os", "para", "pra"]);
+  return value.split(/\s+/).filter((token) => token.length >= 2 && !ignored.has(token));
 }

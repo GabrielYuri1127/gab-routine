@@ -8,8 +8,10 @@ export interface AIMessage {
 export interface AIProviderRequest {
   messages: AIMessage[];
   maxOutputTokens?: number;
+  promptCacheKey?: string;
   temperature?: number;
   responseFormat?: "json" | JsonSchemaResponseFormat;
+  safetyIdentifier?: string;
 }
 
 export interface AIProviderResponse {
@@ -64,20 +66,22 @@ export class OpenAIResponsesProvider implements AIProvider {
         instructions: instructions || undefined,
         max_output_tokens: request.maxOutputTokens ?? 500,
         model: this.model,
+        prompt_cache_key: request.promptCacheKey,
+        safety_identifier: request.safetyIdentifier,
         store: false,
-        temperature: request.temperature ?? 0.2,
+        ...(typeof request.temperature === "number" ? { temperature: request.temperature } : {}),
         text: request.responseFormat ? { format: buildTextFormat(request.responseFormat) } : undefined
       }),
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
         "Content-Type": "application/json"
       },
-      method: "POST"
+      method: "POST",
+      signal: AbortSignal.timeout(20_000)
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`OpenAI request failed with ${response.status}: ${errorText.slice(0, 180)}`);
+      throw new Error(`OpenAI request failed with status ${response.status}.`);
     }
 
     const payload = (await response.json()) as OpenAIResponsesPayload;

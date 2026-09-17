@@ -85,6 +85,7 @@ export function buildRoutineAssistantResponse(input: RoutineAssistantInput): Rou
   const commandProposal = buildAssistantCommandProposal({
     question: input.question,
     subjects: safeInput.subjects,
+    tasks: input.tasks,
     today: input.today
   });
   const intent = detectIntent(input.question);
@@ -202,6 +203,18 @@ function buildCommandAnswer(commandProposal: AssistantCommandProposal): RoutineA
 }
 
 function buildCommandEvidence(commandProposal: AssistantCommandProposal) {
+  if (commandProposal.intent === "complete_task") {
+    return [`Tarefa encontrada: ${commandProposal.task.title}.`, "Novo status: concluida."];
+  }
+
+  if (commandProposal.intent === "reschedule_task") {
+    return [
+      `Tarefa encontrada: ${commandProposal.task.title}.`,
+      `Nova data: ${commandProposal.dateLabel}.`,
+      commandProposal.time ? `Novo horario: ${commandProposal.time}.` : "Horario atual mantido."
+    ];
+  }
+
   if (commandProposal.intent === "register_absence") {
     return [
       `Disciplina detectada: ${commandProposal.subject.name}.`,
@@ -250,7 +263,11 @@ function buildCommandEvidence(commandProposal: AssistantCommandProposal) {
 }
 
 function buildCommandLinks(commandProposal: AssistantCommandProposal): AssistantQuickLink[] {
-  if (commandProposal.intent === "add_task") {
+  if (
+    commandProposal.intent === "add_task" ||
+    commandProposal.intent === "complete_task" ||
+    commandProposal.intent === "reschedule_task"
+  ) {
     return [{ href: "/tarefas", label: "Tarefas" }];
   }
 

@@ -28,8 +28,9 @@ O apoio de ChatGPT/Codex foi usado para transformar a ideia do Gavium em um apli
 - Preparacao de Supabase.
 - Integracao Google Classroom por OAuth.
 - Suporte a mais de uma conta institucional do Classroom.
-- Assistente de IA local por regras.
-- Preparacao de IA por API no servidor.
+- Assistente hibrido com regras locais, contexto da rotina e memoria curta de conversa.
+- Integracao com OpenAI Responses API, JSON estruturado, fallback local e chave somente no servidor.
+- Comandos automaticos para criar, concluir e reagendar itens com protecao contra nomes ambiguos.
 - Tela de tutorial dentro do app.
 - Painel de personalizacao do app.
 - Documentacao tecnica e material de portfolio.

@@ -1,7 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { AlarmClockPlus, Bot, CalendarPlus, ClipboardCheck, GraduationCap, Loader2, Send, Sparkles, type LucideIcon } from "lucide-react";
+import {
+  AlarmClockPlus,
+  Bot,
+  CalendarPlus,
+  ClipboardCheck,
+  GraduationCap,
+  Loader2,
+  Send,
+  Sparkles,
+  Trash2,
+  type LucideIcon
+} from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +21,7 @@ import { createId, useRoutineData } from "@/features/data/routine-store";
 import type { AssistantCommandProposal } from "@/lib/ai/command-parser";
 import { buildRoutineAssistantResponse, type RoutineAssistantResponse } from "@/lib/ai/routine-assistant";
 import { getTodayInAppTimeZone } from "@/lib/date";
+import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 const promptSuggestions: Array<{ icon: LucideIcon; label: string }> = [
   { icon: Bot, label: "Oi, o que voce consegue fazer?" },
@@ -23,7 +35,7 @@ const promptSuggestions: Array<{ icon: LucideIcon; label: string }> = [
 ];
 
 export function AssistantPanel() {
-  const { addActivity, addAttendanceRecord, addEvent, addGrade, addReminder, addTask, data } = useRoutineData();
+  const { addActivity, addAttendanceRecord, addEvent, addGrade, addReminder, addTask, data, updateTask } = useRoutineData();
   const today = getTodayInAppTimeZone();
   const [actionMessage, setActionMessage] = useState("");
   const [error, setError] = useState("");
@@ -32,6 +44,7 @@ export function AssistantPanel() {
   const [model, setModel] = useState("");
   const [question, setQuestion] = useState("");
   const [lastQuestion, setLastQuestion] = useState("");
+  const [conversation, setConversation] = useState<ConversationMessage[]>([]);
   const [source, setSource] = useState<"ai" | "rules">("rules");
   const starterResponse = useMemo(
     () =>
@@ -72,11 +85,28 @@ export function AssistantPanel() {
     setModel("");
     setLastQuestion(cleanQuestion);
     setQuestion("");
+    const requestHistory = conversation.slice(-8).map(({ content, role }) => ({ content, role }));
+    setConversation((current) => [
+      ...current,
+      { content: cleanQuestion, id: createId("chat-user"), role: "user" as const }
+    ].slice(-10));
 
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json"
+      };
+
+      if (isSupabaseConfigured()) {
+        const { data: sessionData } = await createSupabaseBrowserClient().auth.getSession();
+        if (sessionData.session?.access_token) {
+          headers.Authorization = `Bearer ${sessionData.session.access_token}`;
+        }
+      }
+
       const result = await fetch("/api/assistant", {
         body: JSON.stringify({
           events: data.events,
+          history: requestHistory,
           appPreference: data.appPreference,
           question: cleanQuestion,
           reminders: data.reminders,
@@ -84,9 +114,7 @@ export function AssistantPanel() {
           tasks: data.tasks,
           today
         }),
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers,
         method: "POST"
       });
 
@@ -97,6 +125,10 @@ export function AssistantPanel() {
       const payload = (await result.json()) as AssistantApiResponse;
       const nextResponse = applyCommandIfNeeded(payload.response ?? localResponse);
       setResponse(nextResponse);
+      setConversation((current) => [
+        ...current,
+        { content: nextResponse.answer, id: createId("chat-assistant"), role: "assistant" as const }
+      ].slice(-10));
       setSource(payload.source ?? "rules");
       setModel(payload.model ?? "");
       setModeDetail(payload.modeDetail ?? (payload.source === "ai" ? "IA online ativa." : "IA local ativa."));
@@ -105,7 +137,12 @@ export function AssistantPanel() {
         setError("Usei a resposta local porque a IA online nao respondeu.");
       }
     } catch {
-      setResponse(applyCommandIfNeeded(localResponse));
+      const nextResponse = applyCommandIfNeeded(localResponse);
+      setResponse(nextResponse);
+      setConversation((current) => [
+        ...current,
+        { content: nextResponse.answer, id: createId("chat-assistant"), role: "assistant" as const }
+      ].slice(-10));
       setSource("rules");
       setModeDetail("IA local ativa; nao consegui confirmar a rota online agora.");
       setError("Usei a resposta local porque a IA online nao respondeu.");
@@ -205,6 +242,23 @@ export function AssistantPanel() {
       });
     }
 
+    if (proposal.intent === "complete_task") {
+      updateTask(proposal.task.id, {
+        completedAt: new Date().toISOString(),
+        status: "done"
+      });
+    }
+
+    if (proposal.intent === "reschedule_task") {
+      updateTask(proposal.task.id, {
+        date: proposal.date,
+        dueDate: proposal.date,
+        snoozedUntil: undefined,
+        status: "open",
+        ...(proposal.time ? { time: proposal.time } : {})
+      });
+    }
+
     setActionMessage(getCompletionMessage(proposal));
   }
 
@@ -219,6 +273,44 @@ export function AssistantPanel() {
           <Badge tone={source === "ai" ? "mint" : "sky"}>{source === "ai" ? "IA API" : "IA local"}</Badge>
         </div>
         <p className="mb-4 text-xs leading-5 text-slate-500">{modeDetail}</p>
+
+        {conversation.length ? (
+          <div className="mb-4 border-y border-line bg-slate-50/70 py-3">
+            <div className="mb-3 flex items-center justify-between gap-3 px-3">
+              <p className="text-xs font-semibold uppercase text-slate-500">Conversa recente</p>
+              <button
+                aria-label="Limpar conversa"
+                className="flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition hover:bg-white hover:text-ink"
+                onClick={() => setConversation([])}
+                title="Limpar conversa"
+                type="button"
+              >
+                <Trash2 aria-hidden className="h-4 w-4" />
+              </button>
+            </div>
+            <div aria-live="polite" className="max-h-64 space-y-3 overflow-y-auto px-3">
+              {conversation.map((message) => (
+                <div className={message.role === "user" ? "flex justify-end" : "flex justify-start"} key={message.id}>
+                  <div
+                    className={
+                      message.role === "user"
+                        ? "max-w-[88%] rounded-lg bg-ink px-3 py-2 text-sm leading-6 text-white"
+                        : "max-w-[88%] border-l-2 border-mint bg-white px-3 py-2 text-sm leading-6 text-slate-700"
+                    }
+                  >
+                    {message.content}
+                  </div>
+                </div>
+              ))}
+              {loading ? (
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
+                  Analisando seus dados
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
 
         <form className="space-y-3" onSubmit={handleSubmit}>
           <label className="block">
@@ -364,6 +456,12 @@ interface AssistantApiResponse {
   source?: "ai" | "rules";
 }
 
+interface ConversationMessage {
+  content: string;
+  id: string;
+  role: "assistant" | "user";
+}
+
 function getCompletionMessage(proposal: AssistantCommandProposal) {
   if (proposal.intent === "register_absence") {
     return `Concluido: ${proposal.summary} ${proposal.quantity === 1 ? "registrada" : "registradas"}.`;
@@ -379,6 +477,14 @@ function getCompletionMessage(proposal: AssistantCommandProposal) {
 
   if (proposal.intent === "add_event") {
     return `Concluido: compromisso "${proposal.summary}" adicionado.`;
+  }
+
+  if (proposal.intent === "complete_task") {
+    return `Concluido: a tarefa "${proposal.task.title}" foi marcada como concluida.`;
+  }
+
+  if (proposal.intent === "reschedule_task") {
+    return `Concluido: ${proposal.summary}.`;
   }
 
   return `Concluido: ${proposal.summary} adicionada.`;

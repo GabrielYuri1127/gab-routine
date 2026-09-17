@@ -29,7 +29,7 @@ O Gavium organiza essas informacoes em uma interface pensada para uso diario no 
 - Tarefas com prioridade, data, tempo estimado e status.
 - Lembretes dentro do app e notificacoes push preparadas para Android.
 - Calendario mensal com aulas, tarefas, prazos, lembretes e compromissos.
-- Assistente de IA com respostas baseadas nos dados cadastrados e comandos automaticos para faltas, notas, atividades, tarefas, lembretes e compromissos quando os dados estao claros.
+- Assistente hibrido com regras locais confiaveis e IA online contextual, memoria curta, saida estruturada e comandos automaticos para criar, concluir e reagendar itens quando os dados estao claros.
 - Importacao do Google Classroom por conta.
 - Suporte a mais de uma conta institucional do Google Classroom.
 - Perfil personalizavel com nome do app, usuario, cor, semestre padrao, carga horaria e modulos visiveis.
@@ -45,9 +45,11 @@ A parte academica foi separada em regras reutilizaveis para faltas, horarios, no
 
 A integracao com Google Classroom foi criada como importacao assistida: o usuario conecta a conta, revisa uma previa e decide quando importar. Isso evita misturar dados automaticamente e ajuda quem tem mais de uma conta institucional.
 
+O assistente usa uma arquitetura hibrida. O motor local calcula prioridades, medias, frequencia, prazos e propostas de acao; a IA online recebe um contexto reduzido da rotina para responder perguntas livres. Alteracoes so sao executadas quando o parser deterministico encontra dados suficientes. Login, limite persistente por usuario, timeout, identificador anonimizado e fallback local protegem custo e disponibilidade.
+
 ## Resultado
 
-O resultado atual e um app funcional, responsivo, instalavel no Android como PWA, preparado para uso com varias contas quando Supabase esta configurado e com base de notificacoes push para lembretes no celular. A evolucao natural fica em widgets Android e recursos mais avancados de IA.
+O resultado atual e um app funcional, responsivo, instalavel no Android como PWA, preparado para uso com varias contas quando Supabase esta configurado, com notificacoes push e uma base profissional para IA contextual. A evolucao natural fica em widgets Android, sincronizacao granular e planos inteligentes de estudo.
 
 ## Diferenciais
 

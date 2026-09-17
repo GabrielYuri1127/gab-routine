@@ -17,9 +17,10 @@ O Gavium ja tem uma versao funcional para uso pessoal, testes com outras pessoas
 - Tarefas.
 - Lembretes.
 - Calendario.
-- Assistente com logica local, status do app e comandos automaticos quando os dados estao claros.
-- Preparacao de IA online.
-- Comandos automaticos para faltas, notas, atividades, tarefas, lembretes e compromissos.
+- Assistente hibrido com logica local, contexto da rotina, memoria curta e fallback automatico.
+- Integracao de IA online pela OpenAI Responses API, pronta para ativacao por variaveis de ambiente.
+- Comandos automaticos para faltas, notas, atividades, tarefas, lembretes e compromissos, incluindo conclusao e reagendamento de tarefas.
+- Protecao da IA por login, limite temporario por usuario, timeout e identificador anonimizado.
 - Personalizacao do app.
 - Painel de status separando o que falta resolver agora e o que e melhoria futura.
 - Suporte por WhatsApp com link direto.
@@ -35,7 +36,7 @@ O Gavium ja tem uma versao funcional para uso pessoal, testes com outras pessoas
 
 - Teste real com Google Classroom usando contas institucionais.
 - Configuracao final das variaveis no ambiente de producao.
-- Uso de IA online com chave no servidor.
+- Ativacao e teste da IA online com uma chave real apenas no servidor.
 - Validacao com amigos e familiares.
 - Configuracao de VAPID, Supabase service role e secrets do GitHub para disparo automatico de push em producao.
 
@@ -44,7 +45,7 @@ O Gavium ja tem uma versao funcional para uso pessoal, testes com outras pessoas
 - Sincronizacao granular por tabela no Supabase.
 - Widget Android nativo.
 - Mais relatorios academicos.
-- Melhorias no assistente para sugerir planos semanais, rotinas de estudo e revisoes por prova.
+- Planos semanais, rotinas de estudo e revisoes por prova gerados e acompanhados pelo assistente.
 - Opcoes avancadas para diferentes faculdades e regras academicas.
 
 ## Fora Do Escopo Atual

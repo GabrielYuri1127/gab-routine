@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import { buildAssistantCommandProposal } from "../lib/ai/command-parser";
 import type { Subject } from "../types/academic";
+import type { Task } from "../types/domain";
 
 const subject: Subject = {
   activities: [],
@@ -25,6 +26,26 @@ const subject: Subject = {
   status: "active",
   workloadHours: 60
 };
+
+const tasks: Task[] = [
+  {
+    dueDate: "2026-09-12",
+    id: "task-report",
+    priority: "high",
+    status: "open",
+    title: "Finalizar relatorio",
+    userId: "user-1"
+  },
+  {
+    dueDate: "2026-09-11",
+    id: "task-book",
+    priority: "medium",
+    status: "open",
+    time: "10:00",
+    title: "Comprar livro",
+    userId: "user-1"
+  }
+];
 
 describe("assistant command parser", () => {
   it("proposes an absence record from natural language", () => {
@@ -127,5 +148,55 @@ describe("assistant command parser", () => {
 
     assert.equal(proposal?.intent, "add_event");
     assert.equal(proposal?.summary, "Reuniao do projeto em 11/09 as 15:30");
+  });
+
+  it("completes an existing task from a natural phrase", () => {
+    const proposal = buildAssistantCommandProposal({
+      question: "terminei o relatorio",
+      subjects: [subject],
+      tasks,
+      today: "2026-09-10"
+    });
+
+    assert.equal(proposal?.intent, "complete_task");
+    assert.equal(proposal?.summary, 'tarefa "Finalizar relatorio" concluida');
+  });
+
+  it("understands mark-as-done commands with the task name in the middle", () => {
+    const proposal = buildAssistantCommandProposal({
+      question: "marque comprar livro como concluida",
+      subjects: [subject],
+      tasks,
+      today: "2026-09-10"
+    });
+
+    assert.equal(proposal?.intent, "complete_task");
+    assert.equal(proposal?.summary, 'tarefa "Comprar livro" concluida');
+  });
+
+  it("reschedules an existing task with a new date and time", () => {
+    const proposal = buildAssistantCommandProposal({
+      question: "mova comprar livro para amanha as 14h",
+      subjects: [subject],
+      tasks,
+      today: "2026-09-10"
+    });
+
+    assert.equal(proposal?.intent, "reschedule_task");
+    assert.equal(proposal?.summary, 'tarefa "Comprar livro" reagendada para 11/09 as 14:00');
+  });
+
+  it("does not execute an ambiguous task completion", () => {
+    const proposal = buildAssistantCommandProposal({
+      question: "terminei relatorio",
+      subjects: [subject],
+      tasks: [
+        ...tasks,
+        { ...tasks[0], id: "task-report-2", title: "Revisar relatorio" }
+      ],
+      today: "2026-09-10"
+    });
+
+    assert.equal(proposal, null);
   });
 });

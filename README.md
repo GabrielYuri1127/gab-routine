@@ -127,7 +127,7 @@ A arquitetura inicial fica em:
 - `lib/ai/command-parser.ts`
 - `services/ai/`
 
-Por padrao o provedor esta desativado, entao o app continua funcionando com regras internas. A rota `/assistente` ja responde perguntas sobre prioridades, faltas, medias, prazos e status de publicacao usando os dados locais. Ela tambem entende comandos como registrar faltas, adicionar notas, criar atividades, lembretes, compromissos e tarefas, salvando direto quando os dados estao claros e pedindo complemento quando falta algo essencial. Quando `AI_PROVIDER=openai` e `AI_API_KEY` estiverem configurados no servidor, `/api/assistant` usa IA real sem expor a chave no navegador.
+Por padrao o provedor esta desativado, entao o app continua funcionando com regras internas. A rota `/assistente` responde perguntas sobre prioridades, faltas, medias, prazos e status de publicacao usando os dados locais. Ela tambem registra faltas e notas, cria atividades, lembretes, compromissos e tarefas, conclui tarefas existentes e reagenda prazos sem pedir confirmacao quando o comando e seguro e claro. Quando `AI_PROVIDER=openai` e `AI_API_KEY` estiverem configurados no servidor, `/api/assistant` usa IA real com contexto da rotina, memoria curta da conversa e JSON estruturado. A chave nunca vai para o navegador, o acesso online exige login quando Supabase esta ativo e existe um limite temporario por usuario.
 
 Veja `docs/ai-setup.md` antes de configurar a IA na Vercel.
 
@@ -157,7 +157,7 @@ O material apresentavel fica em `portfolio/`, com case study, ferramentas do pro
 ## Entregue
 
 - Home Hoje com proximo item, agenda do dia, compromissos, pendencias, lembretes e resumo da faculdade.
-- `/assistente` com IA local para perguntas, status do app e comandos automaticos quando os dados estao claros.
+- `/assistente` com modo local, IA online contextual, memoria curta e comandos automaticos quando os dados estao claros.
 - Navegacao mobile com botao central de acao rapida.
 - `/faculdade` com busca, filtros por status, cards com atalhos e cadastro detalhado.
 - `/faculdade/[id]` com detalhes, acoes rapidas, faltas, notas, simulador, atividades e gerenciamento.

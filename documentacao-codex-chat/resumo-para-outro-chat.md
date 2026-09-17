@@ -14,7 +14,7 @@ O projeto agora se chama Gavium. O nome anterior, Gab Routine, era apenas provis
 - Mobile: PWA instalavel no Android.
 - Persistencia atual: `localStorage`.
 - Persistencia futura preparada: Supabase.
-- IA: assistente local por regras e rota de servidor pronta para usar OpenAI API com variaveis de ambiente.
+- IA: arquitetura hibrida com regras locais, OpenAI Responses API, contexto da rotina, memoria curta, saida estruturada, fallback e limite por usuario. A ativacao online depende das variaveis de ambiente.
 - Google Classroom: OAuth preparado, importacao de cursos ativos e trabalhos com data, com suporte a mais de uma conta institucional.
 
 ## Funcionalidades Implementadas
@@ -63,7 +63,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
 - Terminar configuracao das variaveis na Vercel.
 - Testar Google Classroom com uma conta real.
-- Ativar IA online com chave no servidor.
+- Adicionar a chave no servidor e testar a IA online com uma conta autenticada.
 - Implementar notificacoes push completas.
 - Evoluir login e sincronizacao com Supabase.
 - Criar wrapper Android nativo se um widget real for necessario no futuro.
