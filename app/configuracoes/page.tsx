@@ -6,6 +6,7 @@ import { AppPreferencesPanel } from "@/features/settings/components/app-preferen
 import { DataTools } from "@/features/settings/components/data-tools";
 import { IntegrationStatusPanel } from "@/features/settings/components/integration-status-panel";
 import { PushNotificationsPanel } from "@/features/settings/components/push-notifications-panel";
+import { PwaInstallPanel } from "@/features/settings/components/pwa-install-panel";
 
 export default function SettingsPage() {
   return (
@@ -20,6 +21,7 @@ export default function SettingsPage() {
 
       <AppPreferencesPanel />
       <IntegrationStatusPanel />
+      <PwaInstallPanel />
       <PushNotificationsPanel />
       <DataTools />
       <ClassroomImportPanel />

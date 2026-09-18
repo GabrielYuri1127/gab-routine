@@ -1,4 +1,4 @@
-const CACHE_NAME = "gavium-v3";
+const CACHE_NAME = "gavium-v4";
 const APP_SHELL = ["/", "/faculdade", "/manifest.webmanifest", "/icons/icon-192.png", "/brand/gavium-mark.svg"];
 
 self.addEventListener("install", (event) => {
@@ -17,7 +17,24 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") {
+  const url = new URL(event.request.url);
+
+  if (event.request.method !== "GET" || url.origin !== self.location.origin || url.pathname.startsWith("/api/")) {
+    return;
+  }
+
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(async () => (await caches.match(event.request)) ?? caches.match("/"))
+    );
     return;
   }
 
@@ -29,8 +46,10 @@ self.addEventListener("fetch", (event) => {
 
       return fetch(event.request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          if (response.ok && response.type === "basic") {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
           return response;
         })
         .catch(() => caches.match("/"));
