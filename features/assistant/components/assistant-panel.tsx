@@ -359,7 +359,9 @@ export function AssistantPanel() {
         {lastQuestion ? <p className="mb-2 text-sm text-white/60">Pergunta: {lastQuestion}</p> : null}
         <p className="text-base leading-7 text-white/90">{currentResponse.answer}</p>
         {error ? <p className="mt-3 text-sm text-white/65">{error}</p> : null}
-        {actionMessage ? <p className="mt-3 text-sm font-medium text-white/75">{actionMessage}</p> : null}
+        {actionMessage && actionMessage !== currentResponse.answer ? (
+          <p className="mt-3 text-sm font-medium text-white/75">{actionMessage}</p>
+        ) : null}
       </section>
 
       <section className="grid gap-3 sm:grid-cols-3">
@@ -440,6 +442,7 @@ const intentLabels: Record<RoutineAssistantResponse["intent"], string> = {
   attendance: "faltas",
   command: "acao",
   conversation: "conversa",
+  date_time: "data",
   deadlines: "prazos",
   grades: "notas",
   resources: "materiais",

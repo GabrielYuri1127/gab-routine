@@ -10,6 +10,7 @@ import { buildAssistantCommandProposal, type AssistantCommandProposal } from "./
 
 export type AssistantIntent =
   | "now"
+  | "date_time"
   | "attendance"
   | "command"
   | "grades"
@@ -92,6 +93,8 @@ export function buildRoutineAssistantResponse(input: RoutineAssistantInput): Rou
   const response =
     commandProposal
       ? buildCommandAnswer(commandProposal)
+      : intent === "date_time"
+        ? buildDateTimeAnswer(safeInput)
       : intent === "readiness"
       ? buildReadinessAnswer(safeInput)
       : intent === "attendance"
@@ -116,6 +119,10 @@ function detectIntent(question: string): AssistantIntent {
   const attendanceQuestion = isAttendanceQuestion(normalized);
   const readinessQuestion = isReadinessQuestion(normalized);
   const resourceQuestion = isResourceQuestion(normalized);
+
+  if (isDateQuestion(normalized)) {
+    return "date_time";
+  }
 
   if (isConversationQuestion(normalized)) {
     return "conversation";
@@ -150,6 +157,47 @@ function detectIntent(question: string): AssistantIntent {
   }
 
   return "summary";
+}
+
+function isDateQuestion(normalized: string) {
+  const compact = normalized.replace(/[^a-z0-9]+/g, " ").trim();
+
+  return /^(?:(?:que|qual) (?:dia|data) (?:e )?hoje|qual (?:e )?a data de hoje|(?:em )?que dia estamos|hoje (?:e )?que dia|(?:a )?data de hoje)\b/.test(
+    compact
+  );
+}
+
+function buildDateTimeAnswer(input: RoutineAssistantInput): RoutineAssistantResponse {
+  const weekday = getWeekdayFromDate(parseDateKey(input.today));
+  const weekdayLabel = {
+    monday: "segunda-feira",
+    tuesday: "terca-feira",
+    wednesday: "quarta-feira",
+    thursday: "quinta-feira",
+    friday: "sexta-feira",
+    saturday: "sabado",
+    sunday: "domingo"
+  }[weekday];
+  const year = input.today.slice(0, 4);
+  const shortDate = formatShortDate(input.today);
+  const fullDate = `${shortDate}/${year}`;
+
+  return {
+    answer: `Hoje e ${weekdayLabel}, ${fullDate}.`,
+    dataGaps: [],
+    evidence: [`Data de referencia do Gavium: ${fullDate}.`, "Fuso horario do app: America/Manaus."],
+    highlights: [
+      { label: "Data", tone: "mint", value: shortDate },
+      { label: "Dia", tone: "sky", value: weekdayLabel },
+      { label: "Ano", tone: "neutral", value: year }
+    ],
+    intent: "date_time",
+    quickLinks: [
+      { href: "/", label: "Hoje" },
+      { href: "/calendario", label: "Calendario" }
+    ],
+    suggestions: ["Ver o que tenho hoje", "Perguntar qual e a prioridade de hoje", "Abrir o calendario"]
+  };
 }
 
 function isConversationQuestion(normalized: string) {

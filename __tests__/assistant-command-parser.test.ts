@@ -117,6 +117,29 @@ describe("assistant command parser", () => {
     assert.equal(proposal?.summary, "Comprar pilha para 11/09");
   });
 
+  it("never turns informational questions into automatic actions", () => {
+    for (const question of ["que dia e hoje?", "qual a data de hoje?", "o que tenho hoje?", "que horas sao?"]) {
+      const proposal = buildAssistantCommandProposal({
+        question,
+        subjects: [subject],
+        today: "2026-09-10"
+      });
+
+      assert.equal(proposal, null, question);
+    }
+  });
+
+  it("still accepts an explicit task command for today", () => {
+    const proposal = buildAssistantCommandProposal({
+      question: "crie tarefa revisar agenda hoje",
+      subjects: [subject],
+      today: "2026-09-10"
+    });
+
+    assert.equal(proposal?.intent, "add_task");
+    assert.equal(proposal?.summary, "Revisar agenda para 10/09");
+  });
+
   it("cleans natural personal reminders before saving the task title", () => {
     const proposal = buildAssistantCommandProposal({
       question: "tenho dentista sexta",

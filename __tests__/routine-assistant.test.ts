@@ -113,6 +113,21 @@ describe("routine assistant", () => {
     assert.equal(response.evidence.some((item) => item.includes("Primeira tarefa calculada: Enviar relatorio")), true);
   });
 
+  it("answers the current date without creating a task", () => {
+    const response = buildRoutineAssistantResponse({
+      events: [],
+      question: "Que dia e hoje?",
+      reminders: [],
+      subjects: [baseSubject],
+      tasks: [urgentTask],
+      today: "2026-09-18"
+    });
+
+    assert.equal(response.intent, "date_time");
+    assert.equal(response.commandProposal, undefined);
+    assert.match(response.answer, /sexta-feira, 18\/09\/2026/);
+  });
+
   it("surfaces attendance risk from registered absences", () => {
     const subject: Subject = {
       ...baseSubject,

@@ -130,6 +130,12 @@ const activityTypeLabels: Record<ActivityType, string> = {
 };
 
 export function buildAssistantCommandProposal(input: CommandParserInput): AssistantCommandProposal | null {
+  const normalized = normalizeText(input.question);
+
+  if (isInformationRequest(normalized)) {
+    return null;
+  }
+
   return (
     buildAbsenceProposal(input) ??
     buildGradeProposal(input) ??
@@ -928,6 +934,16 @@ function isQuestionLike(normalized: string) {
 
 function isLeadingQuestion(normalized: string) {
   return /\?|^(como|mostre|o que|posso|qual|quais|quando|quanto|quantas)\b/.test(normalized.trim());
+}
+
+function isInformationRequest(normalized: string) {
+  const compact = normalizeForMatch(normalized);
+
+  return (
+    /^(que|o que|qual|quais|quando|onde|como|quem|quanto|quantos|quantas|por que|porque|posso|mostre|me diga)\b/.test(
+      compact
+    ) || /^(a )?data de hoje\b/.test(compact)
+  );
 }
 
 function includesAny(value: string, candidates: string[]) {

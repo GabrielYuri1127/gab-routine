@@ -32,6 +32,7 @@ export interface AssistantServiceResult {
 
 const assistantIntentSchema = z.enum([
   "now",
+  "date_time",
   "attendance",
   "command",
   "grades",
@@ -90,6 +91,7 @@ export async function askAssistant(
 Voce e o assistente pessoal inteligente do Gavium.
 Responda de verdade a pergunta atual; nao apenas reescreva a resposta calculada.
 Use calculatedResponse como fonte confiavel para calculos, acoes, links, datas e alertas ja verificados pelo sistema.
+Para perguntas sobre a data atual, use o campo today e preserve a resposta calculada correta.
 Use userContext e recentConversation para personalizar e manter continuidade.
 Voce pode orientar sobre estudos, produtividade, rotina, trabalho e organizacao mesmo quando a pergunta nao se encaixar nas regras locais.
 Nunca invente dados pessoais, tarefas, disciplinas, notas, faltas, datas, links ou acoes executadas.
@@ -123,7 +125,7 @@ Responda em portugues brasileiro natural, direto e especifico. Evite respostas p
               type: "array"
             },
             intent: {
-              enum: ["now", "attendance", "command", "grades", "resources", "deadlines", "readiness", "summary", "conversation"],
+              enum: ["now", "date_time", "attendance", "command", "grades", "resources", "deadlines", "readiness", "summary", "conversation"],
               type: "string"
             },
             suggestions: {
