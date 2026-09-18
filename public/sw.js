@@ -1,5 +1,5 @@
-const CACHE_NAME = "gavium-v2";
-const APP_SHELL = ["/", "/faculdade", "/manifest.webmanifest", "/icons/icon.svg", "/brand/gavium-mark.svg"];
+const CACHE_NAME = "gavium-v3";
+const APP_SHELL = ["/", "/faculdade", "/manifest.webmanifest", "/icons/icon-192.png", "/brand/gavium-mark.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -48,8 +48,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title || fallback.title, {
       body: data.body || fallback.body,
-      icon: "/icons/icon.svg",
-      badge: "/icons/icon.svg",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
       tag: data.tag || "gavium",
       renotify: true,
       data: data.url || "/",

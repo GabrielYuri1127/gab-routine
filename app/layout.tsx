@@ -10,8 +10,11 @@ export const metadata: Metadata = {
   description: "Sistema pessoal para rotina, estudos, trabalho, tarefas, lembretes e produtividade.",
   applicationName: "Gavium",
   icons: {
-    apple: "/icons/maskable-icon.svg",
-    icon: "/icons/icon.svg"
+    apple: "/icons/apple-touch-icon.png",
+    icon: [
+      { sizes: "192x192", type: "image/png", url: "/icons/icon-192.png" },
+      { sizes: "512x512", type: "image/png", url: "/icons/icon-512.png" }
+    ]
   },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
