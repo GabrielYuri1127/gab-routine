@@ -8,12 +8,13 @@ import {
   ClipboardCheck,
   GraduationCap,
   Loader2,
+  LogIn,
   Send,
   Sparkles,
   Trash2,
   type LucideIcon
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ import { createId, useRoutineData } from "@/features/data/routine-store";
 import type { AssistantCommandProposal } from "@/lib/ai/command-parser";
 import { buildRoutineAssistantResponse, type RoutineAssistantResponse } from "@/lib/ai/routine-assistant";
 import { getTodayInAppTimeZone } from "@/lib/date";
+import type { IntegrationStatusReport } from "@/lib/integrations/status";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 const promptSuggestions: Array<{ icon: LucideIcon; label: string }> = [
@@ -37,7 +39,9 @@ const promptSuggestions: Array<{ icon: LucideIcon; label: string }> = [
 export function AssistantPanel() {
   const { addActivity, addAttendanceRecord, addEvent, addGrade, addReminder, addTask, data, updateTask } = useRoutineData();
   const today = getTodayInAppTimeZone();
+  const supabaseConfigured = isSupabaseConfigured();
   const [actionMessage, setActionMessage] = useState("");
+  const [aiConfigured, setAiConfigured] = useState<boolean | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [modeDetail, setModeDetail] = useState("IA local pronta para responder com os dados cadastrados.");
@@ -45,6 +49,7 @@ export function AssistantPanel() {
   const [question, setQuestion] = useState("");
   const [lastQuestion, setLastQuestion] = useState("");
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
+  const [sessionEmail, setSessionEmail] = useState<string | null | undefined>(supabaseConfigured ? undefined : null);
   const [source, setSource] = useState<"ai" | "rules">("rules");
   const starterResponse = useMemo(
     () =>
@@ -62,6 +67,75 @@ export function AssistantPanel() {
   const [response, setResponse] = useState<RoutineAssistantResponse | null>(null);
 
   const currentResponse = response ?? starterResponse;
+  const availabilityChecking = aiConfigured === null || sessionEmail === undefined;
+  const apiReady = aiConfigured === true && Boolean(sessionEmail);
+  const assistantBadge = response
+    ? source === "ai"
+      ? "IA API"
+      : "IA local"
+    : availabilityChecking
+      ? "Verificando"
+      : apiReady
+        ? "IA API pronta"
+        : "IA local";
+  const assistantModeDetail = response
+    ? modeDetail
+    : availabilityChecking
+      ? "Verificando sua conta e a configuracao da IA online."
+      : aiConfigured !== true
+        ? "A IA online nao esta configurada neste ambiente; o motor local continua disponivel."
+        : sessionEmail
+          ? `Conta ${sessionEmail} conectada. A IA online sera usada na proxima pergunta.`
+          : "Entre na sua conta para usar a IA online. O motor local continua disponivel sem consumir creditos.";
+  const needsLogin = supabaseConfigured && aiConfigured === true && sessionEmail === null;
+
+  useEffect(() => {
+    let active = true;
+
+    void fetch("/api/integrations/status", { cache: "no-store" })
+      .then(async (result) => {
+        if (!result.ok) {
+          throw new Error("Integration status request failed");
+        }
+
+        return (await result.json()) as IntegrationStatusReport;
+      })
+      .then((report) => {
+        if (active) {
+          setAiConfigured(report.items.some((item) => item.id === "ai" && item.state === "ready"));
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setAiConfigured(false);
+        }
+      });
+
+    if (!supabaseConfigured) {
+      return () => {
+        active = false;
+      };
+    }
+
+    const client = createSupabaseBrowserClient();
+    void client.auth.getSession().then(({ data: sessionData }) => {
+      if (active) {
+        setSessionEmail(sessionData.session?.user.email ?? null);
+      }
+    });
+    const {
+      data: { subscription }
+    } = client.auth.onAuthStateChange((_event, session) => {
+      if (active) {
+        setSessionEmail(session?.user.email ?? null);
+      }
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, [supabaseConfigured]);
 
   async function ask(nextQuestion: string) {
     const cleanQuestion = nextQuestion.trim();
@@ -270,9 +344,22 @@ export function AssistantPanel() {
             <Bot aria-hidden className="h-5 w-5 text-mint" />
             <h2 className="text-lg font-semibold text-ink">Assistente</h2>
           </span>
-          <Badge tone={source === "ai" ? "mint" : "sky"}>{source === "ai" ? "IA API" : "IA local"}</Badge>
+          <Badge tone={source === "ai" || (!response && apiReady) ? "mint" : "sky"}>{assistantBadge}</Badge>
         </div>
-        <p className="mb-4 text-xs leading-5 text-slate-500">{modeDetail}</p>
+        <p className="mb-4 text-xs leading-5 text-slate-500">{assistantModeDetail}</p>
+
+        {needsLogin ? (
+          <div className="mb-4 flex flex-col gap-3 border-l-2 border-mint bg-mint/5 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm leading-6 text-slate-700">A chave da IA esta pronta. Falta apenas entrar na sua conta para proteger seus dados.</p>
+            <Link
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-ink px-4 text-sm font-medium text-white transition hover:bg-black"
+              href="/login"
+            >
+              <LogIn aria-hidden className="h-4 w-4" />
+              Entrar para ativar
+            </Link>
+          </div>
+        ) : null}
 
         {conversation.length ? (
           <div className="mb-4 border-y border-line bg-slate-50/70 py-3">

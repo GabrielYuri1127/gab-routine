@@ -1,6 +1,7 @@
 "use client";
 
-import { KeyRound, Lock, LogIn, LogOut, MailCheck, UserPlus } from "lucide-react";
+import { Bot, KeyRound, Lock, LogIn, LogOut, MailCheck, UserPlus } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -265,6 +266,13 @@ export function LoginCard() {
             Sair
           </Button>
         </div>
+        <Link
+          className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-ink px-4 text-sm font-medium text-white transition hover:bg-black"
+          href="/assistente"
+        >
+          <Bot aria-hidden className="h-4 w-4" />
+          Abrir assistente com IA
+        </Link>
       </div>
     );
   }
