@@ -468,7 +468,7 @@ function SignUpProfileFields({
           <input
             className={inputClass}
             onChange={(event) => updateField("fullName", event.target.value)}
-            placeholder="Ex.: Gabriel Yuri"
+            placeholder="Ex.: Ana Silva"
             required
             value={profile.fullName}
           />
@@ -511,7 +511,7 @@ function SignUpProfileFields({
             <option value="amigo_familia">Amigo ou familia</option>
             <option value="faculdade_escola">Faculdade ou escola</option>
             <option value="trabalho">Trabalho</option>
-            <option value="portfolio">Portfolio do Gabriel</option>
+            <option value="portfolio">Portfolio pessoal</option>
             <option value="rede_social">Rede social</option>
             <option value="outro">Outro</option>
           </select>

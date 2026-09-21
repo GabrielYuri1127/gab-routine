@@ -4,7 +4,7 @@
 
 **Gavium** e o nome atual do app.
 
-O nome nasceu da ideia de criar uma marca curta, tecnologica e pessoal sem depender diretamente do nome Gabriel. Ele soa como produto digital, funciona melhor em portugues e ingles, e combina com a proposta de um sistema pessoal para organizar uma vida cheia de faculdade, projetos, estudos, compromissos e objetivos.
+O nome nasceu da ideia de criar uma marca curta, tecnologica e independente de qualquer nome pessoal. Ele soa como produto digital, funciona melhor em portugues e ingles, e combina com a proposta de um sistema para organizar uma vida cheia de faculdade, projetos, estudos, compromissos e objetivos.
 
 ## Conceito
 
@@ -14,7 +14,7 @@ A ideia e que o app nao seja apenas uma lista de tarefas, mas uma central de rot
 
 ## Por Que Combina Com O Projeto
 
-- Tem identidade pessoal discreta, inspirada no Gabriel, mas parece nome de produto.
+- Tem identidade propria e funciona como nome de produto.
 - Passa sensacao de tecnologia, organizacao e inteligencia.
 - E curto, memoravel e mais profissional que um nome descritivo generico.
 - Pode crescer de um projeto pessoal para algo compartilhavel com amigos, familiares e, no futuro, outros usuarios.

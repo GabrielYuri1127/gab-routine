@@ -5,7 +5,7 @@ Este guia resume como publicar o Gavium usando o repositorio do GitHub.
 ## Repositorio
 
 ```text
-https://github.com/GabrielYuri1127/gab-routine.git
+https://github.com/seu-usuario/gavium.git
 ```
 
 ## Configuracao Recomendada

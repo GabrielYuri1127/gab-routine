@@ -8,7 +8,7 @@ O projeto agora se chama Gavium. O nome anterior, Gab Routine, era apenas provis
 
 ## Estado Atual
 
-- Repositorio: `https://github.com/GabrielYuri1127/gab-routine.git`
+- Repositorio: use a URL privada ou publica configurada no ambiente de deploy.
 - Stack: Next.js App Router, React, TypeScript, Tailwind CSS, Zod, Lucide Icons.
 - Deploy planejado: Vercel.
 - Mobile: PWA instalavel no Android.

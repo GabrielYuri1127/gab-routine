@@ -60,7 +60,7 @@ const coachPreference: AppPreference = {
   defaultSemester: "2026/1",
   defaultWorkloadHours: 60,
   discoverySource: "portfolio",
-  displayName: "Gabriel",
+  displayName: "Marina",
   enabledModules: {
     assistant: true,
     calendar: true,
@@ -91,7 +91,7 @@ describe("routine assistant", () => {
       });
 
       assert.equal(response.intent, "conversation");
-      assert.match(response.answer, /Oi, Gabriel/);
+      assert.match(response.answer, /Oi, Marina/);
       assert.match(response.answer, /criar tarefas|registrar faltas/);
       assert.equal(response.quickLinks.some((link) => link.href === "/trabalho"), true);
     }
