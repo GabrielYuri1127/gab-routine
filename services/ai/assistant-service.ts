@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { shouldUseLocalAssistant } from "@/lib/ai/economy";
 import { AIProviderError, getAIProviderFailure, getConfiguredAIProvider } from "@/lib/ai/provider";
 import {
   buildRoutineAssistantResponse,
@@ -71,6 +72,14 @@ export async function askAssistant(
     };
   }
 
+  if (shouldUseLocalAssistant(question, localResponse)) {
+    return {
+      modeDetail: "Modo economico: resposta calculada no proprio Gavium, sem consumir creditos da OpenAI.",
+      response: localResponse,
+      source: "rules"
+    };
+  }
+
   if (options.allowOnline === false) {
     return {
       modeDetail:
@@ -83,7 +92,7 @@ export async function askAssistant(
 
   try {
     const completion = await provider.complete({
-      maxOutputTokens: 1_400,
+      maxOutputTokens: 1_100,
       messages: [
         {
           role: "system",
@@ -203,32 +212,32 @@ function buildModelContext(
       productivityGoal: context.appPreference?.productivityGoal ?? ""
     },
     routineData: {
-      events: context.events.slice(0, 80).map(({ category, date, endsAt, startsAt, title }) => ({
+      events: context.events.slice(0, 40).map(({ category, date, endsAt, startsAt, title }) => ({
         category,
         date,
         endsAt,
         startsAt,
         title
       })),
-      reminders: context.reminders.slice(0, 80).map(({ remindAt, sourceType, status, title }) => ({
+      reminders: context.reminders.slice(0, 40).map(({ remindAt, sourceType, status, title }) => ({
         remindAt,
         sourceType,
         status,
         title
       })),
-      subjects: context.subjects.slice(0, 30).map((subject) => ({
-        activities: subject.activities.slice(0, 40).map(({ dueDate, status, time, title, type }) => ({ dueDate, status, time, title, type })),
-        attendance: subject.attendance.slice(0, 80).map(({ date, quantity, status }) => ({ date, quantity, status })),
+      subjects: context.subjects.slice(0, 20).map((subject) => ({
+        activities: subject.activities.slice(0, 20).map(({ dueDate, status, time, title, type }) => ({ dueDate, status, time, title, type })),
+        attendance: subject.attendance.slice(0, 40).map(({ date, quantity, status }) => ({ date, quantity, status })),
         code: subject.code,
-        grades: subject.grades.slice(0, 40).map(({ date, maxScore, name, score, weight }) => ({ date, maxScore, name, score, weight })),
+        grades: subject.grades.slice(0, 20).map(({ date, maxScore, name, score, weight }) => ({ date, maxScore, name, score, weight })),
         name: subject.name,
-        resources: (subject.resources ?? []).slice(0, 30).map(({ notes, title, type, url }) => ({ notes, title, type, url })),
+        resources: (subject.resources ?? []).slice(0, 15).map(({ notes, title, type, url }) => ({ notes, title, type, url })),
         rules: subject.rules,
         schedules: subject.schedules,
         semester: subject.semester,
         status: subject.status
       })),
-      tasks: context.tasks.slice(0, 150).map(({ category, date, dueDate, priority, status, time, title }) => ({
+      tasks: context.tasks.slice(0, 80).map(({ category, date, dueDate, priority, status, time, title }) => ({
         category,
         date,
         dueDate,
@@ -243,9 +252,9 @@ function buildModelContext(
 
 function sanitizeHistory(history: AssistantConversationMessage[] | undefined) {
   return (history ?? [])
-    .slice(-8)
+    .slice(-6)
     .map((message) => ({
-      content: message.content.trim().slice(0, 2_000),
+      content: message.content.trim().slice(0, 1_000),
       role: message.role
     }))
     .filter((message) => message.content.length > 0);

@@ -12,11 +12,14 @@ Essas variaveis devem ficar no servidor, como variaveis de ambiente da Vercel. N
 
 ## Como Funciona
 
-- A tela `/assistente` envia a pergunta e o contexto para `/api/assistant`.
+- A tela `/assistente` envia a pergunta para `/api/assistant`, que decide entre o motor local e a IA online.
 - O servidor calcula uma resposta segura com regras locais, incluindo base da resposta, avisos de dados faltantes e proximos passos.
+- Faltas, notas, progresso, prioridades, prazos, materiais, resumos e comandos conhecidos ficam locais e nao gastam creditos.
+- Perguntas abertas, como criar um plano de estudos ou explicar uma estrategia, usam a IA online. O usuario tambem pode pedir explicitamente `use a IA online`.
+- Abrir a tela nao faz uma chamada paga de teste; a chave e o modelo sao validados na primeira pergunta que realmente exige IA.
 - Perguntas como "o que falta?" ou "o que falta para publicar?" usam o status real de Vercel, IA online, Google Classroom e Supabase, sem confundir com faltas de aula.
 - Comandos claros de alteracao viram uma acao automatica. O app salva falta, nota, atividade ou tarefa direto quando reconhece os dados essenciais, e pede complemento quando faltam disciplina, data, nota ou titulo.
-- Se `AI_PROVIDER=openai` e `AI_API_KEY` existirem, a API responde a pergunta usando o contexto real da rotina e as ultimas mensagens da conversa. Numeros, datas, links e acoes continuam ancorados no calculo local.
+- Se `AI_PROVIDER=openai` e `AI_API_KEY` existirem, a API usa contexto reduzido da rotina e ate seis mensagens recentes nas perguntas abertas. Numeros, datas, links e acoes continuam ancorados no calculo local.
 - Quando Supabase esta configurado, somente usuarios autenticados consomem a IA online. Pessoas sem login continuam usando o modo local.
 - O servidor aplica limite temporario por usuario, timeout e identificador anonimizado. Quando a chave secreta do Supabase esta disponivel, o uso fica registrado em `ai_usage`; sem ela, existe contingencia em memoria. A requisicao usa `store: false`.
 - Se a API falhar, o app volta automaticamente para a resposta local.

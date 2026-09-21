@@ -1,10 +1,27 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { probeAIProvider } from "../lib/ai/health";
+import { getAIConfigurationStatus, probeAIProvider } from "../lib/ai/health";
 import { AIProviderError, type AIProvider } from "../lib/ai/provider";
 
 describe("AI health probe", () => {
+  it("reports configuration without spending a completion", () => {
+    let calls = 0;
+    const provider: AIProvider = {
+      name: "openai",
+      async complete() {
+        calls += 1;
+        return { content: JSON.stringify({ ok: true }), model: "gpt-test" };
+      }
+    };
+
+    const result = getAIConfigurationStatus(provider);
+
+    assert.equal(result.code, "configured");
+    assert.equal(result.available, null);
+    assert.equal(calls, 0);
+  });
+
   it("marks the configured model ready only after a real completion", async () => {
     const provider: AIProvider = {
       name: "openai",

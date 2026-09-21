@@ -8,7 +8,6 @@ import {
   GraduationCap,
   Loader2,
   LogIn,
-  RefreshCw,
   Send,
   Sparkles,
   Trash2,
@@ -44,7 +43,6 @@ export function AssistantPanel() {
   const [actionMessage, setActionMessage] = useState("");
   const [aiHealth, setAiHealth] = useState<AIHealthStatus | null>(null);
   const [error, setError] = useState("");
-  const [healthRefreshKey, setHealthRefreshKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [modeDetail, setModeDetail] = useState("IA local pronta para responder com os dados cadastrados.");
   const [model, setModel] = useState("");
@@ -70,16 +68,20 @@ export function AssistantPanel() {
 
   const currentResponse = response ?? starterResponse;
   const availabilityChecking = aiHealth === null || sessionEmail === undefined;
-  const apiReady = aiHealth?.available === true && (!supabaseConfigured || Boolean(sessionEmail));
+  const apiReady =
+    (aiHealth?.code === "ready" || aiHealth?.code === "configured") &&
+    (!supabaseConfigured || Boolean(sessionEmail));
   const assistantBadge = response
     ? source === "ai"
       ? "IA API"
       : "IA local"
     : availabilityChecking
       ? "Verificando"
-      : apiReady
-        ? "IA API pronta"
-        : "IA local";
+      : aiHealth?.code === "configured"
+        ? "IA economica"
+        : apiReady
+          ? "IA API pronta"
+          : "IA local";
   const assistantModeDetail = response
     ? modeDetail
     : availabilityChecking
@@ -87,7 +89,7 @@ export function AssistantPanel() {
       : aiHealth?.detail ?? "Nao consegui verificar a IA online agora; o motor local continua disponivel.";
   const needsLogin = aiHealth?.code === "auth_required";
   const needsAttention = Boolean(
-    sessionEmail && aiHealth?.configured && !aiHealth.available && aiHealth.code !== "auth_required"
+    sessionEmail && aiHealth?.configured && aiHealth.available === false && aiHealth.code !== "auth_required"
   );
 
   useEffect(() => {
@@ -162,7 +164,7 @@ export function AssistantPanel() {
     return () => {
       active = false;
     };
-  }, [healthRefreshKey, sessionEmail, supabaseConfigured]);
+  }, [sessionEmail, supabaseConfigured]);
 
   async function ask(nextQuestion: string) {
     const cleanQuestion = nextQuestion.trim();
@@ -186,7 +188,7 @@ export function AssistantPanel() {
     setModel("");
     setLastQuestion(cleanQuestion);
     setQuestion("");
-    const requestHistory = conversation.slice(-8).map(({ content, role }) => ({ content, role }));
+    const requestHistory = conversation.slice(-6).map(({ content, role }) => ({ content, role }));
     setConversation((current) => [
       ...current,
       { content: cleanQuestion, id: createId("chat-user"), role: "user" as const }
@@ -406,17 +408,8 @@ export function AssistantPanel() {
         ) : null}
 
         {needsAttention ? (
-          <div className="mb-4 flex flex-col gap-3 border-l-2 border-coral bg-coral/5 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-4 border-l-2 border-coral bg-coral/5 px-3 py-3">
             <p className="text-sm leading-6 text-slate-700">{aiHealth?.detail}</p>
-            <Button
-              className="shrink-0"
-              onClick={() => setHealthRefreshKey((current) => current + 1)}
-              size="sm"
-              variant="secondary"
-            >
-              <RefreshCw aria-hidden className="h-4 w-4" />
-              Testar novamente
-            </Button>
           </div>
         ) : null}
 

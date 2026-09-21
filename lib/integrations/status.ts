@@ -63,11 +63,11 @@ export function buildIntegrationStatus(env: IntegrationEnv = process.env, reques
       {
         category: "agora",
         detail: aiReady
-          ? `IA online configurada com ${env.AI_MODEL || "modelo padrao"}; a tela Assistente faz um teste real de chave, creditos e modelo.`
+          ? `IA online configurada com ${env.AI_MODEL || "modelo padrao"} em modo economico; calculos simples nao gastam creditos.`
           : "O app continua respondendo com IA local por regras.",
         id: "ai",
         missing: aiReady ? [] : ["AI_PROVIDER=openai", "AI_API_KEY"],
-        nextStep: aiReady ? "Entrar e conferir o diagnostico ao abrir /assistente." : "Adicionar variaveis de IA na Vercel e fazer novo deploy.",
+        nextStep: aiReady ? "Usar a IA online somente para perguntas abertas em /assistente." : "Adicionar variaveis de IA na Vercel e fazer novo deploy.",
         state: aiReady ? "ready" : "needs_setup",
         title: "IA online"
       },

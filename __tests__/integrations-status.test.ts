@@ -27,6 +27,7 @@ describe("integration status", () => {
 
     assert.equal(ai?.state, "ready");
     assert.match(ai?.detail ?? "", /configurada/);
+    assert.match(ai?.detail ?? "", /economico/);
     assert.doesNotMatch(ai?.detail ?? "", /ativa/);
     assert.equal(classroom?.state, "ready");
     assert.equal(push?.state, "needs_setup");

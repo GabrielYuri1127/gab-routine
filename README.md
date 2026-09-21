@@ -128,7 +128,7 @@ A arquitetura inicial fica em:
 - `lib/ai/command-parser.ts`
 - `services/ai/`
 
-Por padrao o provedor esta desativado, entao o app continua funcionando com regras internas. A rota `/assistente` responde perguntas sobre prioridades, faltas, medias, prazos e status de publicacao usando os dados locais. Ela tambem registra faltas e notas, cria atividades, lembretes, compromissos e tarefas, conclui tarefas existentes e reagenda prazos sem pedir confirmacao quando o comando e seguro e claro. Quando `AI_PROVIDER=openai` e `AI_API_KEY` estiverem configurados no servidor, `/api/assistant` usa IA real com contexto da rotina, memoria curta da conversa e JSON estruturado. A chave nunca vai para o navegador, o acesso online exige login quando Supabase esta ativo e existe um limite temporario por usuario.
+Por padrao o provedor esta desativado, entao o app continua funcionando com regras internas. A rota `/assistente` responde perguntas sobre prioridades, faltas, medias, prazos e status de publicacao usando os dados locais. Ela tambem registra faltas e notas, cria atividades, lembretes, compromissos e tarefas, conclui tarefas existentes e reagenda prazos sem pedir confirmacao quando o comando e seguro e claro. Quando `AI_PROVIDER=openai` e `AI_API_KEY` estiverem configurados no servidor, `/api/assistant` usa IA real somente para perguntas abertas; calculos e comandos conhecidos ficam no modo local para economizar creditos. A chave nunca vai para o navegador, o acesso online exige login quando Supabase esta ativo e existe um limite temporario por usuario.
 
 Veja `docs/ai-setup.md` antes de configurar a IA na Vercel.
 

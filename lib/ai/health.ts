@@ -6,15 +6,36 @@ import {
   type AIProviderFailureCode
 } from "./provider";
 
-export type AIHealthCode = "ready" | "not_configured" | "auth_required" | AIProviderFailureCode;
+export type AIHealthCode = "ready" | "configured" | "not_configured" | "auth_required" | AIProviderFailureCode;
 
 export interface AIHealthStatus {
-  available: boolean;
+  available: boolean | null;
   checkedAt: string;
   code: AIHealthCode;
   configured: boolean;
   detail: string;
   model?: string;
+}
+
+export function getAIConfigurationStatus(provider: AIProvider = getConfiguredAIProvider()): AIHealthStatus {
+  const checkedAt = new Date().toISOString();
+  if (provider.name === "none") {
+    return {
+      available: false,
+      checkedAt,
+      code: "not_configured",
+      configured: false,
+      detail: "A IA online ainda nao esta configurada. O motor local continua disponivel."
+    };
+  }
+
+  return {
+    available: null,
+    checkedAt,
+    code: "configured",
+    configured: true,
+    detail: "Modo economico ativo: a IA online so sera testada quando uma pergunta realmente precisar dela."
+  };
 }
 
 const SUCCESS_CACHE_MS = 5 * 60 * 1_000;
@@ -41,20 +62,16 @@ export async function checkAIHealth(): Promise<AIHealthStatus> {
 }
 
 export async function probeAIProvider(provider: AIProvider = getConfiguredAIProvider()): Promise<AIHealthStatus> {
-  const checkedAt = new Date().toISOString();
-  if (provider.name === "none") {
-    return {
-      available: false,
-      checkedAt,
-      code: "not_configured",
-      configured: false,
-      detail: "A IA online ainda nao esta configurada. O motor local continua disponivel."
-    };
+  const configuration = getAIConfigurationStatus(provider);
+  if (!configuration.configured) {
+    return configuration;
   }
+
+  const checkedAt = configuration.checkedAt;
 
   try {
     const completion = await provider.complete({
-      maxOutputTokens: 512,
+      maxOutputTokens: 256,
       messages: [
         {
           content: "Responda somente com o objeto solicitado para confirmar que este modelo esta disponivel.",
