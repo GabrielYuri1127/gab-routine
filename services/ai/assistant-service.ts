@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { getConfiguredAIProvider } from "@/lib/ai/provider";
+import { AIProviderError, getAIProviderFailure, getConfiguredAIProvider } from "@/lib/ai/provider";
 import {
   buildRoutineAssistantResponse,
   type AssistantIntent,
@@ -83,7 +83,7 @@ export async function askAssistant(
 
   try {
     const completion = await provider.complete({
-      maxOutputTokens: 900,
+      maxOutputTokens: 1_400,
       messages: [
         {
           role: "system",
@@ -146,7 +146,7 @@ Responda em portugues brasileiro natural, direto e especifico. Evite respostas p
     const generated = parseGeneratedResponse(completion.content);
 
     if (!generated) {
-      throw new Error("The AI returned an invalid structured response.");
+      throw new AIProviderError("invalid_response");
     }
 
     return {
@@ -155,10 +155,11 @@ Responda em portugues brasileiro natural, direto e especifico. Evite respostas p
       response: mergeGeneratedResponse(localResponse, generated),
       source: "ai"
     };
-  } catch {
+  } catch (error) {
+    const failure = getAIProviderFailure(error);
     return {
-      error: "AI_UNAVAILABLE",
-      modeDetail: "A IA online nao respondeu a tempo; usei o motor local do Gavium nesta pergunta.",
+      error: failure.code,
+      modeDetail: `${failure.detail} Nesta pergunta, usei o motor local do Gavium.`,
       response: localResponse,
       source: "rules"
     };

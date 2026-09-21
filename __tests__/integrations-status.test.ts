@@ -26,6 +26,8 @@ describe("integration status", () => {
     const future = report.items.filter((item) => item.category === "futuro");
 
     assert.equal(ai?.state, "ready");
+    assert.match(ai?.detail ?? "", /configurada/);
+    assert.doesNotMatch(ai?.detail ?? "", /ativa/);
     assert.equal(classroom?.state, "ready");
     assert.equal(push?.state, "needs_setup");
     assert.equal(future.length > 0, true);

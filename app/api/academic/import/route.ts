@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { extractAcademicDocument } from "@/lib/academic-import/extractor";
-import { getConfiguredAIProvider } from "@/lib/ai/provider";
+import { getAIProviderFailure, getConfiguredAIProvider } from "@/lib/ai/provider";
 import { getSupabaseServerConfig, getSupabaseUserFromRequest } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -75,12 +75,13 @@ export async function POST(request: Request) {
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNKNOWN";
     console.error("Academic document import failed:", code);
+    const failure = getAIProviderFailure(error);
     return NextResponse.json(
       {
         error:
           code === "INVALID_ACADEMIC_IMPORT"
             ? "Nao consegui organizar os dados desse documento. Tente uma imagem mais nitida ou outro PDF."
-            : "Nao consegui analisar o documento agora. Tente novamente em alguns instantes."
+            : `${failure.detail} O documento nao foi alterado.`
       },
       { status: 502 }
     );

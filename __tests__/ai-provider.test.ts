@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { OpenAIResponsesProvider } from "../lib/ai/provider";
+import { AIProviderError, OpenAIResponsesProvider } from "../lib/ai/provider";
 
 describe("OpenAI Responses provider", () => {
   it("sends privacy, safety and cache fields without forcing temperature", async () => {
@@ -72,6 +72,44 @@ describe("OpenAI Responses provider", () => {
         { text: "read this", type: "input_text" },
         { file_data: "data:application/pdf;base64,AA==", filename: "grade.pdf", type: "input_file" }
       ]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("classifies a rejected key without exposing the provider response", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ error: { code: "invalid_api_key", message: "secret detail" } }), {
+        headers: { "Content-Type": "application/json" },
+        status: 401
+      });
+
+    try {
+      const provider = new OpenAIResponsesProvider("bad-key", "gpt-test", "https://example.test/v1");
+      await assert.rejects(
+        provider.complete({ messages: [{ content: "hello", role: "user" }] }),
+        (error) => error instanceof AIProviderError && error.code === "invalid_api_key" && !error.message.includes("secret detail")
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("distinguishes missing credits from a temporary rate limit", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ error: { code: "insufficient_quota" } }), {
+        headers: { "Content-Type": "application/json" },
+        status: 429
+      });
+
+    try {
+      const provider = new OpenAIResponsesProvider("test-key", "gpt-test", "https://example.test/v1");
+      await assert.rejects(
+        provider.complete({ messages: [{ content: "hello", role: "user" }] }),
+        (error) => error instanceof AIProviderError && error.code === "insufficient_quota"
+      );
     } finally {
       globalThis.fetch = originalFetch;
     }

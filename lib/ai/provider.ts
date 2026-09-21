@@ -37,6 +37,31 @@ export interface JsonSchemaResponseFormat {
   type: "json_schema";
 }
 
+export type AIProviderFailureCode =
+  | "invalid_api_key"
+  | "insufficient_quota"
+  | "rate_limited"
+  | "model_unavailable"
+  | "request_rejected"
+  | "timeout"
+  | "invalid_response"
+  | "service_unavailable";
+
+export interface AIProviderFailure {
+  code: AIProviderFailureCode;
+  detail: string;
+}
+
+export class AIProviderError extends Error {
+  constructor(
+    public readonly code: AIProviderFailureCode,
+    public readonly status?: number
+  ) {
+    super(`AI provider failed: ${code}`);
+    this.name = "AIProviderError";
+  }
+}
+
 export class DisabledAIProvider implements AIProvider {
   name: AIProviderName = "none";
 
@@ -67,37 +92,60 @@ export class OpenAIResponsesProvider implements AIProvider {
         role: message.role
       }));
 
-    const response = await fetch(`${this.baseUrl}/responses`, {
-      body: JSON.stringify({
-        input,
-        instructions: instructions || undefined,
-        max_output_tokens: request.maxOutputTokens ?? 500,
-        model: this.model,
-        prompt_cache_key: request.promptCacheKey,
-        safety_identifier: request.safetyIdentifier,
-        store: false,
-        ...(typeof request.temperature === "number" ? { temperature: request.temperature } : {}),
-        text: request.responseFormat ? { format: buildTextFormat(request.responseFormat) } : undefined
-      }),
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        "Content-Type": "application/json"
-      },
-      method: "POST",
-      signal: AbortSignal.timeout(request.timeoutMs ?? 20_000)
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}/responses`, {
+        body: JSON.stringify({
+          input,
+          instructions: instructions || undefined,
+          max_output_tokens: request.maxOutputTokens ?? 500,
+          model: this.model,
+          prompt_cache_key: request.promptCacheKey,
+          safety_identifier: request.safetyIdentifier,
+          store: false,
+          ...(typeof request.temperature === "number" ? { temperature: request.temperature } : {}),
+          text: request.responseFormat ? { format: buildTextFormat(request.responseFormat) } : undefined
+        }),
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json"
+        },
+        method: "POST",
+        signal: AbortSignal.timeout(request.timeoutMs ?? 20_000)
+      });
+    } catch (error) {
+      if (error instanceof AIProviderError) {
+        throw error;
+      }
 
-    if (!response.ok) {
-      throw new Error(`OpenAI request failed with status ${response.status}.`);
+      const name = error instanceof Error ? error.name : "";
+      throw new AIProviderError(name === "AbortError" || name === "TimeoutError" ? "timeout" : "service_unavailable");
     }
 
-    const payload = (await response.json()) as OpenAIResponsesPayload;
+    if (!response.ok) {
+      const errorPayload = (await response.json().catch(() => null)) as OpenAIErrorPayload | null;
+      throw new AIProviderError(classifyOpenAIError(response.status, errorPayload), response.status);
+    }
+
+    const payload = (await response.json().catch(() => null)) as OpenAIResponsesPayload | null;
+    if (!payload) {
+      throw new AIProviderError("invalid_response", response.status);
+    }
 
     return {
       content: payload.output_text ?? extractOutputText(payload),
       model: payload.model ?? this.model
     };
   }
+}
+
+export function getAIProviderFailure(error: unknown): AIProviderFailure {
+  const code = error instanceof AIProviderError ? error.code : "service_unavailable";
+
+  return {
+    code,
+    detail: failureDetails[code]
+  };
 }
 
 function buildTextFormat(format: AIProviderRequest["responseFormat"]) {
@@ -133,6 +181,49 @@ interface OpenAIResponsesPayload {
     }>;
   }>;
   output_text?: string;
+}
+
+interface OpenAIErrorPayload {
+  error?: {
+    code?: string;
+    type?: string;
+  };
+}
+
+const failureDetails: Record<AIProviderFailureCode, string> = {
+  invalid_api_key: "A chave da OpenAI foi recusada. Atualize AI_API_KEY na Vercel e faca um novo deploy.",
+  insufficient_quota: "A conta da OpenAI esta sem creditos ou atingiu o limite de uso. Ajuste o faturamento antes de tentar novamente.",
+  rate_limited: "A OpenAI limitou temporariamente as chamadas. Aguarde alguns minutos e tente novamente.",
+  model_unavailable: "O modelo configurado em AI_MODEL nao esta disponivel para esta chave. Escolha um modelo liberado e faca um novo deploy.",
+  request_rejected: "A OpenAI recusou o formato da solicitacao. O app continuou com o motor local.",
+  timeout: "A OpenAI demorou mais que o limite para responder. Tente novamente em alguns instantes.",
+  invalid_response: "A OpenAI respondeu, mas o conteudo veio incompleto. Tente novamente.",
+  service_unavailable: "Nao foi possivel conectar a OpenAI agora. Tente novamente em alguns instantes."
+};
+
+function classifyOpenAIError(status: number, payload: OpenAIErrorPayload | null): AIProviderFailureCode {
+  const providerCode = `${payload?.error?.code ?? ""} ${payload?.error?.type ?? ""}`.toLowerCase();
+
+  if (status === 401 || providerCode.includes("invalid_api_key")) {
+    return "invalid_api_key";
+  }
+  if (
+    providerCode.includes("insufficient_quota") ||
+    providerCode.includes("billing_hard_limit") ||
+    providerCode.includes("billing_not_active")
+  ) {
+    return "insufficient_quota";
+  }
+  if (status === 429) {
+    return "rate_limited";
+  }
+  if (status === 404 || providerCode.includes("model_not_found") || providerCode.includes("unsupported_model")) {
+    return "model_unavailable";
+  }
+  if (status === 400 || status === 403 || status === 422) {
+    return "request_rejected";
+  }
+  return "service_unavailable";
 }
 
 function extractOutputText(payload: OpenAIResponsesPayload) {

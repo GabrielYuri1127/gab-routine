@@ -8,6 +8,7 @@ import {
   GraduationCap,
   Loader2,
   LogIn,
+  RefreshCw,
   Send,
   Sparkles,
   Trash2,
@@ -19,10 +20,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createId, useRoutineData } from "@/features/data/routine-store";
+import type { AIHealthCode, AIHealthStatus } from "@/lib/ai/health";
 import type { AssistantCommandProposal } from "@/lib/ai/command-parser";
 import { buildRoutineAssistantResponse, type RoutineAssistantResponse } from "@/lib/ai/routine-assistant";
 import { getTodayInAppTimeZone } from "@/lib/date";
-import type { IntegrationStatusReport } from "@/lib/integrations/status";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 const promptSuggestions: Array<{ icon: LucideIcon; label: string }> = [
@@ -41,8 +42,9 @@ export function AssistantPanel() {
   const today = getTodayInAppTimeZone();
   const supabaseConfigured = isSupabaseConfigured();
   const [actionMessage, setActionMessage] = useState("");
-  const [aiConfigured, setAiConfigured] = useState<boolean | null>(null);
+  const [aiHealth, setAiHealth] = useState<AIHealthStatus | null>(null);
   const [error, setError] = useState("");
+  const [healthRefreshKey, setHealthRefreshKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [modeDetail, setModeDetail] = useState("IA local pronta para responder com os dados cadastrados.");
   const [model, setModel] = useState("");
@@ -67,8 +69,8 @@ export function AssistantPanel() {
   const [response, setResponse] = useState<RoutineAssistantResponse | null>(null);
 
   const currentResponse = response ?? starterResponse;
-  const availabilityChecking = aiConfigured === null || sessionEmail === undefined;
-  const apiReady = aiConfigured === true && Boolean(sessionEmail);
+  const availabilityChecking = aiHealth === null || sessionEmail === undefined;
+  const apiReady = aiHealth?.available === true && (!supabaseConfigured || Boolean(sessionEmail));
   const assistantBadge = response
     ? source === "ai"
       ? "IA API"
@@ -82,34 +84,14 @@ export function AssistantPanel() {
     ? modeDetail
     : availabilityChecking
       ? "Verificando sua conta e a configuracao da IA online."
-      : aiConfigured !== true
-        ? "A IA online nao esta configurada neste ambiente; o motor local continua disponivel."
-        : sessionEmail
-          ? `Conta ${sessionEmail} conectada. A IA online sera usada na proxima pergunta.`
-          : "Entre na sua conta para usar a IA online. O motor local continua disponivel sem consumir creditos.";
-  const needsLogin = supabaseConfigured && aiConfigured === true && sessionEmail === null;
+      : aiHealth?.detail ?? "Nao consegui verificar a IA online agora; o motor local continua disponivel.";
+  const needsLogin = aiHealth?.code === "auth_required";
+  const needsAttention = Boolean(
+    sessionEmail && aiHealth?.configured && !aiHealth.available && aiHealth.code !== "auth_required"
+  );
 
   useEffect(() => {
     let active = true;
-
-    void fetch("/api/integrations/status", { cache: "no-store" })
-      .then(async (result) => {
-        if (!result.ok) {
-          throw new Error("Integration status request failed");
-        }
-
-        return (await result.json()) as IntegrationStatusReport;
-      })
-      .then((report) => {
-        if (active) {
-          setAiConfigured(report.items.some((item) => item.id === "ai" && item.state === "ready"));
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setAiConfigured(false);
-        }
-      });
 
     if (!supabaseConfigured) {
       return () => {
@@ -136,6 +118,51 @@ export function AssistantPanel() {
       subscription.unsubscribe();
     };
   }, [supabaseConfigured]);
+
+  useEffect(() => {
+    if (sessionEmail === undefined) {
+      return;
+    }
+
+    let active = true;
+    setAiHealth(null);
+
+    void (async () => {
+      const headers: Record<string, string> = {};
+      if (supabaseConfigured) {
+        const { data: sessionData } = await createSupabaseBrowserClient().auth.getSession();
+        if (sessionData.session?.access_token) {
+          headers.Authorization = `Bearer ${sessionData.session.access_token}`;
+        }
+      }
+
+      const result = await fetch("/api/assistant/health", {
+        cache: "no-store",
+        headers
+      });
+      const payload = (await result.json()) as AIHealthStatus;
+      if (!result.ok && result.status !== 401) {
+        throw new Error("AI health request failed");
+      }
+      if (active) {
+        setAiHealth(payload);
+      }
+    })().catch(() => {
+      if (active) {
+        setAiHealth({
+          available: false,
+          checkedAt: new Date().toISOString(),
+          code: "service_unavailable",
+          configured: true,
+          detail: "Nao consegui verificar a IA online agora. O motor local continua disponivel."
+        });
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [healthRefreshKey, sessionEmail, supabaseConfigured]);
 
   async function ask(nextQuestion: string) {
     const cleanQuestion = nextQuestion.trim();
@@ -208,7 +235,24 @@ export function AssistantPanel() {
       setModeDetail(payload.modeDetail ?? (payload.source === "ai" ? "IA online ativa." : "IA local ativa."));
 
       if (payload.error) {
-        setError("Usei a resposta local porque a IA online nao respondeu.");
+        const detail = payload.modeDetail ?? "A IA online falhou; usei a resposta local nesta pergunta.";
+        setError(detail);
+        setAiHealth({
+          available: false,
+          checkedAt: new Date().toISOString(),
+          code: payload.error,
+          configured: true,
+          detail
+        });
+      } else if (payload.source === "ai") {
+        setAiHealth({
+          available: true,
+          checkedAt: new Date().toISOString(),
+          code: "ready",
+          configured: true,
+          detail: payload.modeDetail ?? "IA online pronta.",
+          model: payload.model
+        });
       }
     } catch {
       const nextResponse = applyCommandIfNeeded(localResponse);
@@ -358,6 +402,21 @@ export function AssistantPanel() {
               <LogIn aria-hidden className="h-4 w-4" />
               Entrar para ativar
             </Link>
+          </div>
+        ) : null}
+
+        {needsAttention ? (
+          <div className="mb-4 flex flex-col gap-3 border-l-2 border-coral bg-coral/5 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm leading-6 text-slate-700">{aiHealth?.detail}</p>
+            <Button
+              className="shrink-0"
+              onClick={() => setHealthRefreshKey((current) => current + 1)}
+              size="sm"
+              variant="secondary"
+            >
+              <RefreshCw aria-hidden className="h-4 w-4" />
+              Testar novamente
+            </Button>
           </div>
         ) : null}
 
@@ -541,7 +600,7 @@ const intentLabels: Record<RoutineAssistantResponse["intent"], string> = {
 };
 
 interface AssistantApiResponse {
-  error?: string;
+  error?: AIHealthCode;
   modeDetail?: string;
   model?: string;
   response?: RoutineAssistantResponse;
