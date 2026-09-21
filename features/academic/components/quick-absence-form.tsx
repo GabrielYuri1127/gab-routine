@@ -71,16 +71,16 @@ export function QuickAbsenceForm() {
     <div className="space-y-5">
       <header>
         <p className="text-sm font-medium text-mint">Acao rapida</p>
-        <h1 className="mt-1 text-2xl font-semibold text-ink">Registrar falta</h1>
-        <p className="mt-2 text-sm text-slate-600">Escolha a area, ajuste a data e toque na quantidade.</p>
+        <h1 className="mt-1 text-2xl font-semibold text-foreground">Registrar falta</h1>
+        <p className="mt-2 text-sm text-slate-600">Escolha a disciplina, ajuste a data e toque na quantidade.</p>
       </header>
 
       <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
         <div className="grid gap-3 sm:grid-cols-2">
           <label>
-            <span className="text-sm font-medium text-slate-700">Area</span>
+            <span className="text-sm font-medium text-slate-700">Disciplina</span>
             <select
-              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-strong"
               onChange={(event) => setSubjectId(event.target.value)}
               value={subjectId}
             >
@@ -94,7 +94,7 @@ export function QuickAbsenceForm() {
           <label>
             <span className="text-sm font-medium text-slate-700">Data da aula</span>
             <input
-              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-strong"
               max={today}
               onChange={(event) => setDate(event.target.value)}
               type="date"
@@ -117,7 +117,7 @@ export function QuickAbsenceForm() {
               <button
                 className={cn(
                   "shrink-0 rounded-lg border border-line bg-white px-3 py-2 text-left text-xs text-slate-600",
-                  option.date === date && "border-ink bg-ink text-white"
+                  option.date === date && "border-strong bg-contrast text-white"
                 )}
                 key={option.date}
                 onClick={() => setDate(option.date)}
@@ -133,7 +133,7 @@ export function QuickAbsenceForm() {
         <label className="mt-4 block">
           <span className="text-sm font-medium text-slate-700">Observacao</span>
           <input
-            className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+            className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
             onChange={(event) => setNotes(event.target.value)}
             placeholder="Ex.: aula de semana passada"
             value={notes}
@@ -158,15 +158,15 @@ export function QuickAbsenceForm() {
         </div>
 
         {selectedSubject ? (
-          <Link className="mt-4 flex items-center justify-between rounded-lg border border-line px-3 py-3 text-sm font-medium text-ink" href={`/faculdade/${selectedSubject.id}`}>
-            Abrir area
+          <Link className="mt-4 flex items-center justify-between rounded-lg border border-line px-3 py-3 text-sm font-medium text-foreground" href={`/faculdade/${selectedSubject.id}`}>
+            Abrir disciplina
             <ArrowRight aria-hidden className="h-4 w-4" />
           </Link>
         ) : null}
       </section>
 
       {toast ? (
-        <div className="rounded-lg bg-ink px-4 py-3 text-white shadow-soft">
+        <div className="rounded-lg bg-contrast px-4 py-3 text-white shadow-soft">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm">
               {toast.quantity} {toast.quantity === 1 ? "falta registrada" : "faltas registradas"} em {toast.subjectName} no dia{" "}
@@ -187,7 +187,7 @@ function Mini({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-slate-50 p-3">
       <p className="text-[11px] font-medium uppercase text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-ink">{value}</p>
+      <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
     </div>
   );
 }

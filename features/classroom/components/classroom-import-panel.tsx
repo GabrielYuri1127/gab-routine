@@ -269,7 +269,7 @@ export function ClassroomImportPanel() {
         <div className="min-w-0">
           <div className="mb-3 flex items-center gap-2">
             <GraduationCap aria-hidden className="h-5 w-5 text-sky-600" />
-            <h2 className="text-lg font-semibold text-ink">Google Classroom</h2>
+            <h2 className="text-lg font-semibold text-foreground">Google Classroom</h2>
           </div>
           <p className="text-sm leading-6 text-slate-600">
             Conecte uma ou mais contas institucionais. Cada conta fica separada na previa e pode ser importada sem misturar origem.
@@ -314,12 +314,12 @@ export function ClassroomImportPanel() {
 
       {connections.length ? (
         <div className="mt-4 border-t border-line pt-4">
-          <h3 className="text-sm font-semibold text-ink">Contas conectadas</h3>
+          <h3 className="text-sm font-semibold text-foreground">Contas conectadas</h3>
           <div className="mt-2 divide-y divide-line rounded-lg border border-line">
             {connections.map((connection) => (
               <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between" key={connection.connectionId}>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-ink">{connection.name ?? connection.email ?? "Conta Google"}</p>
+                  <p className="truncate text-sm font-medium text-foreground">{connection.name ?? connection.email ?? "Conta Google"}</p>
                   <p className="truncate text-xs text-slate-500">
                     {connection.email ?? "Email nao informado"}
                     {connection.lastSyncedAt ? ` - sincronizada ${formatSyncDate(connection.lastSyncedAt)}` : " - ainda nao sincronizada"}
@@ -362,7 +362,7 @@ export function ClassroomImportPanel() {
               <div className="rounded-lg border border-line p-3" key={getImportKey(item)}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-ink">{getAccountLabel(item)}</p>
+                    <p className="truncate text-sm font-semibold text-foreground">{getAccountLabel(item)}</p>
                     <p className="mt-1 text-xs text-slate-500">
                       {accountTotals.courses} turma(s), {accountTotals.courseWork} item(ns), {accountTotals.datedCourseWork} com prazo
                     </p>
@@ -382,7 +382,7 @@ export function ClassroomImportPanel() {
                     <div className="rounded-lg border border-line bg-slate-50 p-3" key={courseItem.course.id}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-ink">{courseItem.course.name}</p>
+                          <p className="truncate text-sm font-semibold text-foreground">{courseItem.course.name}</p>
                           <p className="mt-1 text-xs text-slate-500">
                             {courseItem.course.section || courseItem.course.room || "Sem secao"} - {courseItem.courseWork.length} item(ns)
                           </p>
@@ -763,7 +763,7 @@ function Mini({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-slate-50 p-3">
       <p className="text-xs font-medium text-slate-500">{label}</p>
-      <p className="mt-1 text-xl font-semibold text-ink">{value}</p>
+      <p className="mt-1 text-xl font-semibold text-foreground">{value}</p>
     </div>
   );
 }

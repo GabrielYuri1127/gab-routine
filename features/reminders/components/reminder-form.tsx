@@ -58,14 +58,14 @@ export function ReminderForm({ afterCreateHref, compact = false }: ReminderFormP
     <form className="rounded-lg border border-line bg-white p-4 shadow-sm" onSubmit={handleSubmit}>
       <div className="mb-4 flex items-center gap-2">
         <BellPlus aria-hidden className="h-5 w-5 text-sky" />
-        <h2 className="text-lg font-semibold text-ink">{compact ? "Novo lembrete" : "Adicionar lembrete"}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{compact ? "Novo lembrete" : "Adicionar lembrete"}</h2>
       </div>
 
       <div className="space-y-3">
         <label className="block">
           <span className="text-xs font-semibold uppercase text-slate-500">Titulo</span>
           <input
-            className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-sky"
+            className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-foreground outline-none focus:border-sky"
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Ex.: Separar material da aula"
             required
@@ -77,7 +77,7 @@ export function ReminderForm({ afterCreateHref, compact = false }: ReminderFormP
           <label className="block">
             <span className="text-xs font-semibold uppercase text-slate-500">Data</span>
             <input
-              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-sky"
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-foreground outline-none focus:border-sky"
               onChange={(event) => setDate(event.target.value)}
               required
               type="date"
@@ -87,7 +87,7 @@ export function ReminderForm({ afterCreateHref, compact = false }: ReminderFormP
           <label className="block">
             <span className="text-xs font-semibold uppercase text-slate-500">Hora</span>
             <input
-              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-sky"
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-foreground outline-none focus:border-sky"
               onChange={(event) => setTime(event.target.value)}
               required
               type="time"
@@ -97,7 +97,7 @@ export function ReminderForm({ afterCreateHref, compact = false }: ReminderFormP
           <label className="block">
             <span className="text-xs font-semibold uppercase text-slate-500">Tipo</span>
             <select
-              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-sky"
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-foreground outline-none focus:border-sky"
               onChange={(event) => setSourceType(event.target.value as NonNullable<Reminder["sourceType"]>)}
               value={sourceType}
             >

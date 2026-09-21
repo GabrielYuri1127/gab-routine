@@ -10,14 +10,14 @@ export function SupportWhatsAppCard({ compact = false }: { compact?: boolean }) 
         <div className="min-w-0">
           <div className="mb-2 flex items-center gap-2">
             <MessageCircle aria-hidden className="h-5 w-5 text-mint" />
-            <h2 className={compact ? "text-base font-semibold text-ink" : "text-lg font-semibold text-ink"}>Suporte pelo WhatsApp</h2>
+            <h2 className={compact ? "text-base font-semibold text-foreground" : "text-lg font-semibold text-foreground"}>Suporte pelo WhatsApp</h2>
           </div>
           <p className="text-sm leading-6 text-slate-600">
             Fale direto com o suporte do Gavium pelo numero {supportPhoneDisplay}.
           </p>
         </div>
         <a
-          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-ink px-4 text-sm font-medium text-white transition hover:bg-black"
+          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-contrast px-4 text-sm font-medium text-white transition hover:bg-contrast-hover"
           href={supportWhatsappUrl}
           rel="noreferrer"
           target="_blank"

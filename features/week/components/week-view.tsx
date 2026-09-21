@@ -151,13 +151,13 @@ export function WeekView() {
       <header className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <p className="text-sm font-medium text-mint">Semana</p>
-          <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Planejamento semanal</h1>
+          <h1 className="mt-1 text-2xl font-semibold text-foreground sm:text-3xl">Planejamento semanal</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
             Horarios, prazos e tarefas em uma linha do tempo unica. Conflitos aparecem automaticamente.
           </p>
         </div>
         <Link
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-ink px-4 text-sm font-medium text-white transition hover:bg-black"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-contrast px-4 text-sm font-medium text-white transition hover:bg-contrast-hover"
           href="/quick/event"
         >
           <Plus aria-hidden className="h-4 w-4" />
@@ -172,7 +172,7 @@ export function WeekView() {
               <ChevronLeft aria-hidden className="h-5 w-5" />
             </Button>
             <div className="min-w-44 text-center">
-              <p className="text-sm font-semibold text-ink">{formatWeekRange(weekDates)}</p>
+              <p className="text-sm font-semibold text-foreground">{formatWeekRange(weekDates)}</p>
               <p className="mt-0.5 text-xs text-slate-500">{allItems.length} itens visiveis</p>
             </div>
             <Button aria-label="Proxima semana" onClick={() => moveWeek(7)} size="icon" title="Proxima semana" variant="secondary">
@@ -192,7 +192,7 @@ export function WeekView() {
                 <label
                   className={cn(
                     "flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm font-medium transition",
-                    visibleKinds[option.kind] ? "border-slate-300 bg-slate-50 text-ink" : "border-line bg-white text-slate-400"
+                    visibleKinds[option.kind] ? "border-slate-300 bg-slate-50 text-foreground" : "border-line bg-white text-slate-400"
                   )}
                   key={option.kind}
                 >
@@ -222,9 +222,9 @@ export function WeekView() {
       {allItems.length === 0 ? (
         <section className="rounded-lg border border-dashed border-line bg-white px-5 py-10 text-center">
           <CalendarDays aria-hidden className="mx-auto h-8 w-8 text-slate-400" />
-          <h2 className="mt-3 text-base font-semibold text-ink">Nenhum item nessa semana</h2>
+          <h2 className="mt-3 text-base font-semibold text-foreground">Nenhum item nessa semana</h2>
           <p className="mt-1 text-sm text-slate-500">Mude os filtros, navegue para outra semana ou adicione um compromisso.</p>
-          <Link className="mt-4 inline-flex h-10 items-center gap-2 rounded-lg border border-line px-3 text-sm font-medium text-ink" href="/quick/event">
+          <Link className="mt-4 inline-flex h-10 items-center gap-2 rounded-lg border border-line px-3 text-sm font-medium text-foreground" href="/quick/event">
             <Plus aria-hidden className="h-4 w-4" />
             Adicionar
           </Link>
@@ -252,7 +252,7 @@ export function WeekView() {
                       key={day.dateKey}
                     >
                       <p className="text-[11px] font-semibold uppercase text-slate-500">{weekdayLabels[getWeekdayFromDate(day.date)]}</p>
-                      <p className={cn("mt-1 text-sm font-semibold text-ink", day.dateKey === today && "text-emerald-700")}>
+                      <p className={cn("mt-1 text-sm font-semibold text-foreground", day.dateKey === today && "text-emerald-700")}>
                         {formatShortDate(day.dateKey)}
                       </p>
                     </div>
@@ -367,7 +367,7 @@ function MobileDay({ plan, today }: { plan: DayPlan; today: string }) {
     <section className={cn("rounded-lg border border-line bg-white shadow-sm", plan.dateKey === today && "border-emerald-300")}>
       <div className={cn("flex items-center justify-between border-b border-line px-4 py-3", plan.dateKey === today && "bg-emerald-50")}>
         <div>
-          <h2 className="text-sm font-semibold text-ink">{weekdayLabels[getWeekdayFromDate(plan.date)]}</h2>
+          <h2 className="text-sm font-semibold text-foreground">{weekdayLabels[getWeekdayFromDate(plan.date)]}</h2>
           <p className="mt-0.5 text-xs text-slate-500">{formatShortDate(plan.dateKey)}</p>
         </div>
         {plan.dateKey === today ? <Badge tone="mint">hoje</Badge> : <Badge>{plan.items.length} itens</Badge>}
@@ -385,7 +385,7 @@ function MobileDay({ plan, today }: { plan: DayPlan; today: string }) {
                 href={item.href}
                 key={item.id}
               >
-                <span className="text-xs font-semibold text-ink">{item.startTime ?? "--:--"}</span>
+                <span className="text-xs font-semibold text-foreground">{item.startTime ?? "--:--"}</span>
                 <span className="min-w-0">
                   <span className="flex items-center gap-2 truncate text-sm font-medium text-slate-700">
                     <Icon aria-hidden className="h-4 w-4 shrink-0" />
@@ -436,7 +436,7 @@ function WeekMetric({ icon: Icon, label, value, tone = "neutral" }: {
         <Icon aria-hidden className={cn("h-4 w-4", tone === "warning" && "text-amber-600")} />
         <p className="text-xs font-medium">{label}</p>
       </div>
-      <p className="mt-2 text-xl font-semibold text-ink">{value}</p>
+      <p className="mt-2 text-xl font-semibold text-foreground">{value}</p>
     </div>
   );
 }

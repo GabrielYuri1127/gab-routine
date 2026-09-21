@@ -21,7 +21,7 @@ export function ReminderCenter() {
     <div className="space-y-5">
       <header>
         <p className="text-sm font-medium text-mint">Lembretes</p>
-        <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Central de lembretes</h1>
+        <h1 className="mt-1 text-2xl font-semibold text-foreground sm:text-3xl">Central de lembretes</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
           Nesta fase eles aparecem no app e ficam salvos localmente. Push no Android entra na fase de notificacoes.
         </p>
@@ -37,7 +37,7 @@ export function ReminderCenter() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-ink">Agendados</h2>
+          <h2 className="text-lg font-semibold text-foreground">Agendados</h2>
           <Badge tone="sky">{scheduled.length} ativos</Badge>
         </div>
         <ReminderList reminders={scheduled} />
@@ -63,7 +63,7 @@ function Metric({
         <Icon aria-hidden className="h-5 w-5 text-slate-500" />
         <Badge tone={tone}>{label}</Badge>
       </div>
-      <p className="text-2xl font-semibold text-ink">{value}</p>
+      <p className="text-2xl font-semibold text-foreground">{value}</p>
     </div>
   );
 }

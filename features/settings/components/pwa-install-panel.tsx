@@ -62,7 +62,7 @@ export function PwaInstallPanel() {
         <div>
           <div className="mb-2 flex items-center gap-2">
             <Smartphone aria-hidden className="h-5 w-5 text-mint" />
-            <h2 className="text-lg font-semibold text-ink">Aplicativo no Android</h2>
+            <h2 className="text-lg font-semibold text-foreground">Aplicativo no Android</h2>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge tone={installed ? "mint" : "sky"}>{installed ? "instalado" : "PWA"}</Badge>

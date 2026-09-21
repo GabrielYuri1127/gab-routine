@@ -7,7 +7,7 @@ export type Weekday =
   | "saturday"
   | "sunday";
 
-export type SubjectStatus = "active" | "paused" | "completed" | "archived";
+export type SubjectStatus = "planned" | "active" | "completed" | "failed" | "paused" | "archived";
 
 export type AttendanceStatus = "absence" | "justified" | "present" | "cancelled";
 
@@ -106,6 +106,7 @@ export interface Subject {
   professor?: string;
   room?: string;
   semester: string;
+  recommendedPeriod?: number;
   workloadHours: number;
   color: string;
   status: SubjectStatus;

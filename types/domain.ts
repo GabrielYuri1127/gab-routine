@@ -32,6 +32,10 @@ export interface AppPreference {
   contextDetails: string;
   contexts: string[];
   courseOrArea: string;
+  courseInstitution?: string;
+  courseTotalSemesters?: number;
+  courseTotalWorkloadHours?: number;
+  currentCurriculumPeriod?: number;
   defaultClassesQuantity: number;
   defaultSemester: string;
   defaultWorkloadHours: number;

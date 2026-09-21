@@ -83,19 +83,19 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
     <section className="space-y-4" id="faltas">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-ink">Faltas</h2>
+          <h2 className="text-lg font-semibold text-foreground">Faltas</h2>
           <p className="mt-1 text-sm text-slate-500">Registre hoje, uma data antiga, presenca, justificativa ou aula cancelada.</p>
         </div>
         <div className="flex w-full rounded-lg border border-line bg-white p-1 sm:w-auto">
           <button
-            className={`h-9 flex-1 rounded-md px-3 text-sm sm:flex-none ${mode === "simple" ? "bg-ink text-white" : "text-slate-500"}`}
+            className={`h-9 flex-1 rounded-md px-3 text-sm sm:flex-none ${mode === "simple" ? "bg-contrast text-white" : "text-slate-500"}`}
             onClick={() => setMode("simple")}
             type="button"
           >
             Rapido
           </button>
           <button
-            className={`h-9 flex-1 rounded-md px-3 text-sm sm:flex-none ${mode === "complete" ? "bg-ink text-white" : "text-slate-500"}`}
+            className={`h-9 flex-1 rounded-md px-3 text-sm sm:flex-none ${mode === "complete" ? "bg-contrast text-white" : "text-slate-500"}`}
             onClick={() => setMode("complete")}
             type="button"
           >
@@ -149,7 +149,7 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
       <form className="rounded-lg border border-line bg-white p-4 shadow-sm" onSubmit={handleCustomSubmit}>
         <div className="mb-4 flex items-center gap-2">
           <CalendarClock aria-hidden className="h-5 w-5 text-mint" />
-          <h3 className="text-sm font-semibold text-ink">Registrar data passada</h3>
+          <h3 className="text-sm font-semibold text-foreground">Registrar data passada</h3>
         </div>
 
         <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
@@ -157,7 +157,7 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
             <button
               className={cn(
                 "shrink-0 rounded-lg border border-line bg-white px-3 py-2 text-left text-xs text-slate-600",
-                date === option.date && "border-ink bg-ink text-white"
+                date === option.date && "border-strong bg-contrast text-white"
               )}
               key={option.date}
               onClick={() => {
@@ -176,7 +176,7 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
           <label>
             <span className="text-sm font-medium text-slate-700">Data</span>
             <input
-              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
               max={today}
               onChange={(event) => setDate(event.target.value)}
               type="date"
@@ -186,7 +186,7 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
           <label>
             <span className="text-sm font-medium text-slate-700">Aulas</span>
             <input
-              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
               min={1}
               onChange={(event) => setQuantity(event.target.value)}
               type="number"
@@ -196,7 +196,7 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
           <label>
             <span className="text-sm font-medium text-slate-700">Tipo</span>
             <select
-              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-strong"
               onChange={(event) => setStatus(event.target.value as AttendanceRecord["status"])}
               value={status}
             >
@@ -210,7 +210,7 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
           <label>
             <span className="text-sm font-medium text-slate-700">Observacao</span>
             <input
-              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
               onChange={(event) => setNotes(event.target.value)}
               placeholder="Ex.: esqueci de registrar"
               value={notes}
@@ -239,7 +239,7 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
 
       <div className="rounded-lg border border-line bg-white shadow-sm">
         <div className="border-b border-line px-4 py-3">
-          <h3 className="text-sm font-semibold text-ink">Historico editavel</h3>
+          <h3 className="text-sm font-semibold text-foreground">Historico editavel</h3>
         </div>
         <div className="divide-y divide-line">
           {sortedRecords.length === 0 ? (
@@ -250,7 +250,7 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
                 <label className="text-xs text-slate-500">
                   Data
                   <input
-                    className="mt-1 h-9 w-full rounded-lg border border-line px-2 text-sm text-ink"
+                    className="mt-1 h-9 w-full rounded-lg border border-line px-2 text-sm text-foreground"
                     onChange={(event) => updateAttendanceRecord(subject.id, record.id, { date: event.target.value })}
                     type="date"
                     value={record.date}
@@ -259,7 +259,7 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
                 <label className="text-xs text-slate-500">
                   Qtd.
                   <input
-                    className="mt-1 h-9 w-full rounded-lg border border-line px-2 text-sm text-ink"
+                    className="mt-1 h-9 w-full rounded-lg border border-line px-2 text-sm text-foreground"
                     min={0}
                     onChange={(event) => updateAttendanceRecord(subject.id, record.id, { quantity: Number(event.target.value) })}
                     type="number"
@@ -269,7 +269,7 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
                 <label className="text-xs text-slate-500">
                   Status
                   <select
-                    className="mt-1 h-9 w-full rounded-lg border border-line bg-white px-2 text-sm text-ink"
+                    className="mt-1 h-9 w-full rounded-lg border border-line bg-white px-2 text-sm text-foreground"
                     onChange={(event) => updateAttendanceRecord(subject.id, record.id, { status: event.target.value as AttendanceRecord["status"] })}
                     value={record.status}
                   >
@@ -283,7 +283,7 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
                 <label className="text-xs text-slate-500">
                   Observacao
                   <input
-                    className="mt-1 h-9 w-full rounded-lg border border-line px-2 text-sm text-ink"
+                    className="mt-1 h-9 w-full rounded-lg border border-line px-2 text-sm text-foreground"
                     onChange={(event) => updateAttendanceRecord(subject.id, record.id, { notes: event.target.value || undefined })}
                     placeholder={statusLabels[record.status]}
                     value={record.notes ?? ""}
@@ -299,7 +299,7 @@ export function AttendanceQuickActions({ subject }: { subject: Subject }) {
       </div>
 
       {toast ? (
-        <div className="fixed inset-x-4 bottom-24 z-50 flex items-center justify-between gap-3 rounded-lg bg-ink px-4 py-3 text-white shadow-soft lg:left-auto lg:right-8 lg:w-96">
+        <div className="fixed inset-x-4 bottom-24 z-50 flex items-center justify-between gap-3 rounded-lg bg-contrast px-4 py-3 text-white shadow-soft lg:left-auto lg:right-8 lg:w-96">
           <span className="text-sm">{toast.message}</span>
           <button
             className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium text-white hover:bg-white/10"
@@ -319,7 +319,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-line bg-white p-3 shadow-sm">
       <p className="text-[11px] font-medium uppercase text-slate-400">{label}</p>
-      <p className="mt-1 text-xl font-semibold text-ink">{value}</p>
+      <p className="mt-1 text-xl font-semibold text-foreground">{value}</p>
     </div>
   );
 }

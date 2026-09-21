@@ -33,26 +33,22 @@ const defaultSignUpProfile: SignUpProfile = {
   assistantStyle: "balanced",
   birthDate: "",
   contextDetails: "",
-  contexts: ["produtividade"],
+  contexts: ["faculdade", "trabalho"],
   courseOrArea: "",
   discoverySource: "",
   fullName: "",
   gender: "",
-  primaryContext: "produtividade",
+  primaryContext: "faculdade",
   productivityGoal: ""
 };
 
-const inputClass = "mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-mint";
+const inputClass = "mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-foreground outline-none focus:border-mint";
 const textareaClass =
-  "mt-1 min-h-24 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink outline-none focus:border-mint";
+  "mt-1 min-h-24 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-mint";
 
 const contextOptions = [
-  { label: "Produtividade", value: "produtividade" },
-  { label: "Rotina pessoal", value: "rotina_pessoal" },
-  { label: "Escola", value: "escola" },
   { label: "Faculdade", value: "faculdade" },
-  { label: "Trabalho", value: "trabalho" },
-  { label: "Projetos", value: "projetos" }
+  { label: "Trabalho", value: "trabalho" }
 ];
 
 export function LoginCard() {
@@ -222,7 +218,7 @@ export function LoginCard() {
           <Lock aria-hidden className="h-5 w-5 text-slate-500" />
           <Badge tone="gold">modo local</Badge>
         </div>
-        <h2 className="text-lg font-semibold text-ink">Supabase ainda nao configurado</h2>
+        <h2 className="text-lg font-semibold text-foreground">Supabase ainda nao configurado</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
           O app funciona no Android com armazenamento local, mas para mais de uma pessoa usar com dados separados e seguro preencher
           `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` no ambiente da Vercel ou no arquivo `.env.local`.
@@ -238,7 +234,7 @@ export function LoginCard() {
           <LogIn aria-hidden className="h-5 w-5 text-mint" />
           <Badge tone="mint">conectado</Badge>
         </div>
-        <h2 className="text-lg font-semibold text-ink">{currentName ? `${currentName} conectado` : currentEmail}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{currentName ? `${currentName} conectado` : currentEmail}</h2>
         {currentName ? <p className="mt-1 text-sm text-slate-500">{currentEmail}</p> : null}
         <p className="mt-2 text-sm leading-6 text-slate-600">
           Esta conta tem um espaco proprio no Gavium. Disciplinas, faltas, notas, tarefas, lembretes e Classroom ficam separados dos outros usuarios.
@@ -267,7 +263,7 @@ export function LoginCard() {
           </Button>
         </div>
         <Link
-          className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-ink px-4 text-sm font-medium text-white transition hover:bg-black"
+          className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-contrast px-4 text-sm font-medium text-white transition hover:bg-contrast-hover"
           href="/assistente"
         >
           <Bot aria-hidden className="h-4 w-4" />
@@ -286,7 +282,7 @@ export function LoginCard() {
         {mode === "recovery" ? <KeyRound aria-hidden className="h-5 w-5 text-mint" /> : null}
         <Badge tone="mint">Supabase</Badge>
       </div>
-      <h2 className="text-lg font-semibold text-ink">{getAuthTitle(mode)}</h2>
+      <h2 className="text-lg font-semibold text-foreground">{getAuthTitle(mode)}</h2>
       <p className="mt-2 text-sm leading-6 text-slate-600">
         {getAuthDescription(mode)}
       </p>
@@ -343,7 +339,7 @@ export function LoginCard() {
       </div>
 
       {mode === "sign-in" || mode === "sign-up" ? (
-        <label className="mt-3 flex items-start gap-3 rounded-lg border border-line bg-slate-50 px-3 py-3 text-sm text-ink">
+        <label className="mt-3 flex items-start gap-3 rounded-lg border border-line bg-slate-50 px-3 py-3 text-sm text-foreground">
         <input
           checked={rememberLogin}
           className="mt-1"
@@ -460,9 +456,9 @@ function SignUpProfileFields({
   return (
     <div className="mt-5 space-y-4 rounded-lg border border-dashed border-line bg-slate-50 p-4">
       <div>
-        <h3 className="text-sm font-semibold text-ink">Perfil inicial</h3>
+        <h3 className="text-sm font-semibold text-foreground">Perfil inicial</h3>
         <p className="mt-1 text-xs leading-5 text-slate-500">
-          Esses dados ajudam o Gavium a separar escola, faculdade, trabalho e rotina pessoal para personalizar lembretes e IA.
+          Esses dados ajudam o Gavium a conectar sua vida acadêmica e profissional com lembretes e IA.
         </p>
       </div>
 
@@ -480,12 +476,8 @@ function SignUpProfileFields({
         <label className="block">
           <span className="text-xs font-semibold uppercase text-slate-500">Uso principal</span>
           <select className={inputClass} onChange={(event) => updateField("primaryContext", event.target.value)} value={profile.primaryContext}>
-            <option value="produtividade">Produtividade geral</option>
-            <option value="rotina_pessoal">Rotina pessoal</option>
-            <option value="trabalho">Trabalho</option>
             <option value="faculdade">Faculdade</option>
-            <option value="escola">Escola</option>
-            <option value="projetos">Projetos</option>
+            <option value="trabalho">Trabalho</option>
           </select>
         </label>
       </div>
@@ -494,7 +486,7 @@ function SignUpProfileFields({
         <span className="text-xs font-semibold uppercase text-slate-500">Onde pretende usar</span>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           {contextOptions.map((option) => (
-            <label className="flex min-h-11 items-center gap-2 rounded-lg border border-line bg-white px-3 text-sm text-ink" key={option.value}>
+            <label className="flex min-h-11 items-center gap-2 rounded-lg border border-line bg-white px-3 text-sm text-foreground" key={option.value}>
               <input checked={profile.contexts.includes(option.value)} onChange={() => toggleContext(option.value)} type="checkbox" />
               {option.label}
             </label>
@@ -504,7 +496,7 @@ function SignUpProfileFields({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
-          <span className="text-xs font-semibold uppercase text-slate-500">Curso, serie ou area</span>
+          <span className="text-xs font-semibold uppercase text-slate-500">Curso</span>
           <input
             className={inputClass}
             onChange={(event) => updateField("courseOrArea", event.target.value)}
@@ -568,7 +560,7 @@ function SignUpProfileFields({
         <textarea
           className={textareaClass}
           onChange={(event) => updateField("contextDetails", event.target.value)}
-          placeholder="Ex.: usa Classroom, trabalha de tarde, faz academia, tem mais de uma conta institucional."
+          placeholder="Ex.: usa Classroom, estuda a noite e trabalha durante a tarde."
           value={profile.contextDetails}
         />
       </label>

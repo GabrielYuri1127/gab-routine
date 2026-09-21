@@ -4,19 +4,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Bell,
-  BookOpen,
-  BookOpenCheck,
   Bot,
+  BriefcaseBusiness,
   CalendarDays,
+  CalendarRange,
   CheckSquare,
+  GraduationCap,
   Home,
-  MoreHorizontal,
   Settings,
+  SlidersHorizontal,
   type LucideIcon
 } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { MobileAddMenu } from "@/components/mobile-add-menu";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { RoutineDataProvider } from "@/features/data/routine-data-provider";
 import { useRoutineData } from "@/features/data/routine-store";
 import { cn } from "@/lib/utils";
@@ -24,21 +26,19 @@ import type { EnabledModules } from "@/types/domain";
 
 const primaryNav = [
   { label: "Hoje", href: "/", icon: Home },
-  { label: "Estudos", href: "/faculdade", icon: BookOpen },
-  { label: "Semana", href: "/semana", icon: CalendarDays },
-  { label: "Mais", href: "/mais", icon: MoreHorizontal }
+  { label: "Faculdade", href: "/faculdade", icon: GraduationCap },
+  { label: "Trabalho", href: "/trabalho", icon: BriefcaseBusiness },
+  { label: "Agenda", href: "/semana", icon: CalendarRange },
+  { label: "Assistente", href: "/assistente", icon: Bot }
 ];
 
-const secondaryNav: Array<{ label: string; href: string; icon: LucideIcon; module: keyof EnabledModules | null }> = [
-  { label: "Calendario", href: "/calendario", icon: CalendarDays, module: "calendar" },
+const utilityNav: Array<{ label: string; href: string; icon: LucideIcon; module: keyof EnabledModules | null }> = [
   { label: "Tarefas", href: "/tarefas", icon: CheckSquare, module: "tasks" },
+  { label: "Calendário", href: "/calendario", icon: CalendarDays, module: "calendar" },
   { label: "Lembretes", href: "/lembretes", icon: Bell, module: "reminders" },
-  { label: "Assistente", href: "/assistente", icon: Bot, module: "assistant" },
-  { label: "Tutorial", href: "/tutorial", icon: BookOpenCheck, module: "tutorial" },
-  { label: "Configuracoes", href: "/configuracoes", icon: Settings, module: null }
+  { label: "Ferramentas", href: "/mais", icon: SlidersHorizontal, module: null },
+  { label: "Configurações", href: "/configuracoes", icon: Settings, module: null }
 ];
-
-const futureModules = ["Projetos", "Habitos", "Metas"];
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -50,104 +50,146 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 function AppShellContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { data } = useRoutineData();
+  const { cloud, data } = useRoutineData();
   const preferences = data.appPreference;
   const appName = preferences.appName.trim() || "Gavium";
-  const profileLabel = preferences.profileLabel.trim() || "rotina pessoal";
-  const secondaryItems = secondaryNav.filter((item) => !item.module || preferences.enabledModules[item.module]);
+  const courseLabel = preferences.courseOrArea.trim() || "Faculdade e trabalho";
+  const utilityItems = utilityNav.filter((item) => !item.module || preferences.enabledModules[item.module]);
 
   return (
-    <div className="min-h-screen bg-paper">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-line bg-white px-4 py-5 lg:block">
-        <Link className="mb-8 flex items-center gap-3" href="/">
-          <img alt="" aria-hidden className="h-11 w-11 rounded-lg shadow-sm" src="/brand/gavium-mark.svg" />
-          <span>
-            <span className="block font-semibold text-ink">{appName}</span>
-            <span className="block text-xs text-slate-500">{profileLabel}</span>
+    <div className="min-h-screen max-w-full overflow-x-hidden bg-paper">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 border-r border-line bg-white lg:flex lg:flex-col">
+        <Link className="flex h-20 items-center gap-3 border-b border-line px-5" href="/">
+          <img alt="" aria-hidden className="h-10 w-10 rounded-md shadow-sm" src="/brand/gavium-mark.svg" />
+          <span className="min-w-0">
+            <span className="block truncate font-semibold text-foreground">{appName}</span>
+            <span className="block truncate text-xs text-slate-500">{courseLabel}</span>
           </span>
         </Link>
 
-        <nav className="space-y-1">
-          {primaryNav.map((item) => {
-            const Icon = item.icon;
-            const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-
-            return (
-              <Link
-                className={cn(
-                  "flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-ink",
-                  active && "bg-slate-100 text-ink"
-                )}
-                href={item.href}
-                key={item.href}
-                style={active ? { color: preferences.accentColor } : undefined}
-              >
-                <Icon aria-hidden className="h-4 w-4" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <nav className="mt-6 space-y-1">
-          {secondaryItems.map((item) => {
-            const Icon = item.icon;
-            const active = pathname === item.href || pathname.startsWith(item.href);
-
-            return (
-              <Link
-                className={cn(
-                  "flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-ink",
-                  active && "bg-slate-100 text-ink"
-                )}
-                href={item.href}
-                key={item.href}
-                style={active ? { color: preferences.accentColor } : undefined}
-              >
-                <Icon aria-hidden className="h-4 w-4" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="mt-8 border-t border-line pt-5">
-          <p className="px-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Proximas fases</p>
-          <div className="mt-2 space-y-1">
-            {futureModules.map((module) => (
-              <div className="flex h-9 items-center justify-between rounded-lg px-3 text-sm text-slate-400" key={module}>
-                <span>{module}</span>
-                <span className="text-[11px]">em breve</span>
-              </div>
+        <div className="flex-1 overflow-y-auto px-3 py-5">
+          <p className="px-3 text-[11px] font-semibold uppercase text-slate-400">Principal</p>
+          <nav className="mt-2 space-y-1">
+            {primaryNav.map((item) => (
+              <DesktopNavItem accentColor={preferences.accentColor} item={item} key={item.href} pathname={pathname} />
             ))}
+          </nav>
+
+          <p className="mt-7 px-3 text-[11px] font-semibold uppercase text-slate-400">Organização</p>
+          <nav className="mt-2 space-y-1">
+            {utilityItems.map((item) => (
+              <DesktopNavItem accentColor={preferences.accentColor} item={item} key={item.href} pathname={pathname} />
+            ))}
+          </nav>
+        </div>
+
+        <div className="space-y-2 border-t border-line p-4">
+          <ThemeToggle />
+          <div className="flex items-center gap-3 rounded-md bg-slate-50 px-3 py-3">
+            <span
+              aria-hidden
+              className={cn(
+                "h-2.5 w-2.5 shrink-0 rounded-full",
+                cloud.status === "error" ? "bg-coral" : cloud.configured ? "bg-mint" : "bg-slate-300"
+              )}
+            />
+            <span className="min-w-0">
+              <span className="block truncate text-xs font-medium text-foreground">
+                {cloud.configured ? "Dados sincronizados" : "Dados neste dispositivo"}
+              </span>
+              <span className="block truncate text-[11px] text-slate-500">{cloud.email ?? "Backup local ativo"}</span>
+            </span>
           </div>
         </div>
       </aside>
 
-      <header className="sticky top-0 z-20 border-b border-line bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
-        <Link className="flex items-center gap-3" href="/">
-          <img alt="" aria-hidden className="h-10 w-10 rounded-lg shadow-sm" src="/brand/gavium-mark.svg" />
+      <header className="sticky top-0 z-20 flex h-16 w-full min-w-0 items-center justify-between border-b border-line bg-white/95 px-4 backdrop-blur lg:hidden">
+        <Link className="flex min-w-0 items-center gap-3" href="/">
+          <img alt="" aria-hidden className="h-9 w-9 rounded-md shadow-sm" src="/brand/gavium-mark.svg" />
           <span className="min-w-0">
-            <span className="block truncate text-sm font-semibold text-ink">{appName}</span>
-            <span className="block truncate text-xs text-slate-500">{profileLabel}</span>
+            <span className="block truncate text-sm font-semibold text-foreground">{appName}</span>
+            <span className="block truncate text-xs text-slate-500">{courseLabel}</span>
           </span>
         </Link>
+        <div className="flex items-center gap-1">
+          <ThemeToggle compact />
+          <Link
+            aria-label="Abrir assistente"
+            className="flex h-10 w-10 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100"
+            href="/assistente"
+          >
+            <Bot aria-hidden className="h-5 w-5" />
+          </Link>
+          <Link
+            aria-label="Abrir configurações"
+            className="flex h-10 w-10 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100"
+            href="/configuracoes"
+          >
+            <Settings aria-hidden className="h-5 w-5" />
+          </Link>
+        </div>
       </header>
 
-      <main className="mx-auto min-h-screen w-full max-w-5xl px-4 pb-28 pt-4 sm:px-6 lg:ml-64 lg:px-8 lg:pb-10 lg:pt-8">
+      <main className="min-h-screen w-full min-w-0 max-w-full px-4 pb-28 pt-5 sm:px-6 lg:ml-60 lg:w-[calc(100%-15rem)] lg:px-8 lg:pb-12 lg:pt-8">
         {children}
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 px-2 pb-2 pt-2 backdrop-blur lg:hidden">
         <div className="grid grid-cols-5 items-end">
           <MobileNavItem accentColor={preferences.accentColor} href="/" icon={Home} label="Hoje" pathname={pathname} />
-          <MobileNavItem accentColor={preferences.accentColor} href="/faculdade" icon={BookOpen} label="Estudos" pathname={pathname} />
+          <MobileNavItem
+            accentColor={preferences.accentColor}
+            href="/faculdade"
+            icon={GraduationCap}
+            label="Faculdade"
+            pathname={pathname}
+          />
           <MobileAddMenu />
-          <MobileNavItem accentColor={preferences.accentColor} href="/semana" icon={CalendarDays} label="Semana" pathname={pathname} />
-          <MobileNavItem accentColor={preferences.accentColor} href="/mais" icon={MoreHorizontal} label="Mais" pathname={pathname} />
+          <MobileNavItem
+            accentColor={preferences.accentColor}
+            href="/trabalho"
+            icon={BriefcaseBusiness}
+            label="Trabalho"
+            pathname={pathname}
+          />
+          <MobileNavItem
+            accentColor={preferences.accentColor}
+            href="/semana"
+            icon={CalendarRange}
+            label="Agenda"
+            pathname={pathname}
+          />
         </div>
       </nav>
     </div>
+  );
+}
+
+function DesktopNavItem({
+  accentColor,
+  item,
+  pathname
+}: {
+  accentColor: string;
+  item: { href: string; icon: LucideIcon; label: string };
+  pathname: string;
+}) {
+  const Icon = item.icon;
+  const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+
+  return (
+    <Link
+      className={cn(
+        "relative flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-foreground",
+        active && "bg-slate-100 text-foreground"
+      )}
+      href={item.href}
+      style={active ? { color: accentColor } : undefined}
+    >
+      {active ? <span className="absolute inset-y-2 left-0 w-0.5 rounded-full" style={{ backgroundColor: accentColor }} /> : null}
+      <Icon aria-hidden className="h-4 w-4" />
+      {item.label}
+    </Link>
   );
 }
 
@@ -168,10 +210,7 @@ function MobileNavItem({
 
   return (
     <Link
-      className={cn(
-        "flex h-14 flex-col items-center justify-center gap-1 rounded-lg text-xs font-medium text-slate-500",
-        active && "text-ink"
-      )}
+      className={cn("flex h-14 flex-col items-center justify-center gap-1 rounded-md text-xs font-medium text-slate-500", active && "text-foreground")}
       href={href}
       style={active ? { color: accentColor } : undefined}
     >

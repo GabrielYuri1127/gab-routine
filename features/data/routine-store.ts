@@ -166,6 +166,7 @@ export function normalizeAppPreference(value: unknown, userId = LOCAL_USER_ID): 
 
   const parsed = value as Partial<AppPreference>;
   const appName = normalizeAppName(parsed.appName);
+  const primaryContext = normalizePrimaryContext(parsed.primaryContext);
   return {
     ...DEFAULT_APP_PREFERENCE,
     ...parsed,
@@ -173,11 +174,24 @@ export function normalizeAppPreference(value: unknown, userId = LOCAL_USER_ID): 
     assistantAnswerStyle: normalizeAssistantStyle(parsed.assistantAnswerStyle),
     birthDate: normalizeText(parsed.birthDate),
     contextDetails: normalizeText(parsed.contextDetails),
-    contexts: normalizeStringArray(parsed.contexts, DEFAULT_APP_PREFERENCE.contexts),
+    contexts: normalizeFocusedContexts(parsed.contexts, primaryContext),
     courseOrArea: normalizeText(parsed.courseOrArea),
+    courseInstitution: normalizeText(parsed.courseInstitution),
+    courseTotalSemesters: normalizePositiveNumber(
+      parsed.courseTotalSemesters,
+      DEFAULT_APP_PREFERENCE.courseTotalSemesters ?? 10
+    ),
+    courseTotalWorkloadHours: normalizeNonNegativeNumber(
+      parsed.courseTotalWorkloadHours,
+      DEFAULT_APP_PREFERENCE.courseTotalWorkloadHours ?? 0
+    ),
+    currentCurriculumPeriod: normalizePositiveNumber(
+      parsed.currentCurriculumPeriod,
+      DEFAULT_APP_PREFERENCE.currentCurriculumPeriod ?? 1
+    ),
     discoverySource: normalizeText(parsed.discoverySource),
     gender: normalizeText(parsed.gender),
-    primaryContext: normalizeText(parsed.primaryContext) || DEFAULT_APP_PREFERENCE.primaryContext,
+    primaryContext,
     productivityGoal: normalizeText(parsed.productivityGoal),
     enabledModules: {
       ...DEFAULT_APP_PREFERENCE.enabledModules,
@@ -198,8 +212,8 @@ function normalizeAppName(value: unknown) {
 function buildProfilePreferenceFromMetadata(metadata: unknown, email?: string | null, userId = LOCAL_USER_ID): AppPreference {
   const displayName =
     readMetadataString(metadata, "full_name") || readMetadataString(metadata, "name") || getDisplayNameFromEmail(email) || "Usuario";
-  const primaryContext = readMetadataString(metadata, "primary_context") || DEFAULT_APP_PREFERENCE.primaryContext;
-  const contexts = readMetadataStringArray(metadata, "contexts", [primaryContext]);
+  const primaryContext = normalizePrimaryContext(readMetadataString(metadata, "primary_context"));
+  const contexts = normalizeFocusedContexts(readMetadataStringArray(metadata, "contexts", [primaryContext]), primaryContext);
   const assistantAnswerStyle = normalizeAssistantStyle(readMetadataString(metadata, "assistant_style"));
 
   return {
@@ -241,6 +255,14 @@ function normalizeText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizePositiveNumber(value: unknown, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function normalizeNonNegativeNumber(value: unknown, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : fallback;
+}
+
 function normalizeStringArray(value: unknown, fallback: string[]) {
   if (!Array.isArray(value)) {
     return fallback;
@@ -248,6 +270,17 @@ function normalizeStringArray(value: unknown, fallback: string[]) {
 
   const values = value.filter((item): item is string => typeof item === "string" && Boolean(item.trim())).map((item) => item.trim());
   return values.length ? values : fallback;
+}
+
+function normalizePrimaryContext(value: unknown) {
+  return value === "trabalho" ? "trabalho" : "faculdade";
+}
+
+function normalizeFocusedContexts(value: unknown, primaryContext: string) {
+  const contexts = normalizeStringArray(value, DEFAULT_APP_PREFERENCE.contexts).filter(
+    (context) => context === "faculdade" || context === "trabalho"
+  );
+  return contexts.length ? contexts : [primaryContext];
 }
 
 function normalizeAssistantStyle(value: unknown): AppPreference["assistantAnswerStyle"] {

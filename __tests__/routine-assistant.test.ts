@@ -93,7 +93,7 @@ describe("routine assistant", () => {
       assert.equal(response.intent, "conversation");
       assert.match(response.answer, /Oi, Gabriel/);
       assert.match(response.answer, /criar tarefas|registrar faltas/);
-      assert.equal(response.quickLinks.some((link) => link.href === "/configuracoes"), true);
+      assert.equal(response.quickLinks.some((link) => link.href === "/trabalho"), true);
     }
   });
 
@@ -155,6 +155,61 @@ describe("routine assistant", () => {
     assert.match(response.answer, /Redes de Computadores/);
     assert.equal(response.quickLinks.some((link) => link.href === "/faculdade/redes"), true);
     assert.equal(response.evidence.some((item) => item.includes("14/15 faltas")), true);
+  });
+
+  it("summarizes degree progress from completed workload", () => {
+    const response = buildRoutineAssistantResponse({
+      appPreference: {
+        ...coachPreference,
+        courseTotalWorkloadHours: 180,
+        currentCurriculumPeriod: 2
+      },
+      events: [],
+      question: "Como esta meu progresso no curso?",
+      reminders: [],
+      subjects: [
+        baseSubject,
+        {
+          ...baseSubject,
+          activities: [],
+          id: "calculo",
+          name: "Calculo I",
+          recommendedPeriod: 1,
+          status: "completed"
+        }
+      ],
+      tasks: [],
+      today: "2026-09-08"
+    });
+
+    assert.equal(response.intent, "course_progress");
+    assert.match(response.answer, /33%/);
+    assert.match(response.answer, /60 de 180 horas/);
+    assert.equal(response.quickLinks.some((link) => link.href === "/faculdade"), true);
+  });
+
+  it("prioritizes the professional task queue separately", () => {
+    const response = buildRoutineAssistantResponse({
+      events: [],
+      question: "Qual e minha prioridade de trabalho hoje?",
+      reminders: [],
+      subjects: [],
+      tasks: [
+        urgentTask,
+        {
+          ...urgentTask,
+          category: "Trabalho",
+          id: "work-task-1",
+          title: "Entregar proposta ao cliente"
+        }
+      ],
+      today: "2026-09-08"
+    });
+
+    assert.equal(response.intent, "work");
+    assert.match(response.answer, /Entregar proposta ao cliente/);
+    assert.equal(response.evidence.some((item) => item.includes("1 tarefa(s) de trabalho")), true);
+    assert.equal(response.quickLinks.some((link) => link.href === "/trabalho"), true);
   });
 
   it("answers app readiness questions without confusing them with attendance", () => {

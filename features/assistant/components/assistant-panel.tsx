@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import {
-  AlarmClockPlus,
   Bot,
-  CalendarPlus,
+  BriefcaseBusiness,
   ClipboardCheck,
   GraduationCap,
   Loader2,
@@ -12,6 +11,7 @@ import {
   Send,
   Sparkles,
   Trash2,
+  TrendingUp,
   type LucideIcon
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -28,12 +28,12 @@ import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabas
 const promptSuggestions: Array<{ icon: LucideIcon; label: string }> = [
   { icon: Bot, label: "Oi, o que voce consegue fazer?" },
   { icon: Sparkles, label: "O que devo fazer agora?" },
-  { icon: ClipboardCheck, label: "O que falta para publicar o app?" },
+  { icon: TrendingUp, label: "Como esta meu progresso no curso?" },
   { icon: GraduationCap, label: "Como estao minhas faltas?" },
-  { icon: GraduationCap, label: "Quais prazos vem primeiro?" },
+  { icon: ClipboardCheck, label: "Quais disciplinas precisam de atencao?" },
+  { icon: ClipboardCheck, label: "Quais prazos academicos vem primeiro?" },
+  { icon: BriefcaseBusiness, label: "Qual e minha prioridade de trabalho hoje?" },
   { icon: GraduationCap, label: "Como estao minhas medias?" },
-  { icon: CalendarPlus, label: "Tenho dentista sexta 15h" },
-  { icon: AlarmClockPlus, label: "Me lembre de levar o carregador amanha as 8h" }
 ];
 
 export function AssistantPanel() {
@@ -342,7 +342,7 @@ export function AssistantPanel() {
         <div className="mb-4 flex items-center justify-between gap-3">
           <span className="flex items-center gap-2">
             <Bot aria-hidden className="h-5 w-5 text-mint" />
-            <h2 className="text-lg font-semibold text-ink">Assistente</h2>
+            <h2 className="text-lg font-semibold text-foreground">Assistente</h2>
           </span>
           <Badge tone={source === "ai" || (!response && apiReady) ? "mint" : "sky"}>{assistantBadge}</Badge>
         </div>
@@ -352,7 +352,7 @@ export function AssistantPanel() {
           <div className="mb-4 flex flex-col gap-3 border-l-2 border-mint bg-mint/5 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm leading-6 text-slate-700">A chave da IA esta pronta. Falta apenas entrar na sua conta para proteger seus dados.</p>
             <Link
-              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-ink px-4 text-sm font-medium text-white transition hover:bg-black"
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-contrast px-4 text-sm font-medium text-white transition hover:bg-contrast-hover"
               href="/login"
             >
               <LogIn aria-hidden className="h-4 w-4" />
@@ -367,7 +367,7 @@ export function AssistantPanel() {
               <p className="text-xs font-semibold uppercase text-slate-500">Conversa recente</p>
               <button
                 aria-label="Limpar conversa"
-                className="flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition hover:bg-white hover:text-ink"
+                className="flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition hover:bg-white hover:text-foreground"
                 onClick={() => setConversation([])}
                 title="Limpar conversa"
                 type="button"
@@ -381,7 +381,7 @@ export function AssistantPanel() {
                   <div
                     className={
                       message.role === "user"
-                        ? "max-w-[88%] rounded-lg bg-ink px-3 py-2 text-sm leading-6 text-white"
+                        ? "max-w-[88%] rounded-lg bg-contrast px-3 py-2 text-sm leading-6 text-white"
                         : "max-w-[88%] border-l-2 border-mint bg-white px-3 py-2 text-sm leading-6 text-slate-700"
                     }
                   >
@@ -403,7 +403,7 @@ export function AssistantPanel() {
           <label className="block">
             <span className="text-sm font-medium text-slate-700">Pergunta</span>
             <textarea
-              className="mt-1 min-h-28 w-full resize-y rounded-lg border border-line bg-white px-3 py-3 text-sm text-ink outline-none focus:border-ink"
+              className="mt-1 min-h-28 w-full resize-y rounded-lg border border-line bg-white px-3 py-3 text-sm text-foreground outline-none focus:border-strong"
               onChange={(event) => setQuestion(event.target.value)}
               placeholder="Ex.: o que devo priorizar hoje?"
               value={question}
@@ -421,7 +421,7 @@ export function AssistantPanel() {
 
             return (
             <button
-              className="flex min-h-11 items-center gap-2 rounded-lg border border-line px-3 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-ink"
+              className="flex min-h-11 items-center gap-2 rounded-lg border border-line px-3 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-foreground"
               disabled={loading}
               key={suggestion.label}
               onClick={() => ask(suggestion.label)}
@@ -435,7 +435,7 @@ export function AssistantPanel() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-line bg-ink p-4 text-white shadow-soft" style={{ borderTop: `4px solid ${data.appPreference.accentColor}` }}>
+      <section className="rounded-lg border border-line bg-contrast p-4 text-white shadow-soft" style={{ borderTop: `4px solid ${data.appPreference.accentColor}` }}>
         <div className="mb-3 flex items-center justify-between gap-3">
           <span className="flex items-center gap-2 text-sm font-medium text-white/75">
             <Sparkles aria-hidden className="h-4 w-4" />
@@ -456,7 +456,7 @@ export function AssistantPanel() {
           <div className="rounded-lg border border-line bg-white p-4 shadow-sm" key={highlight.label}>
             <p className="text-xs font-semibold uppercase text-slate-400">{highlight.label}</p>
             <div className="mt-2 flex items-center justify-between gap-3">
-              <p className="text-xl font-semibold text-ink">{highlight.value}</p>
+              <p className="text-xl font-semibold text-foreground">{highlight.value}</p>
               <Badge tone={highlight.tone}>{highlight.tone === "neutral" ? "ok" : highlight.tone}</Badge>
             </div>
           </div>
@@ -465,7 +465,7 @@ export function AssistantPanel() {
 
       <section className="grid gap-3 md:grid-cols-[1fr_220px]">
         <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink">Proximos passos</h2>
+          <h2 className="text-lg font-semibold text-foreground">Proximos passos</h2>
           <div className="mt-3 space-y-2">
             {currentResponse.suggestions.map((suggestion) => (
               <div className="flex items-center gap-2 text-sm text-slate-700" key={suggestion}>
@@ -477,11 +477,11 @@ export function AssistantPanel() {
         </div>
 
         <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink">Abrir</h2>
+          <h2 className="text-lg font-semibold text-foreground">Abrir</h2>
           <div className="mt-3 space-y-2">
             {currentResponse.quickLinks.map((link) => (
               <Link
-                className="flex h-10 items-center justify-center rounded-lg border border-line text-sm font-medium text-ink transition hover:bg-slate-50"
+                className="flex h-10 items-center justify-center rounded-lg border border-line text-sm font-medium text-foreground transition hover:bg-slate-50"
                 href={link.href}
                 key={`${link.href}-${link.label}`}
               >
@@ -494,7 +494,7 @@ export function AssistantPanel() {
 
       <section className="grid gap-3 md:grid-cols-2">
         <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink">Base da resposta</h2>
+          <h2 className="text-lg font-semibold text-foreground">Base da resposta</h2>
           <div className="mt-3 space-y-2">
             {currentResponse.evidence.map((item) => (
               <div className="flex items-start gap-2 text-sm leading-6 text-slate-700" key={item}>
@@ -506,7 +506,7 @@ export function AssistantPanel() {
         </div>
 
         <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink">Dados que ajudam</h2>
+          <h2 className="text-lg font-semibold text-foreground">Dados que ajudam</h2>
           <div className="mt-3 space-y-2">
             {currentResponse.dataGaps.length ? (
               currentResponse.dataGaps.map((item) => (
@@ -529,13 +529,15 @@ const intentLabels: Record<RoutineAssistantResponse["intent"], string> = {
   attendance: "faltas",
   command: "acao",
   conversation: "conversa",
+  course_progress: "curso",
   date_time: "data",
   deadlines: "prazos",
   grades: "notas",
   resources: "materiais",
   now: "agora",
   readiness: "status",
-  summary: "resumo"
+  summary: "resumo",
+  work: "trabalho"
 };
 
 interface AssistantApiResponse {

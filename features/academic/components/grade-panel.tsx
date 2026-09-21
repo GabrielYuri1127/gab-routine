@@ -47,7 +47,7 @@ export function GradePanel({ subject }: { subject: Subject }) {
     <section className="space-y-4" id="notas">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-ink">Notas</h2>
+          <h2 className="text-lg font-semibold text-foreground">Notas</h2>
           <p className="mt-1 text-sm text-slate-500">Media calculada por regra interna, sem IA.</p>
         </div>
         <Badge tone="sky">{subject.rules.gradingMethod}</Badge>
@@ -89,7 +89,7 @@ export function GradePanel({ subject }: { subject: Subject }) {
           <label>
             <span className="text-sm font-medium text-slate-700">Nome</span>
             <input
-              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
               onChange={(event) => setName(event.target.value)}
               placeholder="AV1, lista, projeto"
               value={name}
@@ -98,7 +98,7 @@ export function GradePanel({ subject }: { subject: Subject }) {
           <label>
             <span className="text-sm font-medium text-slate-700">Nota</span>
             <input
-              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
               min={0}
               onChange={(event) => setScore(event.target.value)}
               step="0.1"
@@ -109,7 +109,7 @@ export function GradePanel({ subject }: { subject: Subject }) {
           <label>
             <span className="text-sm font-medium text-slate-700">Maxima</span>
             <input
-              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
               min={0.1}
               onChange={(event) => setMaxScore(event.target.value)}
               step="0.1"
@@ -129,7 +129,7 @@ export function GradePanel({ subject }: { subject: Subject }) {
             <label>
               <span className="text-sm font-medium text-slate-700">Peso</span>
               <input
-                className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+                className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
                 min={0}
                 onChange={(event) => setWeight(event.target.value)}
                 step="0.1"
@@ -140,7 +140,7 @@ export function GradePanel({ subject }: { subject: Subject }) {
             <label>
               <span className="text-sm font-medium text-slate-700">Tipo</span>
               <select
-                className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
+                className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-strong"
                 onChange={(event) => setType(event.target.value as Grade["type"])}
                 value={type}
               >
@@ -160,11 +160,11 @@ export function GradePanel({ subject }: { subject: Subject }) {
       <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
         <div className="mb-3 flex items-center gap-2">
           <Calculator aria-hidden className="h-4 w-4 text-mint" />
-          <h3 className="text-sm font-semibold text-ink">Simular nota</h3>
+          <h3 className="text-sm font-semibold text-foreground">Simular nota</h3>
         </div>
         <div className="grid gap-3 sm:grid-cols-[160px_1fr]">
           <input
-            className="h-11 rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+            className="h-11 rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
             min={0}
             onChange={(event) => setSimulationScore(event.target.value)}
             placeholder="Ex.: 8"
@@ -187,7 +187,7 @@ export function GradePanel({ subject }: { subject: Subject }) {
 
       <div className="rounded-lg border border-line bg-white shadow-sm">
         <div className="border-b border-line px-4 py-3">
-          <h3 className="text-sm font-semibold text-ink">Historico de notas</h3>
+          <h3 className="text-sm font-semibold text-foreground">Historico de notas</h3>
         </div>
         <div className="divide-y divide-line">
           {grades.length === 0 ? <p className="px-4 py-5 text-sm text-slate-500">Nenhuma nota cadastrada ainda.</p> : null}
@@ -195,12 +195,12 @@ export function GradePanel({ subject }: { subject: Subject }) {
             <div className="px-4 py-3" key={grade.id}>
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-ink">{grade.name}</p>
+                  <p className="truncate text-sm font-medium text-foreground">{grade.name}</p>
                   <p className="text-xs text-slate-500">
                     {grade.type ?? "nota"} {grade.weight ? `- peso ${grade.weight}` : ""}
                   </p>
                 </div>
-                <p className="text-sm font-semibold text-ink">
+                <p className="text-sm font-semibold text-foreground">
                   {grade.score.toString().replace(".", ",")} / {grade.maxScore.toString().replace(".", ",")}
                 </p>
               </div>
@@ -211,7 +211,7 @@ export function GradePanel({ subject }: { subject: Subject }) {
                   <label className="text-xs text-slate-500">
                     Nome
                     <input
-                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                       onChange={(event) => updateGrade(subject.id, grade.id, { name: event.target.value })}
                       value={grade.name}
                     />
@@ -219,7 +219,7 @@ export function GradePanel({ subject }: { subject: Subject }) {
                   <label className="text-xs text-slate-500">
                     Nota
                     <input
-                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                       min={0}
                       onChange={(event) => updateGrade(subject.id, grade.id, { score: Number(event.target.value) })}
                       step="0.1"
@@ -230,7 +230,7 @@ export function GradePanel({ subject }: { subject: Subject }) {
                   <label className="text-xs text-slate-500">
                     Maxima
                     <input
-                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                       min={0.1}
                       onChange={(event) => updateGrade(subject.id, grade.id, { maxScore: Number(event.target.value) || 10 })}
                       step="0.1"
@@ -241,7 +241,7 @@ export function GradePanel({ subject }: { subject: Subject }) {
                   <label className="text-xs text-slate-500">
                     Peso
                     <input
-                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                       min={0}
                       onChange={(event) => updateGrade(subject.id, grade.id, { weight: event.target.value ? Number(event.target.value) : undefined })}
                       step="0.1"
@@ -254,7 +254,7 @@ export function GradePanel({ subject }: { subject: Subject }) {
                   <label className="text-xs text-slate-500">
                     Tipo
                     <select
-                      className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm text-ink outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm text-foreground outline-none focus:border-strong"
                       onChange={(event) => updateGrade(subject.id, grade.id, { type: event.target.value as Grade["type"] })}
                       value={grade.type ?? "activity"}
                     >
@@ -270,7 +270,7 @@ export function GradePanel({ subject }: { subject: Subject }) {
                   <label className="text-xs text-slate-500">
                     Data
                     <input
-                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                       onChange={(event) => updateGrade(subject.id, grade.id, { date: event.target.value || undefined })}
                       type="date"
                       value={grade.date ?? ""}
@@ -279,7 +279,7 @@ export function GradePanel({ subject }: { subject: Subject }) {
                   <label className="text-xs text-slate-500">
                     Observacao
                     <input
-                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                       onChange={(event) => updateGrade(subject.id, grade.id, { notes: event.target.value || undefined })}
                       value={grade.notes ?? ""}
                     />
@@ -301,7 +301,7 @@ function Metric({ label, value, compact = false }: { label: string; value: strin
   return (
     <div className="rounded-lg border border-line bg-white p-3 shadow-sm">
       <p className="text-[11px] font-medium uppercase text-slate-400">{label}</p>
-      <p className={`mt-1 font-semibold text-ink ${compact ? "text-base" : "text-xl"}`}>{value}</p>
+      <p className={`mt-1 font-semibold text-foreground ${compact ? "text-base" : "text-xl"}`}>{value}</p>
     </div>
   );
 }

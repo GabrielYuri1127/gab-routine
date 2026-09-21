@@ -3,9 +3,9 @@ import {
   Bell,
   BookOpen,
   Bot,
+  BriefcaseBusiness,
   CalendarDays,
   CheckCircle2,
-  CheckSquare,
   GraduationCap,
   Settings,
   Smartphone
@@ -23,15 +23,15 @@ const firstSteps = [
   },
   {
     title: "Ajuste seu perfil",
-    text: "Troque nome, cor, uso principal, periodo padrao, objetivo e modulos que aparecem no menu.",
+    text: "Informe seu curso, instituicao, periodo atual, duracao e carga horaria total da graduacao.",
     href: "/configuracoes",
     label: "Configurar"
   },
   {
-    title: "Cadastre areas importantes",
-    text: "Use para faculdade, escola, trabalho, projetos, cursos, treinos ou qualquer rotina com horarios e acompanhamento.",
+    title: "Monte sua matriz",
+    text: "Cadastre as disciplinas por periodo e marque o que esta planejado, em andamento ou concluido.",
     href: "/faculdade",
-    label: "Abrir Estudos"
+    label: "Abrir Faculdade"
   },
   {
     title: "Registre o que ja aconteceu",
@@ -50,15 +50,15 @@ const firstSteps = [
 const areas = [
   {
     icon: GraduationCap,
-    title: "Estudos",
-    text: "Controle areas, disciplinas, presenca, notas, atividades, horarios e status de cada item.",
+    title: "Faculdade",
+    text: "Acompanhe matriz, disciplinas, faltas, notas, atividades, horarios e progresso do curso.",
     href: "/faculdade"
   },
   {
-    icon: CheckSquare,
-    title: "Tarefas",
-    text: "Organize pendencias por data, prioridade e tempo estimado. Marque como concluida quando finalizar.",
-    href: "/tarefas"
+    icon: BriefcaseBusiness,
+    title: "Trabalho",
+    text: "Organize entregas profissionais por prioridade, prazo e carga estimada para os proximos dias.",
+    href: "/trabalho"
   },
   {
     icon: Bell,
@@ -98,9 +98,9 @@ export default function TutorialPage() {
     <div className="space-y-5">
       <header>
         <p className="text-sm font-medium text-mint">Tutorial</p>
-        <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Comece sem bagunca</h1>
+        <h1 className="mt-1 text-2xl font-semibold text-foreground sm:text-3xl">Comece sem bagunca</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          Um roteiro curto para deixar o app pronto para rotina, estudos, trabalho e uso no celular.
+          Um roteiro curto para organizar faculdade e trabalho sem espalhar informacoes em varios lugares.
         </p>
       </header>
 
@@ -111,10 +111,10 @@ export default function TutorialPage() {
               <Badge tone="mint">Passo {index + 1}</Badge>
               <CheckCircle2 aria-hidden className="h-4 w-4 text-mint" />
             </div>
-            <h2 className="text-base font-semibold text-ink">{step.title}</h2>
+            <h2 className="text-base font-semibold text-foreground">{step.title}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">{step.text}</p>
             <Link
-              className="mt-4 inline-flex h-10 items-center justify-center rounded-lg border border-line px-3 text-sm font-medium text-ink transition hover:bg-slate-50"
+              className="mt-4 inline-flex h-10 items-center justify-center rounded-lg border border-line px-3 text-sm font-medium text-foreground transition hover:bg-slate-50"
               href={step.href}
             >
               {step.label}
@@ -126,7 +126,7 @@ export default function TutorialPage() {
       <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
           <BookOpen aria-hidden className="h-5 w-5 text-gold" />
-          <h2 className="text-lg font-semibold text-ink">Onde fica cada coisa</h2>
+          <h2 className="text-lg font-semibold text-foreground">Onde fica cada coisa</h2>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {areas.map((area) => {
@@ -135,7 +135,7 @@ export default function TutorialPage() {
             return (
               <Link className="rounded-lg border border-line p-3 transition hover:bg-slate-50" href={area.href} key={area.href}>
                 <Icon aria-hidden className="h-5 w-5 text-mint" />
-                <h3 className="mt-3 text-sm font-semibold text-ink">{area.title}</h3>
+                <h3 className="mt-3 text-sm font-semibold text-foreground">{area.title}</h3>
                 <p className="mt-1 text-sm leading-6 text-slate-600">{area.text}</p>
               </Link>
             );
@@ -143,7 +143,7 @@ export default function TutorialPage() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-line bg-ink p-4 text-white shadow-soft">
+      <section className="rounded-lg border border-line bg-contrast p-4 text-white shadow-soft">
         <div className="mb-4 flex items-center gap-2">
           <Smartphone aria-hidden className="h-5 w-5 text-white/75" />
           <h2 className="text-lg font-semibold">Para compartilhar</h2>

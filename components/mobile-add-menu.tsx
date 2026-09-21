@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, BookOpenCheck, CalendarPlus, CheckSquare, GraduationCap, NotebookTabs, Plus, Timer } from "lucide-react";
+import { Bell, BookOpenCheck, BriefcaseBusiness, CalendarPlus, CheckSquare, GraduationCap, NotebookTabs, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { cn } from "@/lib/utils";
@@ -11,7 +11,6 @@ interface QuickOption {
   label: string;
   href?: string;
   helper: string;
-  disabled?: boolean;
   icon: typeof CheckSquare;
 }
 
@@ -31,9 +30,9 @@ export function MobileAddMenu() {
 
     const dailyOptions: QuickOption[] = [
       { label: "Tarefa", href: "/quick/task", helper: "Criar agora", icon: CheckSquare },
+      { label: "Trabalho", href: "/trabalho", helper: "Captura rapida", icon: BriefcaseBusiness },
       { label: "Lembrete", href: "/quick/reminder", helper: "Criar agora", icon: Bell },
-      { label: "Compromisso", href: "/quick/event", helper: "Agenda", icon: CalendarPlus },
-      { label: "Sessao de estudo", helper: "Fase 5", disabled: true, icon: Timer }
+      { label: "Compromisso", href: "/quick/event", helper: "Agenda", icon: CalendarPlus }
     ];
 
     return inSubject ? [...academicOptions, ...dailyOptions] : [dailyOptions[0], ...academicOptions, ...dailyOptions.slice(1)];
@@ -56,7 +55,7 @@ export function MobileAddMenu() {
                 </>
               );
 
-              if (option.disabled || !option.href) {
+              if (!option.href) {
                 return (
                   <button
                     aria-disabled
@@ -71,7 +70,7 @@ export function MobileAddMenu() {
 
               return (
                 <Link
-                  className="flex min-h-14 items-center gap-2 rounded-lg border border-line px-3 text-ink transition hover:bg-slate-50"
+                  className="flex min-h-14 items-center gap-2 rounded-lg border border-line px-3 text-foreground transition hover:bg-slate-50"
                   href={option.href}
                   key={option.label}
                   onClick={() => setOpen(false)}
@@ -88,7 +87,7 @@ export function MobileAddMenu() {
         aria-expanded={open}
         aria-label="Adicionar rapidamente"
         className={cn(
-          "absolute -top-8 flex h-16 w-16 items-center justify-center rounded-full border-4 border-paper bg-ink text-white shadow-soft transition",
+          "absolute -top-8 flex h-16 w-16 items-center justify-center rounded-full border-4 border-paper bg-contrast text-white shadow-soft transition",
           open && "rotate-45 bg-coral"
         )}
         onClick={() => setOpen((value) => !value)}

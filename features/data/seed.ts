@@ -12,8 +12,12 @@ export const DEFAULT_APP_PREFERENCE: AppPreference = {
   assistantAnswerStyle: "balanced",
   birthDate: "",
   contextDetails: "",
-  contexts: ["produtividade"],
+  contexts: ["faculdade", "trabalho"],
   courseOrArea: "",
+  courseInstitution: "",
+  courseTotalSemesters: 10,
+  courseTotalWorkloadHours: 0,
+  currentCurriculumPeriod: 1,
   defaultClassesQuantity: 2,
   defaultSemester: "Atual",
   defaultWorkloadHours: 60,
@@ -28,9 +32,9 @@ export const DEFAULT_APP_PREFERENCE: AppPreference = {
     tutorial: true
   },
   gender: "",
-  primaryContext: "produtividade",
-  profileLabel: "rotina inteligente",
-  productivityGoal: ""
+  primaryContext: "faculdade",
+  profileLabel: "faculdade e trabalho",
+  productivityGoal: "Organizar a vida acadêmica e o trabalho sem perder prazos."
 };
 
 export interface RoutineData {
@@ -56,12 +60,12 @@ export function buildSeedData(today = getTodayInAppTimeZone()): RoutineData {
     subjects: [],
     tasks: [
       {
-        id: "definir-prioridades",
+        id: "configurar-curso",
         userId: LOCAL_USER_ID,
-        title: "Definir prioridades do dia",
-        description: "Escolha ate 3 coisas importantes para hoje.",
+        title: "Configurar curso e periodo atual",
+        description: "Informe instituicao, duracao e carga horaria total do curso.",
         priority: "high",
-        category: "Produtividade",
+        category: "Faculdade",
         date: today,
         dueDate: today,
         time: "08:30",
@@ -69,34 +73,35 @@ export function buildSeedData(today = getTodayInAppTimeZone()): RoutineData {
         status: "open"
       },
       {
-        id: "organizar-rotina",
+        id: "cadastrar-disciplinas",
         userId: LOCAL_USER_ID,
-        title: "Adicionar compromissos fixos",
-        description: "Cadastre aulas, trabalho, treino, estudos ou qualquer rotina recorrente.",
+        title: "Cadastrar disciplinas atuais",
+        description: "Adicione horarios, carga horaria e regras de faltas das disciplinas em andamento.",
         priority: "medium",
-        category: "Rotina",
+        category: "Faculdade",
         date: today,
         dueDate: tomorrow,
         estimatedMinutes: 20,
         status: "open"
       },
       {
-        id: "planejar-amanha",
+        id: "registrar-entrega-trabalho",
         userId: LOCAL_USER_ID,
-        title: "Planejar amanha",
+        title: "Registrar proxima entrega de trabalho",
+        description: "Adicione o prazo e uma estimativa de tempo para a prioridade profissional mais proxima.",
         priority: "medium",
-        category: "Rotina",
+        category: "Trabalho",
         date: today,
-        time: "21:30",
-        estimatedMinutes: 15,
+        dueDate: tomorrow,
+        estimatedMinutes: 20,
         status: "open"
       },
       {
         id: "revisar-semana",
         userId: LOCAL_USER_ID,
-        title: "Revisar semana",
+        title: "Revisar faculdade e trabalho da semana",
         priority: "low",
-        category: "Produtividade",
+        category: "Faculdade",
         date: nextWeek,
         dueDate: nextWeek,
         estimatedMinutes: 30,

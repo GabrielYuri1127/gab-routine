@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Archive, CheckCircle2, Copy, Palette, PauseCircle, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
+import { Archive, CheckCircle2, CircleDashed, Copy, Palette, PauseCircle, Plus, RotateCcw, Save, Trash2, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -13,13 +13,15 @@ import type { GradingMethod, Subject, SubjectStatus, Weekday } from "@/types/aca
 const weekdayOptions: Weekday[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
 const statusLabels: Record<SubjectStatus, string> = {
-  active: "Ativa",
+  active: "Em andamento",
   archived: "Arquivada",
-  completed: "Concluida",
-  paused: "Pausada"
+  completed: "Concluída",
+  failed: "Reprovada",
+  paused: "Trancada",
+  planned: "Planejada"
 };
 
-export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
+export function SubjectSettingsPanel({ defaultOpen = false, subject }: { defaultOpen?: boolean; subject: Subject }) {
   const router = useRouter();
   const { addSubject, removeSubject, updateSubject } = useRoutineData();
   const [name, setName] = useState(subject.name);
@@ -27,6 +29,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
   const [professor, setProfessor] = useState(subject.professor ?? "");
   const [room, setRoom] = useState(subject.room ?? "");
   const [semester, setSemester] = useState(subject.semester);
+  const [recommendedPeriod, setRecommendedPeriod] = useState(String(subject.recommendedPeriod ?? 1));
   const [color, setColor] = useState(subject.color);
   const [status, setStatus] = useState<SubjectStatus>(subject.status);
   const [observations, setObservations] = useState(subject.observations ?? "");
@@ -49,6 +52,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
     setProfessor(subject.professor ?? "");
     setRoom(subject.room ?? "");
     setSemester(subject.semester);
+    setRecommendedPeriod(String(subject.recommendedPeriod ?? 1));
     setColor(subject.color);
     setStatus(subject.status);
     setObservations(subject.observations ?? "");
@@ -74,6 +78,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
       professor: professor.trim() || undefined,
       room: room.trim() || undefined,
       semester: semester.trim() || subject.semester,
+      recommendedPeriod: Math.max(1, Number(recommendedPeriod) || 1),
       color,
       observations: observations.trim() || undefined,
       status,
@@ -158,11 +163,11 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
 
   return (
     <section className="rounded-lg border border-line bg-white p-4 shadow-sm" id="editar">
-      <details>
+      <details open={defaultOpen}>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
           <span className="flex items-center gap-2">
             <Palette aria-hidden className="h-5 w-5 text-mint" />
-            <span className="text-lg font-semibold text-ink">Personalizar area</span>
+            <span className="text-lg font-semibold text-foreground">Configurações da disciplina</span>
           </span>
           <Badge tone={saved ? "mint" : "neutral"}>{saved ? "salvo" : "regras"}</Badge>
         </summary>
@@ -171,13 +176,14 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
           <div className="grid gap-3 sm:grid-cols-2">
             <TextField label="Nome" onChange={setName} value={name} />
             <TextField label="Codigo ou sigla" onChange={setCode} value={code} />
-            <TextField label="Responsavel" onChange={setProfessor} value={professor} />
+            <TextField label="Professor" onChange={setProfessor} value={professor} />
             <TextField label="Local ou link" onChange={setRoom} value={room} />
-            <TextField label="Periodo" onChange={setSemester} value={semester} />
+            <TextField label="Semestre letivo" onChange={setSemester} value={semester} />
+            <NumberField label="Periodo recomendado" onChange={setRecommendedPeriod} value={recommendedPeriod} />
             <label>
               <span className="text-sm font-medium text-slate-700">Status</span>
               <select
-                className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
+                className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-strong"
                 onChange={(event) => setStatus(event.target.value as SubjectStatus)}
                 value={status}
               >
@@ -191,7 +197,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
             <label>
               <span className="text-sm font-medium text-slate-700">Cor</span>
               <input
-                className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-2 text-sm outline-none focus:border-ink"
+                className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-2 text-sm outline-none focus:border-strong"
                 onChange={(event) => setColor(event.target.value)}
                 type="color"
                 value={color}
@@ -202,7 +208,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
           <label className="block">
             <span className="text-sm font-medium text-slate-700">Observacoes</span>
             <textarea
-              className="mt-1 min-h-24 w-full resize-y rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-ink"
+              className="mt-1 min-h-24 w-full resize-y rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-strong"
               onChange={(event) => setObservations(event.target.value)}
               placeholder="Links, criterios, combinados, conteudos importantes ou observacoes da rotina"
               value={observations}
@@ -221,7 +227,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
           <label className="block">
             <span className="text-sm font-medium text-slate-700">Metodo de media</span>
             <select
-              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-strong"
               onChange={(event) => setGradingMethod(event.target.value as GradingMethod)}
               value={gradingMethod}
             >
@@ -234,7 +240,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
 
           <div className="rounded-lg border border-dashed border-line p-3">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold text-ink">Horarios fixos</h3>
+              <h3 className="text-sm font-semibold text-foreground">Horarios fixos</h3>
               <Badge tone="neutral">{subject.schedules.length} encontros</Badge>
             </div>
 
@@ -245,7 +251,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
                   <label>
                     <span className="text-xs font-medium text-slate-500">Dia</span>
                     <select
-                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm outline-none focus:border-strong"
                       onChange={(event) => updateSchedule(schedule.id, { weekday: event.target.value as Weekday })}
                       value={schedule.weekday}
                     >
@@ -259,7 +265,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
                   <label>
                     <span className="text-xs font-medium text-slate-500">Inicio</span>
                     <input
-                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm outline-none focus:border-strong"
                       onChange={(event) => updateSchedule(schedule.id, { startTime: event.target.value })}
                       type="time"
                       value={schedule.startTime}
@@ -268,7 +274,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
                   <label>
                     <span className="text-xs font-medium text-slate-500">Fim</span>
                     <input
-                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm outline-none focus:border-strong"
                       onChange={(event) => updateSchedule(schedule.id, { endTime: event.target.value })}
                       type="time"
                       value={schedule.endTime}
@@ -277,7 +283,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
                   <label>
                     <span className="text-xs font-medium text-slate-500">Registros</span>
                     <input
-                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm outline-none focus:border-strong"
                       min={1}
                       onChange={(event) => updateSchedule(schedule.id, { classesQuantity: Number(event.target.value) || 1 })}
                       type="number"
@@ -295,7 +301,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
               <label>
                 <span className="text-xs font-medium text-slate-500">Novo dia</span>
                 <select
-                  className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm outline-none focus:border-ink"
+                  className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm outline-none focus:border-strong"
                   onChange={(event) => setNewWeekday(event.target.value as Weekday)}
                   value={newWeekday}
                 >
@@ -309,7 +315,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
               <label>
                 <span className="text-xs font-medium text-slate-500">Inicio</span>
                 <input
-                  className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm outline-none focus:border-ink"
+                  className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm outline-none focus:border-strong"
                   onChange={(event) => setNewStartTime(event.target.value)}
                   type="time"
                   value={newStartTime}
@@ -318,7 +324,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
               <label>
                 <span className="text-xs font-medium text-slate-500">Fim</span>
                 <input
-                  className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm outline-none focus:border-ink"
+                  className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm outline-none focus:border-strong"
                   onChange={(event) => setNewEndTime(event.target.value)}
                   type="time"
                   value={newEndTime}
@@ -327,7 +333,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
               <label>
                 <span className="text-xs font-medium text-slate-500">Registros</span>
                 <input
-                  className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm outline-none focus:border-ink"
+                  className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm outline-none focus:border-strong"
                   min={1}
                   onChange={(event) => setNewClassesQuantity(event.target.value)}
                   type="number"
@@ -342,15 +348,23 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
           </div>
 
           <div className="rounded-lg border border-dashed border-line p-3">
-            <h3 className="text-sm font-semibold text-ink">Acoes da area</h3>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <h3 className="text-sm font-semibold text-foreground">Situação da disciplina</h3>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <Button onClick={() => setSubjectStatus("planned")} variant="secondary">
+                <CircleDashed aria-hidden className="h-4 w-4" />
+                Planejar
+              </Button>
               <Button onClick={() => setSubjectStatus("paused")} variant="secondary">
                 <PauseCircle aria-hidden className="h-4 w-4" />
-                Pausar
+                Trancar
               </Button>
               <Button onClick={() => setSubjectStatus("completed")} variant="secondary">
                 <CheckCircle2 aria-hidden className="h-4 w-4" />
                 Concluir
+              </Button>
+              <Button onClick={() => setSubjectStatus("failed")} variant="secondary">
+                <XCircle aria-hidden className="h-4 w-4" />
+                Reprovar
               </Button>
               <Button onClick={() => setSubjectStatus("archived")} variant="secondary">
                 <Archive aria-hidden className="h-4 w-4" />
@@ -368,7 +382,7 @@ export function SubjectSettingsPanel({ subject }: { subject: Subject }) {
               </Button>
               <Button onClick={deleteSubject} variant="danger">
                 <Trash2 aria-hidden className="h-4 w-4" />
-                Excluir area
+                Excluir disciplina
               </Button>
             </div>
           </div>
@@ -388,7 +402,7 @@ function TextField({ label, onChange, value }: { label: string; onChange: (value
     <label>
       <span className="text-sm font-medium text-slate-700">{label}</span>
       <input
-        className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+        className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       />
@@ -411,7 +425,7 @@ function NumberField({
     <label>
       <span className="text-sm font-medium text-slate-700">{label}</span>
       <input
-        className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+        className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
         min={0}
         onChange={(event) => onChange(event.target.value)}
         step={step}

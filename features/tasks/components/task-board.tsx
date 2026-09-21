@@ -46,13 +46,13 @@ export function TaskBoard() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium text-mint">Tarefas</p>
-          <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Fila do dia</h1>
+          <h1 className="mt-1 text-2xl font-semibold text-foreground sm:text-3xl">Fila do dia</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
             Prioridade, prazo, tempo estimado e adiamento ficam salvos no aparelho.
           </p>
         </div>
         <Link
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-line bg-white px-4 text-sm font-medium text-ink shadow-sm"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-line bg-white px-4 text-sm font-medium text-foreground shadow-sm"
           href="/calendario"
         >
           <CalendarDays aria-hidden className="h-4 w-4" />
@@ -74,7 +74,7 @@ export function TaskBoard() {
             <button
               className={cn(
                 "h-10 rounded-lg border border-line bg-white px-4 text-sm font-medium text-slate-600 shadow-sm transition",
-                filter === item.id && "border-ink bg-ink text-white"
+                filter === item.id && "border-strong bg-contrast text-white"
               )}
               key={item.id}
               onClick={() => setFilter(item.id)}
@@ -97,7 +97,7 @@ function Metric({ icon: Icon, label, value }: { icon: typeof ListChecks; label: 
         <Icon aria-hidden className="h-5 w-5 text-slate-500" />
         <Badge tone="neutral">{label}</Badge>
       </div>
-      <p className="text-3xl font-semibold text-ink">{value}</p>
+      <p className="text-3xl font-semibold text-foreground">{value}</p>
     </div>
   );
 }

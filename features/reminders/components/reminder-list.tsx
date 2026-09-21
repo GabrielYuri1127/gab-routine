@@ -70,7 +70,7 @@ export function ReminderList({ reminders, limit, emptyLabel = "Nenhum lembrete n
               </div>
 
               <div className="min-w-0">
-                <p className={`truncate text-sm font-semibold ${dismissed ? "text-slate-400 line-through" : "text-ink"}`}>
+                <p className={`truncate text-sm font-semibold ${dismissed ? "text-slate-400 line-through" : "text-foreground"}`}>
                   {reminder.title}
                 </p>
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -96,7 +96,7 @@ export function ReminderList({ reminders, limit, emptyLabel = "Nenhum lembrete n
                 <label className="text-xs text-slate-500">
                   Titulo
                   <input
-                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                     onChange={(event) => updateReminder(reminder.id, { title: event.target.value })}
                     value={reminder.title}
                   />
@@ -104,7 +104,7 @@ export function ReminderList({ reminders, limit, emptyLabel = "Nenhum lembrete n
                 <label className="text-xs text-slate-500">
                   Data
                   <input
-                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                     onChange={(event) =>
                       updateReminder(reminder.id, {
                         remindAt: `${event.target.value || getReminderDateKey(reminder)}T${getReminderTime(reminder)}:00`
@@ -117,7 +117,7 @@ export function ReminderList({ reminders, limit, emptyLabel = "Nenhum lembrete n
                 <label className="text-xs text-slate-500">
                   Hora
                   <input
-                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                     onChange={(event) =>
                       updateReminder(reminder.id, {
                         remindAt: `${getReminderDateKey(reminder)}T${event.target.value || "09:00"}:00`
@@ -133,7 +133,7 @@ export function ReminderList({ reminders, limit, emptyLabel = "Nenhum lembrete n
                 <label className="text-xs text-slate-500">
                   Tipo
                   <select
-                    className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm text-foreground outline-none focus:border-strong"
                     onChange={(event) => updateReminder(reminder.id, { sourceType: event.target.value as Reminder["sourceType"] })}
                     value={reminder.sourceType ?? "custom"}
                   >
@@ -147,7 +147,7 @@ export function ReminderList({ reminders, limit, emptyLabel = "Nenhum lembrete n
                 <label className="text-xs text-slate-500">
                   Status
                   <select
-                    className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm text-foreground outline-none focus:border-strong"
                     onChange={(event) => updateReminder(reminder.id, { status: event.target.value as Reminder["status"] })}
                     value={reminder.status}
                   >

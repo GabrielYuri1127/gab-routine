@@ -71,9 +71,9 @@ export function ResourcePanel({ subject }: { subject: Subject }) {
     <section className="space-y-4" id="materiais">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-ink">Materiais e links</h2>
+          <h2 className="text-lg font-semibold text-foreground">Materiais e links</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Guarde Classroom, PDFs, videos, repositorios, slides e observacoes importantes desta area.
+            Guarde Classroom, PDFs, vídeos, repositórios, slides e observações importantes desta disciplina.
           </p>
         </div>
         <Badge tone="neutral">{resources.length} salvos</Badge>
@@ -82,14 +82,14 @@ export function ResourcePanel({ subject }: { subject: Subject }) {
       <form className="rounded-lg border border-line bg-white p-4 shadow-sm" onSubmit={addResource}>
         <div className="mb-4 flex items-center gap-2">
           <Link2 aria-hidden className="h-5 w-5 text-mint" />
-          <h3 className="text-sm font-semibold text-ink">Novo material</h3>
+          <h3 className="text-sm font-semibold text-foreground">Novo material</h3>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-[1fr_170px]">
           <label>
             <span className="text-sm font-medium text-slate-700">Titulo</span>
             <input
-              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Ex.: Drive da disciplina, apostila, aula gravada"
               value={title}
@@ -98,7 +98,7 @@ export function ResourcePanel({ subject }: { subject: Subject }) {
           <label>
             <span className="text-sm font-medium text-slate-700">Tipo</span>
             <select
-              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-strong"
               onChange={(event) => setType(event.target.value as ResourceType)}
               value={type}
             >
@@ -115,7 +115,7 @@ export function ResourcePanel({ subject }: { subject: Subject }) {
           <label>
             <span className="text-sm font-medium text-slate-700">Link</span>
             <input
-              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
               onChange={(event) => setUrl(event.target.value)}
               placeholder="https://..."
               type="url"
@@ -131,7 +131,7 @@ export function ResourcePanel({ subject }: { subject: Subject }) {
         <label className="mt-3 block">
           <span className="text-sm font-medium text-slate-700">Notas</span>
           <textarea
-            className="mt-1 min-h-20 w-full resize-none rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-ink"
+            className="mt-1 min-h-20 w-full resize-none rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-strong"
             onChange={(event) => setNotes(event.target.value)}
             placeholder="O que tem nesse material, onde usar, observacoes do professor ou do projeto"
             value={notes}
@@ -152,7 +152,7 @@ export function ResourcePanel({ subject }: { subject: Subject }) {
               </span>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-semibold text-ink">{resource.title}</h3>
+                  <h3 className="font-semibold text-foreground">{resource.title}</h3>
                   <Badge tone={resource.type === "classroom" ? "mint" : "neutral"}>{resourceTypeLabels[resource.type]}</Badge>
                 </div>
                 {resource.url ? (
@@ -179,7 +179,7 @@ export function ResourcePanel({ subject }: { subject: Subject }) {
                 <label className="text-xs text-slate-500">
                   Titulo
                   <input
-                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                     onChange={(event) => updateResource(resource.id, { title: event.target.value })}
                     value={resource.title}
                   />
@@ -187,7 +187,7 @@ export function ResourcePanel({ subject }: { subject: Subject }) {
                 <label className="text-xs text-slate-500">
                   Tipo
                   <select
-                    className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm text-foreground outline-none focus:border-strong"
                     onChange={(event) => updateResource(resource.id, { type: event.target.value as ResourceType })}
                     value={resource.type}
                   >
@@ -202,7 +202,7 @@ export function ResourcePanel({ subject }: { subject: Subject }) {
               <label className="mt-3 block text-xs text-slate-500">
                 Link
                 <input
-                  className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                  className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                   onChange={(event) => updateResource(resource.id, { url: event.target.value || undefined })}
                   value={resource.url ?? ""}
                 />
@@ -210,7 +210,7 @@ export function ResourcePanel({ subject }: { subject: Subject }) {
               <label className="mt-3 block text-xs text-slate-500">
                 Notas
                 <textarea
-                  className="mt-1 min-h-20 w-full resize-none rounded-lg border border-line px-2 py-2 text-sm text-ink outline-none focus:border-ink"
+                  className="mt-1 min-h-20 w-full resize-none rounded-lg border border-line px-2 py-2 text-sm text-foreground outline-none focus:border-strong"
                   onChange={(event) => updateResource(resource.id, { notes: event.target.value || undefined })}
                   value={resource.notes ?? ""}
                 />

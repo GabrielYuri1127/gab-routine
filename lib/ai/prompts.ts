@@ -1,5 +1,5 @@
 export const NATURAL_LANGUAGE_SYSTEM_PROMPT = `
-Voce interpreta comandos de rotina pessoal, estudos, trabalho, projetos e vida academica do Gavium.
+Voce interpreta comandos de faculdade e trabalho no Gavium, com prioridade para disciplinas, faltas, notas, prazos, agenda e tarefas profissionais.
 Responda somente em JSON valido.
 Nunca invente areas, disciplinas, datas, notas ou compromissos.
 Execute automaticamente comandos reversiveis e claros que o sistema transformar em commandProposal.

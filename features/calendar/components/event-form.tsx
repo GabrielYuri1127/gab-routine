@@ -67,14 +67,14 @@ export function EventForm({ afterCreateHref, compact = false, defaultDate }: Eve
     <form className="rounded-lg border border-line bg-white p-4 shadow-sm" onSubmit={handleSubmit}>
       <div className="mb-4 flex items-center gap-2">
         <CalendarPlus aria-hidden className="h-5 w-5 text-gold" />
-        <h2 className="text-lg font-semibold text-ink">{compact ? "Novo compromisso" : "Adicionar compromisso"}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{compact ? "Novo compromisso" : "Adicionar compromisso"}</h2>
       </div>
 
       <div className="space-y-3">
         <label className="block">
           <span className="text-xs font-semibold uppercase text-slate-500">Titulo</span>
           <input
-            className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-mint"
+            className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-foreground outline-none focus:border-mint"
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Ex.: Resolver documentos"
             required
@@ -86,7 +86,7 @@ export function EventForm({ afterCreateHref, compact = false, defaultDate }: Eve
           <label className="block">
             <span className="text-xs font-semibold uppercase text-slate-500">Data</span>
             <input
-              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-mint"
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-foreground outline-none focus:border-mint"
               onChange={(event) => setDate(event.target.value)}
               required
               type="date"
@@ -96,7 +96,7 @@ export function EventForm({ afterCreateHref, compact = false, defaultDate }: Eve
           <label className="block">
             <span className="text-xs font-semibold uppercase text-slate-500">Inicio</span>
             <input
-              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-mint"
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-foreground outline-none focus:border-mint"
               onChange={(event) => setStartsAt(event.target.value)}
               type="time"
               value={startsAt}
@@ -105,7 +105,7 @@ export function EventForm({ afterCreateHref, compact = false, defaultDate }: Eve
           <label className="block">
             <span className="text-xs font-semibold uppercase text-slate-500">Fim</span>
             <input
-              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-mint"
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-foreground outline-none focus:border-mint"
               onChange={(event) => setEndsAt(event.target.value)}
               type="time"
               value={endsAt}
@@ -114,7 +114,7 @@ export function EventForm({ afterCreateHref, compact = false, defaultDate }: Eve
           <label className="block">
             <span className="text-xs font-semibold uppercase text-slate-500">Tipo</span>
             <select
-              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-mint"
+              className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-foreground outline-none focus:border-mint"
               onChange={(event) => setCategory(event.target.value as Event["category"])}
               value={category}
             >

@@ -54,7 +54,7 @@ export function IntegrationStatusPanel() {
         <div>
           <div className="mb-2 flex items-center gap-2">
             <Rocket aria-hidden className="h-5 w-5 text-mint" />
-            <h2 className="text-lg font-semibold text-ink">Status de publicacao</h2>
+            <h2 className="text-lg font-semibold text-foreground">Status de publicacao</h2>
           </div>
           <p className="max-w-2xl text-sm leading-6 text-slate-600">
             Veja o que precisa ser resolvido agora e o que fica como melhoria futura.
@@ -70,7 +70,7 @@ export function IntegrationStatusPanel() {
       <div className="pt-2">
         <div className="mb-3 flex items-center gap-2">
           <Clock3 aria-hidden className="h-4 w-4 text-slate-500" />
-          <h3 className="text-sm font-semibold text-ink">Melhorias futuras</h3>
+          <h3 className="text-sm font-semibold text-foreground">Melhorias futuras</h3>
         </div>
         <div className="grid gap-3 lg:grid-cols-2">
           {report ? futureItems.map((item) => <StatusCard item={item} key={item.id} />) : <LoadingCard />}
@@ -88,13 +88,13 @@ function StatusCard({ item }: { item: IntegrationStatusItem }) {
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <Icon aria-hidden className="h-5 w-5 shrink-0 text-slate-500" />
-          <h3 className="truncate text-sm font-semibold text-ink">{item.title}</h3>
+          <h3 className="truncate text-sm font-semibold text-foreground">{item.title}</h3>
         </div>
         <Badge tone={stateTones[item.state]}>{stateLabels[item.state]}</Badge>
       </div>
 
       <p className="text-sm leading-6 text-slate-600">{item.detail}</p>
-      <p className="mt-3 text-sm font-medium text-ink">{item.nextStep}</p>
+      <p className="mt-3 text-sm font-medium text-foreground">{item.nextStep}</p>
 
       {item.missing.length ? (
         <div className="mt-3 flex flex-wrap gap-2">

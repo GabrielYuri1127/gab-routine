@@ -1,118 +1,75 @@
 import Link from "next/link";
 import {
+  ArrowRight,
   Bell,
   BookOpenCheck,
   Bot,
   CalendarDays,
-  CheckCircle2,
   CheckSquare,
-  Database,
+  Cloud,
   GraduationCap,
-  Settings,
-  Smartphone
+  Settings
 } from "lucide-react";
 
 import { SupportWhatsAppCard } from "@/components/support-whatsapp-card";
-import { Badge } from "@/components/ui/badge";
 
-const implemented = [
-  "Tela Hoje mobile-first",
-  "Modulo Estudos e rotina",
-  "Faltas com registros individuais",
-  "Notas e simulador",
-  "Atividades por prazo",
-  "Compromissos editaveis no calendario",
-  "Assistente de IA local para rotina",
-  "Preset UFAM",
-  "PWA base",
-  "Tarefas com persistencia local",
-  "Lembretes dentro do app",
-  "Calendario mensal",
-  "Backup, preferencias locais e sincronizacao por conta",
-  "Login Supabase com dados separados por usuario",
-  "Importacao Google Classroom preparada",
-  "Tutorial de uso no app",
-  "Perfil personalizavel"
+const organizationLinks = [
+  { description: "Quadro completo e prioridades", href: "/tarefas", icon: CheckSquare, title: "Tarefas" },
+  { description: "Compromissos e visão mensal", href: "/calendario", icon: CalendarDays, title: "Calendário" },
+  { description: "Alertas programados", href: "/lembretes", icon: Bell, title: "Lembretes" },
+  { description: "Planejamento com contexto", href: "/assistente", icon: Bot, title: "Assistente" }
 ];
 
-const next = [
-  { icon: Bell, title: "Push completo e central", phase: "Fase 3" },
-  { icon: Bot, title: "IA por API e comandos mais inteligentes", phase: "Fase 4" },
-  { icon: Smartphone, title: "Widget Android", phase: "Fase 6" }
-];
-
-const links = [
-  { href: "/faculdade", title: "Abrir Estudos", icon: Database },
-  { href: "/tarefas", title: "Abrir Tarefas", icon: CheckSquare },
-  { href: "/lembretes", title: "Abrir Lembretes", icon: Bell },
-  { href: "/calendario", title: "Abrir Calendario", icon: CalendarDays },
-  { href: "/assistente", title: "Abrir Assistente", icon: Bot },
-  { href: "/tutorial", title: "Tutorial de uso", icon: BookOpenCheck },
-  { href: "/configuracoes", title: "Google Classroom", icon: GraduationCap },
-  { href: "/configuracoes", title: "Configuracoes e backup", icon: Settings }
+const systemLinks = [
+  { description: "Classroom, nuvem, push e IA", href: "/configuracoes#integracoes", icon: Cloud, title: "Integrações" },
+  { description: "Perfil acadêmico e preferências", href: "/configuracoes", icon: Settings, title: "Configurações" },
+  { description: "Conheça os fluxos principais", href: "/tutorial", icon: BookOpenCheck, title: "Guia rápido" },
+  { description: "Disciplinas, faltas e matriz", href: "/faculdade", icon: GraduationCap, title: "Faculdade" }
 ];
 
 export default function MorePage() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-7">
       <header>
-        <p className="text-sm font-medium text-mint">Mais</p>
-        <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Estado do Gavium</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          Esta tela evita botoes falsos: o que existe aparece como pronto, e o restante fica marcado por fase.
+        <p className="text-sm font-semibold text-mint">Ferramentas</p>
+        <h1 className="mt-1 text-2xl font-semibold text-foreground sm:text-3xl">Organização e conexões</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+          Recursos de apoio ficam aqui para a navegação principal continuar focada em faculdade e trabalho.
         </p>
       </header>
 
-      <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
-        <h2 className="text-lg font-semibold text-ink">Implementado</h2>
-        <div className="mt-3 space-y-2">
-          {implemented.map((item) => (
-            <div className="flex items-center gap-2 text-sm text-slate-700" key={item}>
-              <CheckCircle2 aria-hidden className="h-4 w-4 text-mint" />
-              {item}
-            </div>
-          ))}
-        </div>
-      </section>
+      <ToolSection items={organizationLinks} title="Organizar" />
+      <ToolSection items={systemLinks} title="Sistema" />
+      <SupportWhatsAppCard compact />
+    </div>
+  );
+}
 
-      <section className="grid gap-3 sm:grid-cols-2">
-        {next.map((item) => {
+function ToolSection({ items, title }: { items: typeof organizationLinks; title: string }) {
+  return (
+    <section>
+      <h2 className="mb-3 text-xs font-semibold uppercase text-slate-400">{title}</h2>
+      <div className="overflow-hidden rounded-md border border-line bg-white sm:grid sm:grid-cols-2">
+        {items.map((item) => {
           const Icon = item.icon;
-
-          return (
-            <div className="rounded-lg border border-line bg-white p-4 shadow-sm" key={item.title}>
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <Icon aria-hidden className="h-5 w-5 text-slate-500" />
-                <Badge>{item.phase}</Badge>
-              </div>
-              <h2 className="text-sm font-semibold text-ink">{item.title}</h2>
-            </div>
-          );
-        })}
-      </section>
-
-      <section className="grid gap-3 sm:grid-cols-2">
-        {links.map((item) => {
-          const Icon = item.icon;
-
           return (
             <Link
-              className="flex items-center gap-3 rounded-lg border border-line bg-white p-4 text-sm font-medium text-ink shadow-sm"
+              className="group grid min-h-20 grid-cols-[36px_minmax(0,1fr)_20px] items-center gap-3 border-b border-line px-4 py-3 last:border-b-0 hover:bg-slate-50 sm:border-r sm:[&:nth-last-child(-n+2)]:border-b-0 sm:[&:nth-child(2n)]:border-r-0"
               href={item.href}
-              key={`${item.href}-${item.title}`}
+              key={item.title}
             >
-              <Icon aria-hidden className="h-4 w-4 text-mint" />
-              {item.title}
+              <span className="flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-600 group-hover:text-foreground">
+                <Icon aria-hidden className="h-4 w-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-foreground">{item.title}</span>
+                <span className="mt-0.5 block truncate text-xs text-slate-500">{item.description}</span>
+              </span>
+              <ArrowRight aria-hidden className="h-4 w-4 text-slate-400" />
             </Link>
           );
         })}
-      </section>
-
-      <Link className="block rounded-lg border border-line bg-white p-4 text-sm font-medium text-ink shadow-sm" href="/login">
-        Conta e Supabase
-      </Link>
-
-      <SupportWhatsAppCard compact />
-    </div>
+      </div>
+    </section>
   );
 }

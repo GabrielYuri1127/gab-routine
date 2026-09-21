@@ -9,10 +9,12 @@ import { getCurrentWeekday } from "@/lib/date";
 import type { Subject, SubjectStatus } from "@/types/academic";
 
 const statusLabels: Record<SubjectStatus, string> = {
-  active: "ativa",
+  active: "em andamento",
   archived: "arquivada",
-  completed: "concluida",
-  paused: "pausada"
+  completed: "concluída",
+  failed: "reprovada",
+  paused: "trancada",
+  planned: "planejada"
 };
 
 export function SubjectCard({ subject }: { subject: Subject }) {
@@ -25,7 +27,7 @@ export function SubjectCard({ subject }: { subject: Subject }) {
   const subjectHref = `/faculdade/${subject.id}`;
 
   return (
-    <article className="rounded-lg border border-line bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft">
+    <article className="rounded-md border border-line bg-white p-4 transition hover:border-slate-400 hover:shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -34,8 +36,8 @@ export function SubjectCard({ subject }: { subject: Subject }) {
             <Badge tone={getStatusTone(subject.status)}>{statusLabels[subject.status]}</Badge>
           </div>
           <Link className="group flex items-center gap-2" href={subjectHref}>
-            <h2 className="truncate text-sm font-semibold uppercase text-ink">{subject.name}</h2>
-            <ArrowRight aria-hidden className="h-4 w-4 shrink-0 text-slate-400 transition group-hover:text-ink" />
+            <h2 className="truncate text-sm font-semibold text-foreground">{subject.name}</h2>
+            <ArrowRight aria-hidden className="h-4 w-4 shrink-0 text-slate-400 transition group-hover:text-foreground" />
           </Link>
           <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
             <CalendarClock aria-hidden className="h-3.5 w-3.5" />
@@ -73,7 +75,7 @@ export function SubjectCard({ subject }: { subject: Subject }) {
 function QuickLink({ href, icon: Icon, label }: { href: string; icon: typeof CalendarClock; label: string }) {
   return (
     <Link
-      className="flex h-10 items-center justify-center gap-2 rounded-lg border border-line text-xs font-medium text-slate-600 transition hover:bg-slate-50 hover:text-ink"
+      className="flex h-10 items-center justify-center gap-2 rounded-lg border border-line text-xs font-medium text-slate-600 transition hover:bg-slate-50 hover:text-foreground"
       href={href}
     >
       <Icon aria-hidden className="h-3.5 w-3.5" />
@@ -86,7 +88,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-[11px] font-medium uppercase text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-ink">{value}</p>
+      <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
     </div>
   );
 }
@@ -96,11 +98,11 @@ function getStatusTone(status: SubjectStatus): "neutral" | "mint" | "gold" | "co
     return "mint";
   }
 
-  if (status === "paused") {
+  if (status === "paused" || status === "planned") {
     return "gold";
   }
 
-  if (status === "archived") {
+  if (status === "archived" || status === "failed") {
     return "coral";
   }
 

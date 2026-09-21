@@ -84,7 +84,7 @@ export function TaskList({ tasks, limit, emptyLabel = "Nenhuma tarefa nesse filt
               </Button>
 
               <div className="min-w-0">
-                <p className={`truncate text-sm font-semibold ${done ? "text-slate-400 line-through" : "text-ink"}`}>
+                <p className={`truncate text-sm font-semibold ${done ? "text-slate-400 line-through" : "text-foreground"}`}>
                   {task.title}
                 </p>
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -121,7 +121,7 @@ export function TaskList({ tasks, limit, emptyLabel = "Nenhuma tarefa nesse filt
                 <label className="text-xs text-slate-500">
                   Titulo
                   <input
-                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                     onChange={(event) => updateTask(task.id, { title: event.target.value })}
                     value={task.title}
                   />
@@ -129,7 +129,7 @@ export function TaskList({ tasks, limit, emptyLabel = "Nenhuma tarefa nesse filt
                 <label className="text-xs text-slate-500">
                   Data
                   <input
-                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                     onChange={(event) => updateTask(task.id, { date: event.target.value || undefined, dueDate: event.target.value || undefined })}
                     type="date"
                     value={taskDate ?? ""}
@@ -138,7 +138,7 @@ export function TaskList({ tasks, limit, emptyLabel = "Nenhuma tarefa nesse filt
                 <label className="text-xs text-slate-500">
                   Hora
                   <input
-                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                     onChange={(event) => updateTask(task.id, { time: event.target.value || undefined })}
                     type="time"
                     value={task.time ?? ""}
@@ -150,7 +150,7 @@ export function TaskList({ tasks, limit, emptyLabel = "Nenhuma tarefa nesse filt
                 <label className="text-xs text-slate-500">
                   Prioridade
                   <select
-                    className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm text-foreground outline-none focus:border-strong"
                     onChange={(event) => updateTask(task.id, { priority: event.target.value as Priority })}
                     value={task.priority}
                   >
@@ -164,7 +164,7 @@ export function TaskList({ tasks, limit, emptyLabel = "Nenhuma tarefa nesse filt
                 <label className="text-xs text-slate-500">
                   Status
                   <select
-                    className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm text-foreground outline-none focus:border-strong"
                     onChange={(event) => updateTask(task.id, { status: event.target.value as TaskStatus })}
                     value={task.status}
                   >
@@ -178,7 +178,7 @@ export function TaskList({ tasks, limit, emptyLabel = "Nenhuma tarefa nesse filt
                 <label className="text-xs text-slate-500">
                   Categoria
                   <input
-                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                     onChange={(event) => updateTask(task.id, { category: event.target.value || undefined })}
                     value={task.category ?? ""}
                   />
@@ -186,7 +186,7 @@ export function TaskList({ tasks, limit, emptyLabel = "Nenhuma tarefa nesse filt
                 <label className="text-xs text-slate-500">
                   Minutos
                   <input
-                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                     min={0}
                     onChange={(event) =>
                       updateTask(task.id, { estimatedMinutes: event.target.value ? Number(event.target.value) : undefined })
@@ -202,7 +202,7 @@ export function TaskList({ tasks, limit, emptyLabel = "Nenhuma tarefa nesse filt
                 <label className="text-xs text-slate-500">
                   Depende de
                   <input
-                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                     onChange={(event) => updateTask(task.id, { dependencyNotes: event.target.value || undefined })}
                     placeholder="Ex.: professor liberar material, cliente responder"
                     value={task.dependencyNotes ?? ""}
@@ -211,7 +211,7 @@ export function TaskList({ tasks, limit, emptyLabel = "Nenhuma tarefa nesse filt
                 <label className="text-xs text-slate-500">
                   Motivo do bloqueio
                   <input
-                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                     onChange={(event) => updateTask(task.id, { blockedReason: event.target.value || undefined })}
                     placeholder="Ex.: aguardando Classroom"
                     value={task.blockedReason ?? ""}
@@ -222,7 +222,7 @@ export function TaskList({ tasks, limit, emptyLabel = "Nenhuma tarefa nesse filt
               <label className="mt-3 block text-xs text-slate-500">
                 Descricao
                 <textarea
-                  className="mt-1 min-h-20 w-full resize-none rounded-lg border border-line px-2 py-2 text-sm text-ink outline-none focus:border-ink"
+                  className="mt-1 min-h-20 w-full resize-none rounded-lg border border-line px-2 py-2 text-sm text-foreground outline-none focus:border-strong"
                   onChange={(event) => updateTask(task.id, { description: event.target.value || undefined })}
                   value={task.description ?? ""}
                 />

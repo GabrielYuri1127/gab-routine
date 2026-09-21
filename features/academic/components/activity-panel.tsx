@@ -133,8 +133,8 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
     <section className="space-y-4" id="atividades">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-ink">Atividades</h2>
-          <p className="mt-1 text-sm text-slate-500">Crie, filtre e edite prazos sem sair desta area.</p>
+          <h2 className="text-lg font-semibold text-foreground">Atividades</h2>
+          <p className="mt-1 text-sm text-slate-500">Crie, filtre e edite prazos sem sair desta disciplina.</p>
         </div>
         <div className="grid grid-cols-3 gap-2 sm:w-80">
           <Mini label="Pendentes" value={summary.pending.toString()} />
@@ -146,7 +146,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
       <form className="rounded-lg border border-line bg-white p-4 shadow-sm" onSubmit={createActivity}>
         <div className="mb-3 flex items-center gap-2">
           <CalendarPlus aria-hidden className="h-5 w-5 text-gold" />
-          <h3 className="text-sm font-semibold text-ink">Nova atividade</h3>
+          <h3 className="text-sm font-semibold text-foreground">Nova atividade</h3>
         </div>
 
         <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
@@ -154,7 +154,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
             <button
               className={cn(
                 "h-10 shrink-0 rounded-lg border border-line bg-white px-3 text-sm font-medium text-slate-600",
-                type === preset.type && "border-ink bg-ink text-white"
+                type === preset.type && "border-strong bg-contrast text-white"
               )}
               key={preset.type}
               onClick={() => {
@@ -175,7 +175,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
           <label>
             <span className="text-sm font-medium text-slate-700">Titulo</span>
             <input
-              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Ex.: Relatorio"
               value={title}
@@ -184,7 +184,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
           <label>
             <span className="text-sm font-medium text-slate-700">Data</span>
             <input
-              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+              className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
               onChange={(event) => setDueDate(event.target.value)}
               type="date"
               value={dueDate}
@@ -202,7 +202,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
             <label>
               <span className="text-sm font-medium text-slate-700">Horario</span>
               <input
-                className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+                className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
                 onChange={(event) => setTime(event.target.value)}
                 type="time"
                 value={time}
@@ -211,7 +211,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
             <label>
               <span className="text-sm font-medium text-slate-700">Tipo</span>
               <select
-                className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
+                className="mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-strong"
                 onChange={(event) => setType(event.target.value as ActivityType)}
                 value={type}
               >
@@ -225,7 +225,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
             <label>
               <span className="text-sm font-medium text-slate-700">Nota maxima</span>
               <input
-                className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-ink"
+                className="mt-1 h-11 w-full rounded-lg border border-line px-3 text-sm outline-none focus:border-strong"
                 onChange={(event) => setMaxScore(event.target.value)}
                 step="0.1"
                 type="number"
@@ -236,7 +236,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
           <label className="mt-3 block">
             <span className="text-sm font-medium text-slate-700">Descricao</span>
             <textarea
-              className="mt-1 min-h-20 w-full resize-none rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-ink"
+              className="mt-1 min-h-20 w-full resize-none rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-strong"
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Detalhes, link, criterio ou orientacao"
               value={description}
@@ -250,14 +250,14 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
           <label className="relative">
             <Search aria-hidden className="absolute left-3 top-1/2 h-4 w-4 translate-y-[-50%] text-slate-400" />
             <input
-              className="h-11 w-full rounded-lg border border-line pl-9 pr-3 text-sm outline-none focus:border-ink"
+              className="h-11 w-full rounded-lg border border-line pl-9 pr-3 text-sm outline-none focus:border-strong"
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Buscar atividade"
               value={query}
             />
           </label>
           <select
-            className="h-11 rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
+            className="h-11 rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-strong"
             onChange={(event) => setTypeFilter(event.target.value as ActivityType | "all")}
             value={typeFilter}
           >
@@ -274,7 +274,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
             <button
               className={cn(
                 "h-9 rounded-lg border border-line px-3 text-sm font-medium text-slate-600",
-                filter === item.id && "border-ink bg-ink text-white"
+                filter === item.id && "border-strong bg-contrast text-white"
               )}
               key={item.id}
               onClick={() => setFilter(item.id)}
@@ -301,7 +301,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
             <div className="rounded-lg border border-line bg-white p-4 shadow-sm" key={activity.id}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-ink">{activity.title}</p>
+                  <p className="truncate text-sm font-semibold text-foreground">{activity.title}</p>
                   <p className="mt-1 text-xs text-slate-500">
                     {typeLabels[activity.type]} - {formatDate(activity.dueDate)} {activity.time ? `as ${activity.time}` : ""}
                   </p>
@@ -311,7 +311,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <select
-                  className="h-9 rounded-lg border border-line bg-white px-2 text-sm text-ink"
+                  className="h-9 rounded-lg border border-line bg-white px-2 text-sm text-foreground"
                   onChange={(event) => updateActivity(subject.id, activity.id, { status: event.target.value as ActivityStatus })}
                   value={activity.status}
                 >
@@ -337,7 +337,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
                   <label className="text-xs text-slate-500">
                     Titulo
                     <input
-                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                       onChange={(event) => updateActivity(subject.id, activity.id, { title: event.target.value })}
                       value={activity.title}
                     />
@@ -345,7 +345,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
                   <label className="text-xs text-slate-500">
                     Data
                     <input
-                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                       onChange={(event) => updateActivity(subject.id, activity.id, { dueDate: event.target.value })}
                       type="date"
                       value={activity.dueDate}
@@ -354,7 +354,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
                   <label className="text-xs text-slate-500">
                     Hora
                     <input
-                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                       onChange={(event) => updateActivity(subject.id, activity.id, { time: event.target.value || undefined })}
                       type="time"
                       value={activity.time ?? ""}
@@ -365,7 +365,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
                   <label className="text-xs text-slate-500">
                     Tipo
                     <select
-                      className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm text-ink outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-2 text-sm text-foreground outline-none focus:border-strong"
                       onChange={(event) => updateActivity(subject.id, activity.id, { type: event.target.value as ActivityType })}
                       value={activity.type}
                     >
@@ -379,7 +379,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
                   <label className="text-xs text-slate-500">
                     Nota maxima
                     <input
-                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                       onChange={(event) =>
                         updateActivity(subject.id, activity.id, {
                           maxScore: event.target.value ? Number(event.target.value) : undefined
@@ -393,7 +393,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
                   <label className="text-xs text-slate-500">
                     Peso
                     <input
-                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                      className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                       onChange={(event) =>
                         updateActivity(subject.id, activity.id, {
                           weight: event.target.value ? Number(event.target.value) : undefined
@@ -408,7 +408,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
                 <label className="mt-3 block text-xs text-slate-500">
                   Descricao
                   <textarea
-                    className="mt-1 min-h-20 w-full resize-none rounded-lg border border-line px-2 py-2 text-sm text-ink outline-none focus:border-ink"
+                    className="mt-1 min-h-20 w-full resize-none rounded-lg border border-line px-2 py-2 text-sm text-foreground outline-none focus:border-strong"
                     onChange={(event) => updateActivity(subject.id, activity.id, { description: event.target.value || undefined })}
                     value={activity.description ?? ""}
                   />
@@ -426,7 +426,7 @@ function Mini({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-slate-50 p-2">
       <p className="text-[10px] font-medium uppercase text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-ink">{value}</p>
+      <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
     </div>
   );
 }

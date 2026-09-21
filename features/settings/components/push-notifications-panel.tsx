@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell, BellOff, BellRing, Loader2, Send, Smartphone } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,15 +33,19 @@ export function PushNotificationsPanel() {
   const [subscribed, setSubscribed] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const supported = useMemo(() => isPushSupported(), []);
-  const hasVapidKey = Boolean(getVapidPublicKey());
+  const [supported, setSupported] = useState(false);
+  const [hasVapidKey, setHasVapidKey] = useState(false);
   const canUseCloud = cloud.configured && Boolean(cloud.userId);
 
   useEffect(() => {
     let active = true;
 
     async function loadState() {
-      if (!supported) {
+      const browserSupported = isPushSupported();
+      setSupported(browserSupported);
+      setHasVapidKey(Boolean(getVapidPublicKey()));
+
+      if (!browserSupported) {
         setPermission("unsupported");
         setStatus("idle");
         return;
@@ -72,7 +76,7 @@ export function PushNotificationsPanel() {
     return () => {
       active = false;
     };
-  }, [supported]);
+  }, []);
 
   async function handleEnable() {
     setStatus("saving");
@@ -149,7 +153,8 @@ export function PushNotificationsPanel() {
   }
 
   const busy = status === "saving" || status === "testing" || status === "checking";
-  const blockedReason = getBlockedReason({ canUseCloud, hasVapidKey, supported });
+  const blockedReason =
+    status === "checking" ? "Verificando suporte a notificacoes..." : getBlockedReason({ canUseCloud, hasVapidKey, supported });
 
   return (
     <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
@@ -157,7 +162,7 @@ export function PushNotificationsPanel() {
         <div>
           <div className="mb-2 flex items-center gap-2">
             <Smartphone aria-hidden className="h-5 w-5 text-mint" />
-            <h2 className="text-lg font-semibold text-ink">Notificacoes no Android</h2>
+            <h2 className="text-lg font-semibold text-foreground">Notificacoes no Android</h2>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge tone={subscribed ? "mint" : "gold"}>{subscribed ? "ativo" : "inativo"}</Badge>
@@ -186,7 +191,7 @@ export function PushNotificationsPanel() {
       </div>
 
       <div className="mt-4 rounded-lg border border-dashed border-line bg-slate-50 p-3">
-        <p className="flex items-center gap-2 text-sm font-medium text-ink">
+        <p className="flex items-center gap-2 text-sm font-medium text-foreground">
           <BellRing aria-hidden className="h-4 w-4 text-mint" />
           {blockedReason ?? "Aparelho pronto para receber lembretes push."}
         </p>

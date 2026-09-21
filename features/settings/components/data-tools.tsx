@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useRoutineData } from "@/features/data/routine-store";
 import type { RoutineData } from "@/features/data/seed";
 
-const inputClass = "mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-ink";
+const inputClass = "mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-foreground outline-none focus:border-strong";
 
 export function DataTools() {
   const { cloud, data, replaceData, resetData, updateNotificationPreference } = useRoutineData();
@@ -58,7 +58,7 @@ export function DataTools() {
       <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
           <BellRing aria-hidden className="h-5 w-5 text-mint" />
-          <h2 className="text-lg font-semibold text-ink">Lembretes do dia</h2>
+          <h2 className="text-lg font-semibold text-foreground">Lembretes do dia</h2>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -102,7 +102,7 @@ export function DataTools() {
       </section>
 
       <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
-        <h2 className="text-lg font-semibold text-ink">Dados e sincronizacao</h2>
+        <h2 className="text-lg font-semibold text-foreground">Dados e sincronizacao</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
           {getCloudDescription(cloud.status, cloud.email, cloud.configured)}
         </p>
@@ -116,7 +116,7 @@ export function DataTools() {
             <Download aria-hidden className="h-4 w-4" />
             Exportar
           </Button>
-          <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-line bg-white px-4 text-sm font-medium text-ink transition hover:bg-slate-50">
+          <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-line bg-white px-4 text-sm font-medium text-foreground transition hover:bg-slate-50">
             <Upload aria-hidden className="h-4 w-4" />
             Importar
             <input accept="application/json,.json" className="sr-only" onChange={importData} type="file" />

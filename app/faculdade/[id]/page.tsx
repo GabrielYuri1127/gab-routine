@@ -5,6 +5,7 @@ export function generateStaticParams() {
   return mockSubjects.map((subject) => ({ id: subject.id }));
 }
 
-export default function SubjectPage({ params }: { params: { id: string } }) {
-  return <SubjectDetailView subjectId={params.id} />;
+export default async function SubjectPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return <SubjectDetailView subjectId={id} />;
 }

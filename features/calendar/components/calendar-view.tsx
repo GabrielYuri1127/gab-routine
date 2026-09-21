@@ -75,13 +75,13 @@ export function CalendarView() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium text-mint">Calendario</p>
-          <h1 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Agenda mensal</h1>
+          <h1 className="mt-1 text-2xl font-semibold text-foreground sm:text-3xl">Agenda mensal</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
             Aulas, prazos academicos, tarefas e lembretes ficam juntos na mesma leitura.
           </p>
         </div>
         <Link
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-line bg-white px-4 text-sm font-medium text-ink shadow-sm"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-line bg-white px-4 text-sm font-medium text-foreground shadow-sm"
           href="/semana"
         >
           <CalendarDays aria-hidden className="h-4 w-4" />
@@ -94,7 +94,7 @@ export function CalendarView() {
           <Button aria-label="Mes anterior" onClick={() => moveMonth(-1)} size="icon" variant="ghost">
             <ChevronLeft aria-hidden className="h-5 w-5" />
           </Button>
-          <h2 className="text-center text-base font-semibold capitalize text-ink">{monthLabel}</h2>
+          <h2 className="text-center text-base font-semibold capitalize text-foreground">{monthLabel}</h2>
           <Button aria-label="Proximo mes" onClick={() => moveMonth(1)} size="icon" variant="ghost">
             <ChevronRight aria-hidden className="h-5 w-5" />
           </Button>
@@ -118,9 +118,9 @@ export function CalendarView() {
             return (
               <button
                 className={cn(
-                  "flex aspect-square min-h-14 flex-col items-start justify-between rounded-lg border border-line bg-white p-2 text-left transition hover:border-ink",
+                  "flex aspect-square min-h-14 flex-col items-start justify-between rounded-lg border border-line bg-white p-2 text-left transition hover:border-strong",
                   !inMonth && "bg-slate-50 text-slate-300",
-                  selected && "border-ink bg-ink text-white",
+                  selected && "border-strong bg-contrast text-white",
                   dateKey === today && !selected && "border-mint"
                 )}
                 key={dateKey}
@@ -155,7 +155,7 @@ export function CalendarView() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-ink">{formatShortDate(selectedDate)}</h2>
+          <h2 className="text-lg font-semibold text-foreground">{formatShortDate(selectedDate)}</h2>
           <Badge tone="neutral">{selectedItems.length} itens</Badge>
         </div>
 
@@ -171,7 +171,7 @@ export function CalendarView() {
                   <div className="grid grid-cols-[44px_1fr_auto] items-center gap-3">
                     <ItemIcon type={item.type} />
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold text-ink">{item.title}</span>
+                      <span className="block truncate text-sm font-semibold text-foreground">{item.title}</span>
                       <span className="block truncate text-xs text-slate-500">{item.time ?? "Dia todo"}</span>
                     </span>
                     <Badge tone={itemTone[item.type]}>{itemLabel[item.type]}</Badge>
@@ -182,7 +182,7 @@ export function CalendarView() {
                       <label className="text-xs text-slate-500">
                         Titulo
                         <input
-                          className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                          className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                           onChange={(event) => updateEvent(item.event!.id, { title: event.target.value })}
                           value={item.event.title}
                         />
@@ -190,7 +190,7 @@ export function CalendarView() {
                       <label className="text-xs text-slate-500">
                         Data
                         <input
-                          className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                          className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                           onChange={(event) => updateEvent(item.event!.id, { date: event.target.value })}
                           type="date"
                           value={item.event.date}
@@ -199,7 +199,7 @@ export function CalendarView() {
                       <label className="text-xs text-slate-500">
                         Inicio
                         <input
-                          className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                          className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                           onChange={(event) => updateEvent(item.event!.id, { startsAt: event.target.value || undefined })}
                           type="time"
                           value={item.event.startsAt ?? ""}
@@ -208,7 +208,7 @@ export function CalendarView() {
                       <label className="text-xs text-slate-500">
                         Fim
                         <input
-                          className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                          className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                           onChange={(event) => updateEvent(item.event!.id, { endsAt: event.target.value || undefined })}
                           type="time"
                           value={item.event.endsAt ?? ""}
@@ -217,7 +217,7 @@ export function CalendarView() {
                       <label className="text-xs text-slate-500">
                         Tipo
                         <select
-                          className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-ink outline-none focus:border-ink"
+                          className="mt-1 h-10 w-full rounded-lg border border-line px-2 text-sm text-foreground outline-none focus:border-strong"
                           onChange={(event) => updateEvent(item.event!.id, { category: event.target.value as Event["category"] })}
                           value={item.event.category}
                         >
@@ -243,7 +243,7 @@ export function CalendarView() {
                 >
                   <ItemIcon type={item.type} />
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold text-ink">{item.title}</span>
+                    <span className="block truncate text-sm font-semibold text-foreground">{item.title}</span>
                     <span className="block truncate text-xs text-slate-500">{item.time ?? "Dia todo"}</span>
                   </span>
                   <Badge tone={itemTone[item.type]}>{itemLabel[item.type]}</Badge>

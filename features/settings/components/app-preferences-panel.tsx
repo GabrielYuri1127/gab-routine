@@ -7,9 +7,9 @@ import { DEFAULT_APP_PREFERENCE } from "@/features/data/seed";
 import { useRoutineData } from "@/features/data/routine-store";
 import type { AssistantAnswerStyle, EnabledModules } from "@/types/domain";
 
-const inputClass = "mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-ink";
+const inputClass = "mt-1 h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-foreground outline-none focus:border-strong";
 const textareaClass =
-  "mt-1 min-h-24 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink outline-none focus:border-ink";
+  "mt-1 min-h-24 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-strong";
 const colors = ["#0f9f7a", "#2b7fff", "#e35d45", "#b7791f", "#7c3aed", "#0891b2"];
 
 const answerStyleLabels: Record<AssistantAnswerStyle, string> = {
@@ -28,21 +28,13 @@ const moduleLabels: Array<{ id: keyof EnabledModules; label: string }> = [
 ];
 
 const contextOptions = [
-  { label: "Produtividade", value: "produtividade" },
-  { label: "Rotina pessoal", value: "rotina_pessoal" },
-  { label: "Trabalho", value: "trabalho" },
   { label: "Faculdade", value: "faculdade" },
-  { label: "Escola", value: "escola" },
-  { label: "Projetos", value: "projetos" }
+  { label: "Trabalho", value: "trabalho" }
 ];
 
 const primaryContextLabels = [
-  { label: "Produtividade geral", value: "produtividade" },
-  { label: "Rotina pessoal", value: "rotina_pessoal" },
-  { label: "Trabalho", value: "trabalho" },
   { label: "Faculdade", value: "faculdade" },
-  { label: "Escola", value: "escola" },
-  { label: "Projetos", value: "projetos" }
+  { label: "Trabalho", value: "trabalho" }
 ];
 
 export function AppPreferencesPanel() {
@@ -66,7 +58,7 @@ export function AppPreferencesPanel() {
     <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
         <UserRound aria-hidden className="h-5 w-5 text-mint" />
-        <h2 className="text-lg font-semibold text-ink">Perfil do app</h2>
+        <h2 className="text-lg font-semibold text-foreground">Perfil do app</h2>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -93,7 +85,7 @@ export function AppPreferencesPanel() {
           <input
             className={inputClass}
             onChange={(event) => updateAppPreference({ profileLabel: event.target.value })}
-            placeholder="rotina pessoal"
+            placeholder="faculdade e trabalho"
             value={preferences.profileLabel}
           />
         </label>
@@ -129,12 +121,21 @@ export function AppPreferencesPanel() {
           </select>
         </label>
         <label>
-          <span className="text-sm font-medium text-slate-700">Curso, area ou ocupacao</span>
+          <span className="text-sm font-medium text-slate-700">Curso</span>
           <input
             className={inputClass}
             onChange={(event) => updateAppPreference({ courseOrArea: event.target.value })}
-            placeholder="Ex.: Engenharia, vendas, estudos, academia"
+            placeholder="Ex.: Engenharia da Computação"
             value={preferences.courseOrArea}
+          />
+        </label>
+        <label>
+          <span className="text-sm font-medium text-slate-700">Instituição</span>
+          <input
+            className={inputClass}
+            onChange={(event) => updateAppPreference({ courseInstitution: event.target.value })}
+            placeholder="Ex.: UFAM"
+            value={preferences.courseInstitution ?? ""}
           />
         </label>
       </div>
@@ -154,6 +155,39 @@ export function AppPreferencesPanel() {
             </label>
           ))}
         </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <label>
+          <span className="text-sm font-medium text-slate-700">Período atual</span>
+          <input
+            className={inputClass}
+            min={1}
+            onChange={(event) => updateAppPreference({ currentCurriculumPeriod: Number(event.target.value) || 1 })}
+            type="number"
+            value={preferences.currentCurriculumPeriod ?? 1}
+          />
+        </label>
+        <label>
+          <span className="text-sm font-medium text-slate-700">Total de períodos</span>
+          <input
+            className={inputClass}
+            min={1}
+            onChange={(event) => updateAppPreference({ courseTotalSemesters: Number(event.target.value) || 1 })}
+            type="number"
+            value={preferences.courseTotalSemesters ?? 10}
+          />
+        </label>
+        <label>
+          <span className="text-sm font-medium text-slate-700">Carga horária do curso</span>
+          <input
+            className={inputClass}
+            min={0}
+            onChange={(event) => updateAppPreference({ courseTotalWorkloadHours: Math.max(0, Number(event.target.value) || 0) })}
+            type="number"
+            value={preferences.courseTotalWorkloadHours ?? 0}
+          />
+        </label>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -231,7 +265,7 @@ export function AppPreferencesPanel() {
           <textarea
             className={textareaClass}
             onChange={(event) => updateAppPreference({ productivityGoal: event.target.value })}
-            placeholder="Ex.: organizar tarefas, estudos, trabalho e lembretes sem perder prazos."
+            placeholder="Ex.: acompanhar o curso e cumprir as prioridades do trabalho sem perder prazos."
             value={preferences.productivityGoal}
           />
         </label>

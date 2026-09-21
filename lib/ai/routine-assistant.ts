@@ -1,4 +1,5 @@
 import { calculateAttendanceSummary } from "../academic-rules/attendance";
+import { calculateCourseProgress } from "../academic-rules/course-progress";
 import { calculateGradeAverage, calculateRequiredFinalExamGrade, getAcademicSituation } from "../academic-rules/grades";
 import { formatShortDate, getWeekdayFromDate, parseDateKey } from "../date";
 import { getReminderDateKey, getReminderTime } from "../reminders/schedule";
@@ -13,11 +14,13 @@ export type AssistantIntent =
   | "date_time"
   | "attendance"
   | "command"
+  | "course_progress"
   | "grades"
   | "resources"
   | "deadlines"
   | "readiness"
   | "summary"
+  | "work"
   | "conversation";
 export type AssistantTone = "mint" | "sky" | "gold" | "coral" | "neutral";
 
@@ -99,6 +102,10 @@ export function buildRoutineAssistantResponse(input: RoutineAssistantInput): Rou
       ? buildReadinessAnswer(safeInput)
       : intent === "attendance"
       ? buildAttendanceAnswer(safeInput)
+      : intent === "course_progress"
+        ? buildCourseProgressAnswer(safeInput)
+        : intent === "work"
+          ? buildWorkAnswer(safeInput)
       : intent === "grades"
         ? buildGradeAnswer(safeInput)
         : intent === "resources"
@@ -142,6 +149,14 @@ function detectIntent(question: string): AssistantIntent {
 
   if (readinessQuestion) {
     return "readiness";
+  }
+
+  if (isCourseProgressQuestion(normalized)) {
+    return "course_progress";
+  }
+
+  if (isWorkPriorityQuestion(normalized)) {
+    return "work";
   }
 
   if (includesAny(normalized, ["nota", "media", "pf", "prova final", "passar", "aprovacao", "reprovar por nota"])) {
@@ -331,8 +346,8 @@ function buildCommandLinks(commandProposal: AssistantCommandProposal): Assistant
   }
 
   return [
-    { href: `/faculdade/${commandProposal.subject.id}`, label: "Abrir area" },
-    { href: "/faculdade", label: "Estudos" }
+    { href: `/faculdade/${commandProposal.subject.id}`, label: "Abrir disciplina" },
+    { href: "/faculdade", label: "Faculdade" }
   ];
 }
 
@@ -347,18 +362,18 @@ function buildConversationAnswer(input: RoutineAssistantInput): RoutineAssistant
   const greeting = name ? `Oi, ${name}.` : "Oi.";
 
   return {
-    answer: `${greeting} Eu sou o assistente do Gavium. Posso conversar sobre sua rotina e tambem agir direto: criar tarefas, lembretes e compromissos, registrar faltas, notas e atividades quando voce usa estudos, encontrar materiais salvos, priorizar o que fazer agora e dizer o que ainda falta para o app ficar pronto. Se quiser, escreva natural, tipo "prova de redes amanha" ou "me lembre de levar o carregador as 8h".`,
+    answer: `${greeting} Eu sou o assistente do Gavium. Posso acompanhar sua faculdade e seu trabalho: mostrar o progresso do curso, analisar faltas e notas, encontrar materiais, organizar prazos e apontar a prioridade profissional de hoje. Tambem consigo criar tarefas, lembretes e compromissos ou registrar faltas quando voce escreve naturalmente.`,
     dataGaps: buildGaps(input, {
       noGrades: input.subjects.every((subject) => subject.grades.length === 0),
       noSchedules: input.subjects.every((subject) => subject.schedules.length === 0),
       noTasks: input.tasks.length === 0
     }),
     evidence: [
-      `${input.subjects.length} area(s) cadastrada(s).`,
+      `${input.subjects.length} disciplina(s) cadastrada(s).`,
       `${openTasks} tarefa(s) aberta(s).`,
       `${pendingActivities} atividade(s) pendente(s).`,
       `${resources} material(is) salvo(s).`,
-      attendanceRisks ? `${attendanceRisks} area(s) com alerta de faltas.` : "Nenhum alerta forte de faltas agora."
+      attendanceRisks ? `${attendanceRisks} disciplina(s) com alerta de faltas.` : "Nenhum alerta forte de faltas agora."
     ],
     highlights: [
       { label: "Tarefas", tone: openTasks ? "gold" : "neutral", value: String(openTasks) },
@@ -368,13 +383,13 @@ function buildConversationAnswer(input: RoutineAssistantInput): RoutineAssistant
     intent: "conversation",
     quickLinks: [
       { href: "/tarefas", label: "Tarefas" },
-      { href: "/faculdade", label: "Estudos" },
-      { href: "/configuracoes", label: "Configuracoes" }
+      { href: "/faculdade", label: "Faculdade" },
+      { href: "/trabalho", label: "Trabalho" }
     ],
     suggestions: [
-      "Perguntar: o que devo fazer agora?",
-      "Comandar: me lembre de estudar redes amanha as 19h",
-      "Perguntar: o que falta para o app ficar pronto?"
+      "Perguntar: como esta meu progresso no curso?",
+      "Perguntar: qual e minha prioridade de trabalho hoje?",
+      "Perguntar: como estao minhas faltas?"
     ]
   };
 }
@@ -406,6 +421,36 @@ function isResourceQuestion(normalized: string) {
     "drive",
     "video",
     "aula gravada"
+  ]);
+}
+
+function isCourseProgressQuestion(normalized: string) {
+  return includesAny(normalized, [
+    "progresso do curso",
+    "progresso no curso",
+    "progresso na faculdade",
+    "quanto do curso",
+    "quantas disciplinas conclui",
+    "quantas materias conclui",
+    "grade curricular",
+    "matriz do curso",
+    "matriz curricular",
+    "quanto falta para formar",
+    "quanto falta para me formar",
+    "formatura"
+  ]);
+}
+
+function isWorkPriorityQuestion(normalized: string) {
+  return includesAny(normalized, [
+    "prioridade de trabalho",
+    "prioridade do trabalho",
+    "trabalho hoje",
+    "tarefas do trabalho",
+    "pendencias do trabalho",
+    "rotina de trabalho",
+    "fazer no trabalho",
+    "painel de trabalho"
   ]);
 }
 
@@ -496,7 +541,7 @@ function buildNowAnswer(input: RoutineAssistantInput): RoutineAssistantResponse 
     ],
     intent: "now",
     quickLinks: [
-      { href: nextFocus ? `/faculdade/${nextFocus.subject.id}` : "/tarefas", label: nextFocus ? "Abrir area" : "Tarefas" },
+      { href: nextFocus ? `/faculdade/${nextFocus.subject.id}` : "/tarefas", label: nextFocus ? "Abrir disciplina" : "Tarefas" },
       { href: "/semana", label: "Semana" },
       { href: "/calendario", label: "Calendario" }
     ],
@@ -520,8 +565,8 @@ function buildAttendanceAnswer(input: RoutineAssistantInput): RoutineAssistantRe
   const top = risks[0] ?? summaries[0];
 
   if (!top) {
-    return emptyAnswer("attendance", "Ainda nao ha areas para analisar faltas.", "/faculdade", "Estudos", [
-      "Cadastre pelo menos uma area."
+    return emptyAnswer("attendance", "Ainda nao ha disciplinas para analisar faltas.", "/faculdade", "Faculdade", [
+      "Cadastre pelo menos uma disciplina."
     ]);
   }
 
@@ -550,7 +595,7 @@ function buildAttendanceAnswer(input: RoutineAssistantInput): RoutineAssistantRe
     suggestions: [
       `Conferir o historico de faltas em ${top.subject.name}`,
       "Registrar faltas antigas que ainda nao entraram",
-      "Verificar se a carga total da area esta correta"
+      "Verificar se a carga horaria da disciplina esta correta"
     ]
   };
 }
@@ -572,8 +617,8 @@ function buildGradeAnswer(input: RoutineAssistantInput): RoutineAssistantRespons
 
   if (!lowest) {
     return emptyAnswer("grades", "Ainda nao ha notas suficientes para calcular medias.", "/faculdade", "Notas", [
-      "Cadastre pelo menos uma nota por area.",
-      "Confira se a area usa media simples, ponderada ou pontos."
+      "Cadastre pelo menos uma nota por disciplina.",
+      "Confira se a disciplina usa media simples, ponderada ou pontos."
     ]);
   }
 
@@ -586,7 +631,7 @@ function buildGradeAnswer(input: RoutineAssistantInput): RoutineAssistantRespons
   return {
     answer: `${lowest.subject.name} pede mais atencao: media ${formatNumber(lowestAverage)} e situacao "${lowest.situation}".${finalExamText}`,
     dataGaps: summaries.some((item) => item.average === null)
-      ? ["Algumas areas ainda nao tem notas cadastradas, entao a comparacao pode mudar."]
+      ? ["Algumas disciplinas ainda nao tem notas cadastradas, entao a comparacao pode mudar."]
       : [],
     evidence: withGrades.slice(0, 3).map(
       (item) => `${item.subject.name}: media ${formatNumber(item.average)} com ${item.subject.grades.length} nota(s).`
@@ -624,11 +669,11 @@ function buildResourceAnswer(input: RoutineAssistantInput): RoutineAssistantResp
     return emptyAnswer(
       "resources",
       subject
-        ? `Ainda nao ha materiais salvos em ${subject.name}. Abra a area e adicione Classroom, PDFs, videos, Drive ou anotacoes importantes.`
-        : "Ainda nao ha materiais salvos. Cadastre uma area e depois salve os links importantes nela.",
+        ? `Ainda nao ha materiais salvos em ${subject.name}. Abra a disciplina e adicione Classroom, PDFs, videos, Drive ou anotacoes importantes.`
+        : "Ainda nao ha materiais salvos. Cadastre uma disciplina e depois salve os links importantes nela.",
       subject ? `/faculdade/${subject.id}` : "/faculdade",
-      subject ? "Abrir area" : "Estudos",
-      ["Materiais precisam ser cadastrados na area para a IA conseguir apontar links e documentos."]
+      subject ? "Abrir disciplina" : "Faculdade",
+      ["Materiais precisam ser cadastrados na disciplina para a IA conseguir apontar links e documentos."]
     );
   }
 
@@ -639,7 +684,7 @@ function buildResourceAnswer(input: RoutineAssistantInput): RoutineAssistantResp
     answer: `Encontrei ${total} material(is) salvo(s). Em ${first.subject.name}, os principais sao: ${examples
       .map((resource) => resource.title)
       .join(", ")}.`,
-    dataGaps: targetSubjects.length !== input.subjects.length ? [] : ["Pergunte por uma area especifica para eu filtrar melhor os materiais."],
+    dataGaps: targetSubjects.length !== input.subjects.length ? [] : ["Pergunte por uma disciplina especifica para eu filtrar melhor os materiais."],
     evidence: resourceGroups
       .slice(0, 4)
       .map(({ subject, resources }) => `${subject.name}: ${resources.length} material(is), incluindo ${resources[0]?.title}.`),
@@ -655,7 +700,7 @@ function buildResourceAnswer(input: RoutineAssistantInput): RoutineAssistantResp
     ],
     suggestions: [
       `Abrir ${first.subject.name} e conferir Materiais`,
-      "Salvar links do Classroom ou Drive nas areas mais usadas",
+      "Salvar links do Classroom ou Drive nas disciplinas mais usadas",
       "Adicionar notas curtas explicando para que serve cada material"
     ]
   };
@@ -691,7 +736,7 @@ function buildDeadlineAnswer(input: RoutineAssistantInput): RoutineAssistantResp
     ],
     intent: "deadlines",
     quickLinks: [
-      { href: first.href, label: first.source === "activity" ? "Abrir area" : "Abrir tarefas" },
+      { href: first.href, label: first.source === "activity" ? "Abrir disciplina" : "Abrir tarefas" },
       { href: "/calendario", label: "Calendario" }
     ],
     suggestions: [
@@ -766,6 +811,109 @@ function buildReadinessAnswer(input: RoutineAssistantInput): RoutineAssistantRes
   };
 }
 
+function buildCourseProgressAnswer(input: RoutineAssistantInput): RoutineAssistantResponse {
+  if (input.subjects.length === 0) {
+    return emptyAnswer(
+      "course_progress",
+      "Ainda nao ha disciplinas na matriz para calcular o progresso do curso.",
+      "/faculdade",
+      "Montar matriz",
+      ["Cadastre as disciplinas concluidas, atuais e planejadas para acompanhar a graduacao."]
+    );
+  }
+
+  const configuredWorkload = input.appPreference?.courseTotalWorkloadHours;
+  const progress = calculateCourseProgress(input.subjects, configuredWorkload);
+  const courseName = input.appPreference?.courseOrArea?.trim() || "Seu curso";
+  const currentPeriod = Math.max(1, input.appPreference?.currentCurriculumPeriod ?? 1);
+  const workloadBasis = configuredWorkload && configuredWorkload > 0
+    ? `${progress.completedWorkloadHours} de ${progress.totalWorkloadHours} horas concluidas`
+    : `${progress.completedSubjects} de ${progress.totalSubjects} disciplinas concluidas`;
+
+  return {
+    answer: `${courseName} esta em ${progress.progressPercent}% de progresso com base nos dados cadastrados: ${workloadBasis}. Voce esta no ${currentPeriod}o periodo, com ${progress.activeSubjects} disciplina(s) em andamento e ${progress.plannedSubjects} planejada(s).`,
+    dataGaps: [
+      !(configuredWorkload && configuredWorkload > 0)
+        ? "Informe a carga horaria total do curso para o percentual representar toda a graduacao."
+        : "",
+      input.subjects.some((subject) => !subject.recommendedPeriod)
+        ? "Algumas disciplinas ainda nao foram posicionadas em um periodo da matriz."
+        : ""
+    ].filter(Boolean),
+    evidence: [
+      `${progress.completedSubjects} disciplina(s) concluida(s).`,
+      `${progress.activeSubjects} disciplina(s) ativa(s) e ${progress.plannedSubjects} planejada(s).`,
+      `${progress.completedWorkloadHours} hora(s) concluidas entre ${progress.trackedWorkloadHours} hora(s) cadastradas.`
+    ],
+    highlights: [
+      { label: "Curso", tone: "mint", value: `${progress.progressPercent}%` },
+      { label: "Concluidas", tone: "sky", value: String(progress.completedSubjects) },
+      { label: "Em andamento", tone: progress.activeSubjects ? "gold" : "neutral", value: String(progress.activeSubjects) }
+    ],
+    intent: "course_progress",
+    quickLinks: [{ href: "/faculdade", label: "Ver matriz do curso" }],
+    suggestions: [
+      "Conferir se todas as disciplinas concluidas estao marcadas",
+      "Posicionar disciplinas ainda sem periodo na matriz",
+      "Revisar a carga horaria total do curso"
+    ]
+  };
+}
+
+function buildWorkAnswer(input: RoutineAssistantInput): RoutineAssistantResponse {
+  const workTasks = input.tasks.filter(
+    (task) => isWorkTask(task) && task.status !== "done" && task.status !== "cancelled"
+  );
+  const orderedTasks = prioritizeTasks(workTasks, input.today);
+  const overdueTasks = orderedTasks.filter((task) => isBeforeToday(getTaskDate(task), input.today));
+  const todayTasks = orderedTasks.filter((task) => getTaskDate(task) === input.today);
+  const workEvents = input.events
+    .filter((event) => event.category === "work" && event.date >= input.today)
+    .sort((a, b) => `${a.date}${a.startsAt ?? ""}`.localeCompare(`${b.date}${b.startsAt ?? ""}`));
+  const nextTask = overdueTasks[0] ?? todayTasks[0] ?? orderedTasks[0];
+  const plannedMinutes = workTasks.reduce((total, task) => total + (task.estimatedMinutes ?? 0), 0);
+
+  if (!nextTask && workEvents.length === 0) {
+    return emptyAnswer(
+      "work",
+      "Nao ha tarefas ou compromissos de trabalho em aberto. Use o painel de Trabalho para registrar a proxima entrega.",
+      "/trabalho",
+      "Abrir Trabalho"
+    );
+  }
+
+  const answer = nextTask
+    ? `Sua prioridade de trabalho e "${nextTask.title}"${getTaskDate(nextTask) ? ` para ${formatShortDate(getTaskDate(nextTask) ?? input.today)}` : ""}. ${overdueTasks.length ? `Ha ${overdueTasks.length} pendencia(s) atrasada(s); resolva a mais curta ou mais critica antes de abrir outra frente.` : todayTasks.length > 1 ? `Depois dela, ainda ha ${todayTasks.length - 1} tarefa(s) para hoje.` : "O restante da fila pode esperar essa entrega avancar."}`
+    : `Seu proximo compromisso de trabalho e "${workEvents[0].title}" em ${formatShortDate(workEvents[0].date)}${workEvents[0].startsAt ? ` as ${workEvents[0].startsAt}` : ""}.`;
+
+  return {
+    answer,
+    dataGaps: workTasks.some((task) => !getTaskDate(task))
+      ? ["Algumas tarefas de trabalho estao sem prazo e podem ficar fora da ordem ideal."]
+      : [],
+    evidence: [
+      `${workTasks.length} tarefa(s) de trabalho em aberto.`,
+      `${todayTasks.length} para hoje e ${overdueTasks.length} atrasada(s).`,
+      plannedMinutes ? `${plannedMinutes} minuto(s) estimados na fila profissional.` : "As tarefas ainda nao tem estimativa de duracao."
+    ],
+    highlights: [
+      { label: "Em aberto", tone: workTasks.length ? "sky" : "neutral", value: String(workTasks.length) },
+      { label: "Hoje", tone: todayTasks.length ? "gold" : "neutral", value: String(todayTasks.length) },
+      { label: "Atrasadas", tone: overdueTasks.length ? "coral" : "mint", value: String(overdueTasks.length) }
+    ],
+    intent: "work",
+    quickLinks: [
+      { href: "/trabalho", label: "Painel de trabalho" },
+      { href: "/tarefas", label: "Todas as tarefas" }
+    ],
+    suggestions: [
+      nextTask ? `Reservar um bloco para ${nextTask.title}` : "Registrar a proxima entrega profissional",
+      overdueTasks.length ? "Limpar a pendencia atrasada mais curta" : "Definir prazo para tarefas sem data",
+      "Revisar a carga dos proximos sete dias"
+    ]
+  };
+}
+
 function buildSummaryAnswer(input: RoutineAssistantInput): RoutineAssistantResponse {
   const openTasks = input.tasks.filter((task) => task.status !== "done" && task.status !== "cancelled");
   const pendingActivities = getPendingActivities(input.subjects);
@@ -776,15 +924,15 @@ function buildSummaryAnswer(input: RoutineAssistantInput): RoutineAssistantRespo
   const nextDeadline = deadlineItems[0];
 
   return {
-    answer: `Resumo rapido: ${openTasks.length} tarefa(s) aberta(s), ${pendingActivities.length} atividade(s) pendente(s) e ${attendanceRisks.length} area(s) pedindo cuidado com faltas.${nextDeadline ? ` O proximo foco por prazo e "${nextDeadline.title}" em ${formatShortDate(nextDeadline.date)}.` : ""}`,
+    answer: `Resumo rapido: ${openTasks.length} tarefa(s) aberta(s), ${pendingActivities.length} atividade(s) pendente(s) e ${attendanceRisks.length} disciplina(s) pedindo cuidado com faltas.${nextDeadline ? ` O proximo foco por prazo e "${nextDeadline.title}" em ${formatShortDate(nextDeadline.date)}.` : ""}`,
     dataGaps: buildGaps(input, {
       noGrades: input.subjects.every((subject) => subject.grades.length === 0),
       noSchedules: input.subjects.every((subject) => subject.schedules.length === 0)
     }),
     evidence: [
-      `${input.subjects.length} area(s) visiveis analisada(s).`,
+      `${input.subjects.length} disciplina(s) visiveis analisada(s).`,
       `${openTasks.length} tarefa(s) abertas e ${pendingActivities.length} atividade(s) pendentes.`,
-      attendanceRisks.length ? `${attendanceRisks.length} area(s) com alerta de falta.` : "Nenhum alerta de falta no momento."
+      attendanceRisks.length ? `${attendanceRisks.length} disciplina(s) com alerta de falta.` : "Nenhum alerta de falta no momento."
     ],
     highlights: [
       { label: "Tarefas", tone: openTasks.length ? "coral" : "neutral", value: String(openTasks.length) },
@@ -794,10 +942,10 @@ function buildSummaryAnswer(input: RoutineAssistantInput): RoutineAssistantRespo
     intent: "summary",
     quickLinks: [
       { href: "/tarefas", label: "Tarefas" },
-      { href: "/faculdade", label: "Estudos" },
+      { href: "/faculdade", label: "Faculdade" },
       { href: "/calendario", label: "Calendario" }
     ],
-    suggestions: ["Pergunte o que fazer agora", "Pergunte por uma area especifica", "Pergunte o que esta atrasado"]
+    suggestions: ["Pergunte o que fazer agora", "Pergunte por uma disciplina especifica", "Pergunte o que esta atrasado"]
   };
 }
 
@@ -924,12 +1072,16 @@ function isBeforeToday(date: string | undefined, today: string) {
   return Boolean(date && date < today);
 }
 
+function isWorkTask(task: Task) {
+  return normalizeText(task.category ?? "").includes("trabalho");
+}
+
 function buildGaps(input: RoutineAssistantInput, options: Partial<Record<"noGrades" | "noSchedules" | "noTasks", boolean>>) {
   return [
     options.noGrades ? "Notas ainda estao incompletas, entao a IA nao consegue comparar medias com seguranca." : "",
     options.noSchedules ? "Horarios de aula ainda estao incompletos, entao a agenda do dia pode ficar parcial." : "",
     options.noTasks ? "Sem tarefas cadastradas, a prioridade fica concentrada em aulas e prazos." : "",
-    input.subjects.length === 0 ? "Cadastre areas para a IA entender estudos, trabalho ou rotina acompanhada." : ""
+    input.subjects.length === 0 ? "Cadastre disciplinas para a IA entender seu curso e seus prazos academicos." : ""
   ].filter(Boolean);
 }
 
