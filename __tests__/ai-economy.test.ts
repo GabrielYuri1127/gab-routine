@@ -23,7 +23,8 @@ describe("AI economy routing", () => {
   });
 
   it("uses online AI for open-ended planning", () => {
-    assert.equal(shouldUseLocalAssistant("Monte um plano de estudos personalizado", response("conversation")), false);
+    assert.equal(shouldUseLocalAssistant("Monte um plano de estudos personalizado", response("summary")), false);
+    assert.equal(shouldUseLocalAssistant("Como posso estudar melhor para a prova?", response("summary")), false);
   });
 
   it("honors an explicit request for online AI", () => {

@@ -24,7 +24,16 @@ export function shouldUseLocalAssistant(question: string, response: RoutineAssis
   if (/\b(use|chame|responda com|pergunte para) (a )?ia online\b/.test(normalized)) {
     return false;
   }
-  if (response.commandProposal || locallySolvedIntents.has(response.intent)) {
+  if (response.commandProposal) {
+    return true;
+  }
+  if (
+    /\b(monte|crie|elabore|prepare) (um |uma )?(plano|estrategia|cronograma|roteiro)\b/.test(normalized) ||
+    /\b(como posso|me ajude a|sugira|recomende|de ideias)\b/.test(normalized)
+  ) {
+    return false;
+  }
+  if (locallySolvedIntents.has(response.intent)) {
     return true;
   }
 
