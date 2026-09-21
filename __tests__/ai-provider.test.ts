@@ -38,4 +38,42 @@ describe("OpenAI Responses provider", () => {
       globalThis.fetch = originalFetch;
     }
   });
+
+  it("keeps file and image input parts in multimodal requests", async () => {
+    const originalFetch = globalThis.fetch;
+    let requestBody: Record<string, unknown> | null = null;
+    globalThis.fetch = async (_input, init) => {
+      requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      return new Response(JSON.stringify({ model: "gpt-test", output_text: "{}" }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200
+      });
+    };
+
+    try {
+      const provider = new OpenAIResponsesProvider("test-key", "gpt-test", "https://example.test/v1");
+      await provider.complete({
+        messages: [
+          { content: "extract safely", role: "system" },
+          {
+            content: [
+              { text: "read this", type: "input_text" },
+              { file_data: "data:application/pdf;base64,AA==", filename: "grade.pdf", type: "input_file" }
+            ],
+            role: "user"
+          }
+        ],
+        timeoutMs: 75_000
+      });
+
+      const body = requestBody as { input?: Array<{ content?: unknown }> } | null;
+      assert.ok(body?.input);
+      assert.deepEqual(body.input[0]?.content, [
+        { text: "read this", type: "input_text" },
+        { file_data: "data:application/pdf;base64,AA==", filename: "grade.pdf", type: "input_file" }
+      ]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });

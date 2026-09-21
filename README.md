@@ -161,6 +161,7 @@ O material apresentavel fica em `portfolio/`, com case study, ferramentas do pro
 - `/assistente` com modo local, IA online contextual, memoria curta e comandos automaticos quando os dados estao claros.
 - Navegacao mobile com botao central de acao rapida.
 - `/faculdade` com busca, filtros por status, cards com atalhos e cadastro detalhado.
+- `/faculdade` com importacao inteligente de horario, historico, analitico e matriz curricular em PDF ou imagem, revisao editavel e mesclagem sem duplicar disciplinas.
 - `/faculdade/[id]` com detalhes, acoes rapidas, faltas, notas, simulador, atividades e gerenciamento.
 - Faltas em registros individuais com modo rapido/completo, data passada, atalhos de aulas recentes, historico editavel e desfazer.
 - Personalizacao de disciplina com professor, sala, semestre, status, observacoes, cor, horarios e regras academicas.

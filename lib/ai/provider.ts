@@ -1,8 +1,13 @@
 export type AIProviderName = "none" | "openrouter" | "gemini" | "groq" | "openai" | "local";
 
+export type AIInputContentPart =
+  | { text: string; type: "input_text" }
+  | { detail?: "auto" | "high" | "low"; image_url: string; type: "input_image" }
+  | { file_data: string; filename: string; type: "input_file" };
+
 export interface AIMessage {
   role: "system" | "user" | "assistant";
-  content: string;
+  content: string | AIInputContentPart[];
 }
 
 export interface AIProviderRequest {
@@ -12,6 +17,7 @@ export interface AIProviderRequest {
   temperature?: number;
   responseFormat?: "json" | JsonSchemaResponseFormat;
   safetyIdentifier?: string;
+  timeoutMs?: number;
 }
 
 export interface AIProviderResponse {
@@ -51,7 +57,8 @@ export class OpenAIResponsesProvider implements AIProvider {
   async complete(request: AIProviderRequest): Promise<AIProviderResponse> {
     const instructions = request.messages
       .filter((message) => message.role === "system")
-      .map((message) => message.content)
+      .map((message) => (typeof message.content === "string" ? message.content : ""))
+      .filter(Boolean)
       .join("\n\n");
     const input = request.messages
       .filter((message) => message.role !== "system")
@@ -77,7 +84,7 @@ export class OpenAIResponsesProvider implements AIProvider {
         "Content-Type": "application/json"
       },
       method: "POST",
-      signal: AbortSignal.timeout(20_000)
+      signal: AbortSignal.timeout(request.timeoutMs ?? 20_000)
     });
 
     if (!response.ok) {

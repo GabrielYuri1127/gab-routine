@@ -7,6 +7,7 @@ import {
   BookMarked,
   CheckCircle2,
   CircleDashed,
+  FileUp,
   GraduationCap,
   LayoutDashboard,
   Plus,
@@ -19,6 +20,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { AcademicImportDialog } from "@/features/academic/components/academic-import-dialog";
 import { SubjectCard } from "@/features/academic/components/subject-card";
 import { SubjectCreateForm, type SubjectCreateDraft } from "@/features/academic/components/subject-create-form";
 import { createId, useRoutineData, type AppPreferencePatch } from "@/features/data/routine-store";
@@ -67,6 +69,8 @@ export function AcademicDashboard() {
   const [createOpen, setCreateOpen] = useState(false);
   const [createPeriod, setCreatePeriod] = useState<number | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importNotice, setImportNotice] = useState("");
   const preferences = data.appPreference;
   const visibleSubjects = useMemo(() => data.subjects.filter((subject) => subject.status !== "archived"), [data.subjects]);
   const courseProgress = useMemo(
@@ -142,9 +146,13 @@ export function AcademicDashboard() {
           <h1 className="mt-1 truncate text-2xl font-semibold text-foreground sm:text-3xl">{courseName}</h1>
           <p className="mt-1 text-sm text-slate-500">{institution}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button aria-label="Configurar curso" onClick={() => setProfileOpen(true)} size="icon" variant="secondary">
             <Settings2 aria-hidden className="h-4 w-4" />
+          </Button>
+          <Button onClick={() => setImportOpen(true)} variant="secondary">
+            <FileUp aria-hidden className="h-4 w-4" />
+            Importar
           </Button>
           <Button onClick={() => openCreate()}>
             <Plus aria-hidden className="h-4 w-4" />
@@ -152,6 +160,18 @@ export function AcademicDashboard() {
           </Button>
         </div>
       </header>
+
+      {importNotice ? (
+        <div className="flex items-start justify-between gap-3 rounded-md border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-950" role="status">
+          <span className="flex items-start gap-2">
+            <CheckCircle2 aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
+            {importNotice}
+          </span>
+          <button aria-label="Fechar aviso" className="text-emerald-700 hover:text-foreground" onClick={() => setImportNotice("")} type="button">
+            <X aria-hidden className="h-4 w-4" />
+          </button>
+        </div>
+      ) : null}
 
       <section className="-mx-4 border-y border-line bg-white px-4 py-5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8" aria-label="Progresso do curso">
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(420px,1fr)] lg:items-end">
@@ -200,7 +220,7 @@ export function AcademicDashboard() {
       </nav>
 
       {visibleSubjects.length === 0 ? (
-        <AcademicEmptyState onAdd={() => openCreate()} onConfigure={() => setProfileOpen(true)} />
+        <AcademicEmptyState onAdd={() => openCreate()} onConfigure={() => setProfileOpen(true)} onImport={() => setImportOpen(true)} />
       ) : null}
 
       {visibleSubjects.length > 0 && view === "overview" ? (
@@ -279,6 +299,23 @@ export function AcademicDashboard() {
         onSave={updateAppPreference}
         open={profileOpen}
         preferences={preferences}
+      />
+      <AcademicImportDialog
+        onClose={() => setImportOpen(false)}
+        onImported={(summary) => {
+          const parts = [
+            summary.created ? `${summary.created} nova(s)` : "",
+            summary.updated ? `${summary.updated} atualizada(s)` : "",
+            summary.schedulesAdded ? `${summary.schedulesAdded} horario(s)` : ""
+          ].filter(Boolean);
+          setImportNotice(
+            parts.length
+              ? `Importacao concluida: ${parts.join(", ")}. Seu progresso foi recalculado.`
+              : "Dados do curso atualizados."
+          );
+          setView("curriculum");
+        }}
+        open={importOpen}
       />
     </div>
   );
@@ -550,7 +587,15 @@ function CurriculumView({
   );
 }
 
-function AcademicEmptyState({ onAdd, onConfigure }: { onAdd: () => void; onConfigure: () => void }) {
+function AcademicEmptyState({
+  onAdd,
+  onConfigure,
+  onImport
+}: {
+  onAdd: () => void;
+  onConfigure: () => void;
+  onImport: () => void;
+}) {
   return (
     <section className="grid min-h-[360px] place-items-center border-y border-dashed border-line py-12 text-center">
       <div className="max-w-lg">
@@ -563,11 +608,15 @@ function AcademicEmptyState({ onAdd, onConfigure }: { onAdd: () => void; onConfi
           notas e prazos sem misturar tudo com a rotina de trabalho.
         </p>
         <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-          <Button onClick={onAdd}>
+          <Button onClick={onImport}>
+            <FileUp aria-hidden className="h-4 w-4" />
+            Importar documento
+          </Button>
+          <Button onClick={onAdd} variant="secondary">
             <Plus aria-hidden className="h-4 w-4" />
             Primeira disciplina
           </Button>
-          <Button onClick={onConfigure} variant="secondary">
+          <Button onClick={onConfigure} variant="ghost">
             <Settings2 aria-hidden className="h-4 w-4" />
             Configurar curso
           </Button>
