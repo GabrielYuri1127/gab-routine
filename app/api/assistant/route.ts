@@ -59,10 +59,11 @@ export async function POST(request: Request) {
     onlineConfigured && Boolean(user || !supabaseConfigured) && !(await consumeRateLimit(identifier, user?.id));
   const allowOnline = (!supabaseConfigured || Boolean(user)) && !rateLimited;
   const fallbackModeDetail = rateLimited
-    ? "Limite temporario da IA online atingido. Usei o motor local; tente novamente em alguns minutos."
+    ? "Limite temporario da IA online atingido. Tente novamente em alguns minutos."
     : supabaseConfigured && !user
-      ? "Entre na sua conta para usar a IA online. O motor local continua disponivel sem consumir creditos."
+      ? "Entre na sua conta para usar a IA online."
       : undefined;
+  const fallbackError = rateLimited ? "rate_limited" : supabaseConfigured && !user ? "auth_required" : undefined;
 
   const result = await askAssistant(
     parsed.data.question,
@@ -77,6 +78,7 @@ export async function POST(request: Request) {
     } as unknown as Omit<RoutineAssistantInput, "question">,
     {
       allowOnline,
+      fallbackError,
       fallbackModeDetail,
       history: parsed.data.history,
       promptCacheKey: `gavium-${identifier.slice(0, 32)}`,
@@ -84,7 +86,7 @@ export async function POST(request: Request) {
     }
   );
 
-  if (user && result.source === "ai") {
+  if (user && result.source === "ai" && result.response) {
     await recordAIUsage(user.id, result.model ?? "unknown", result.response.intent);
   }
 

@@ -195,7 +195,7 @@ const failureDetails: Record<AIProviderFailureCode, string> = {
   insufficient_quota: "A conta da OpenAI esta sem creditos ou atingiu o limite de uso. Ajuste o faturamento antes de tentar novamente.",
   rate_limited: "A OpenAI limitou temporariamente as chamadas. Aguarde alguns minutos e tente novamente.",
   model_unavailable: "O modelo configurado em AI_MODEL nao esta disponivel para esta chave. Escolha um modelo liberado e faca um novo deploy.",
-  request_rejected: "A OpenAI recusou o formato da solicitacao. O app continuou com o motor local.",
+  request_rejected: "A OpenAI recusou o formato da solicitacao. Revise a configuracao e tente novamente.",
   timeout: "A OpenAI demorou mais que o limite para responder. Tente novamente em alguns instantes.",
   invalid_response: "A OpenAI respondeu, mas o conteudo veio incompleto. Tente novamente.",
   service_unavailable: "Nao foi possivel conectar a OpenAI agora. Tente novamente em alguns instantes."

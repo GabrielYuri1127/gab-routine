@@ -14,14 +14,14 @@ import {
   TrendingUp,
   type LucideIcon
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createId, useRoutineData } from "@/features/data/routine-store";
 import type { AIHealthCode, AIHealthStatus } from "@/lib/ai/health";
 import type { AssistantCommandProposal } from "@/lib/ai/command-parser";
-import { buildRoutineAssistantResponse, type RoutineAssistantResponse } from "@/lib/ai/routine-assistant";
+import type { RoutineAssistantResponse } from "@/lib/ai/routine-assistant";
 import { getTodayInAppTimeZone } from "@/lib/date";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
@@ -36,6 +36,16 @@ const promptSuggestions: Array<{ icon: LucideIcon; label: string }> = [
   { icon: GraduationCap, label: "Como estao minhas medias?" },
 ];
 
+const emptyAssistantResponse: RoutineAssistantResponse = {
+  answer: "Envie uma pergunta para receber uma resposta da IA online.",
+  dataGaps: [],
+  evidence: [],
+  highlights: [],
+  intent: "conversation",
+  quickLinks: [],
+  suggestions: []
+};
+
 export function AssistantPanel() {
   const { addActivity, addAttendanceRecord, addEvent, addGrade, addReminder, addTask, data, updateTask } = useRoutineData();
   const today = getTodayInAppTimeZone();
@@ -44,49 +54,34 @@ export function AssistantPanel() {
   const [aiHealth, setAiHealth] = useState<AIHealthStatus | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [modeDetail, setModeDetail] = useState("IA local pronta para responder com os dados cadastrados.");
+  const [modeDetail, setModeDetail] = useState("Verificando a IA online.");
   const [model, setModel] = useState("");
   const [question, setQuestion] = useState("");
   const [lastQuestion, setLastQuestion] = useState("");
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
   const [sessionEmail, setSessionEmail] = useState<string | null | undefined>(supabaseConfigured ? undefined : null);
-  const [source, setSource] = useState<"ai" | "rules">("rules");
-  const starterResponse = useMemo(
-    () =>
-      buildRoutineAssistantResponse({
-        events: data.events,
-        appPreference: data.appPreference,
-        question: "resumo",
-        reminders: data.reminders,
-        subjects: data.subjects,
-        tasks: data.tasks,
-        today
-      }),
-    [data.appPreference, data.events, data.reminders, data.subjects, data.tasks, today]
-  );
+  const [source, setSource] = useState<"ai" | "error">("ai");
   const [response, setResponse] = useState<RoutineAssistantResponse | null>(null);
 
-  const currentResponse = response ?? starterResponse;
+  const currentResponse = response ?? emptyAssistantResponse;
   const availabilityChecking = aiHealth === null || sessionEmail === undefined;
   const apiReady =
     (aiHealth?.code === "ready" || aiHealth?.code === "configured") &&
     (!supabaseConfigured || Boolean(sessionEmail));
-  const assistantBadge = response
-    ? source === "ai"
-      ? "IA API"
-      : "IA local"
-    : availabilityChecking
-      ? "Verificando"
-      : aiHealth?.code === "configured"
-        ? "IA economica"
+  const assistantBadge = loading
+    ? "IA online pensando"
+    : error || source === "error"
+      ? "IA indisponivel"
+      : availabilityChecking
+        ? "Verificando"
         : apiReady
-          ? "IA API pronta"
-          : "IA local";
+          ? "IA online"
+          : "IA indisponivel";
   const assistantModeDetail = response
     ? modeDetail
     : availabilityChecking
       ? "Verificando sua conta e a configuracao da IA online."
-      : aiHealth?.detail ?? "Nao consegui verificar a IA online agora; o motor local continua disponivel.";
+      : error || aiHealth?.detail || "Nao consegui verificar a IA online agora.";
   const needsLogin = aiHealth?.code === "auth_required";
   const needsAttention = Boolean(
     sessionEmail && aiHealth?.configured && aiHealth.available === false && aiHealth.code !== "auth_required"
@@ -156,7 +151,7 @@ export function AssistantPanel() {
           checkedAt: new Date().toISOString(),
           code: "service_unavailable",
           configured: true,
-          detail: "Nao consegui verificar a IA online agora. O motor local continua disponivel."
+          detail: "Nao consegui verificar a IA online agora. Tente novamente em alguns instantes."
         });
       }
     });
@@ -171,16 +166,6 @@ export function AssistantPanel() {
     if (!cleanQuestion) {
       return;
     }
-
-    const localResponse = buildRoutineAssistantResponse({
-      events: data.events,
-      appPreference: data.appPreference,
-      question: cleanQuestion,
-      reminders: data.reminders,
-      subjects: data.subjects,
-      tasks: data.tasks,
-      today
-    });
 
     setError("");
     setActionMessage("");
@@ -221,51 +206,58 @@ export function AssistantPanel() {
         method: "POST"
       });
 
-      if (!result.ok) {
-        throw new Error("Assistant request failed");
+      const payload = (await result.json().catch(() => null)) as AssistantApiResponse | null;
+      if (!result.ok || !payload) {
+        throw new Error(payload?.modeDetail || payload?.error || "Nao consegui acessar a IA online agora.");
       }
 
-      const payload = (await result.json()) as AssistantApiResponse;
-      const nextResponse = applyCommandIfNeeded(payload.response ?? localResponse);
-      setResponse(nextResponse);
-      setConversation((current) => [
-        ...current,
-        { content: nextResponse.answer, id: createId("chat-assistant"), role: "assistant" as const }
-      ].slice(-10));
-      setSource(payload.source ?? "rules");
       setModel(payload.model ?? "");
-      setModeDetail(payload.modeDetail ?? (payload.source === "ai" ? "IA online ativa." : "IA local ativa."));
+      setModeDetail(payload.modeDetail ?? "IA online ativa.");
 
-      if (payload.error) {
-        const detail = payload.modeDetail ?? "A IA online falhou; usei a resposta local nesta pergunta.";
+      if (payload.error || payload.source !== "ai" || !payload.response) {
+        const detail = payload.modeDetail ?? "A IA online nao conseguiu responder agora. Tente novamente.";
+        setResponse(null);
+        setSource("error");
         setError(detail);
+        setConversation((current) => [
+          ...current,
+          { content: detail, id: createId("chat-assistant"), role: "assistant" as const }
+        ].slice(-10));
         setAiHealth({
           available: false,
           checkedAt: new Date().toISOString(),
-          code: payload.error,
-          configured: true,
+          code: toAIHealthCode(payload.error),
+          configured: payload.error !== "not_configured",
           detail
         });
-      } else if (payload.source === "ai") {
-        setAiHealth({
-          available: true,
-          checkedAt: new Date().toISOString(),
-          code: "ready",
-          configured: true,
-          detail: payload.modeDetail ?? "IA online pronta.",
-          model: payload.model
-        });
+        return;
       }
-    } catch {
-      const nextResponse = applyCommandIfNeeded(localResponse);
+
+      const nextResponse = applyCommandIfNeeded(payload.response);
       setResponse(nextResponse);
       setConversation((current) => [
         ...current,
         { content: nextResponse.answer, id: createId("chat-assistant"), role: "assistant" as const }
       ].slice(-10));
-      setSource("rules");
-      setModeDetail("IA local ativa; nao consegui confirmar a rota online agora.");
-      setError("Usei a resposta local porque a IA online nao respondeu.");
+      setSource("ai");
+      setAiHealth({
+        available: true,
+        checkedAt: new Date().toISOString(),
+        code: "ready",
+        configured: true,
+        detail: payload.modeDetail ?? "IA online pronta.",
+        model: payload.model
+      });
+    } catch (requestError) {
+      const detail = requestError instanceof Error ? requestError.message : "Nao consegui acessar a IA online agora.";
+      setResponse(null);
+      setConversation((current) => [
+        ...current,
+        { content: detail, id: createId("chat-assistant"), role: "assistant" as const }
+      ].slice(-10));
+      setSource("error");
+      setModeDetail(detail);
+      setError(detail);
     } finally {
       setLoading(false);
     }
@@ -390,7 +382,7 @@ export function AssistantPanel() {
             <Bot aria-hidden className="h-5 w-5 text-mint" />
             <h2 className="text-lg font-semibold text-foreground">Assistente</h2>
           </span>
-          <Badge tone={source === "ai" || (!response && apiReady) ? "mint" : "sky"}>{assistantBadge}</Badge>
+          <Badge tone={error || source === "error" ? "coral" : apiReady ? "mint" : "sky"}>{assistantBadge}</Badge>
         </div>
         <p className="mb-4 text-xs leading-5 text-slate-500">{assistantModeDetail}</p>
 
@@ -503,76 +495,82 @@ export function AssistantPanel() {
         ) : null}
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-3">
-        {currentResponse.highlights.map((highlight) => (
-          <div className="rounded-lg border border-line bg-white p-4 shadow-sm" key={highlight.label}>
-            <p className="text-xs font-semibold uppercase text-slate-400">{highlight.label}</p>
-            <div className="mt-2 flex items-center justify-between gap-3">
-              <p className="text-xl font-semibold text-foreground">{highlight.value}</p>
-              <Badge tone={highlight.tone}>{highlight.tone === "neutral" ? "ok" : highlight.tone}</Badge>
+      {response && currentResponse.highlights.length ? (
+        <section className="grid gap-3 sm:grid-cols-3">
+          {currentResponse.highlights.map((highlight) => (
+            <div className="rounded-lg border border-line bg-white p-4 shadow-sm" key={highlight.label}>
+              <p className="text-xs font-semibold uppercase text-slate-400">{highlight.label}</p>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <p className="text-xl font-semibold text-foreground">{highlight.value}</p>
+                <Badge tone={highlight.tone}>{highlight.tone === "neutral" ? "ok" : highlight.tone}</Badge>
+              </div>
+            </div>
+          ))}
+        </section>
+      ) : null}
+
+      {response ? (
+        <section className="grid gap-3 md:grid-cols-[1fr_220px]">
+          <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">Proximos passos</h2>
+            <div className="mt-3 space-y-2">
+              {currentResponse.suggestions.map((suggestion) => (
+                <div className="flex items-center gap-2 text-sm text-slate-700" key={suggestion}>
+                  <span aria-hidden className="h-2 w-2 rounded-full bg-mint" />
+                  {suggestion}
+                </div>
+              ))}
             </div>
           </div>
-        ))}
-      </section>
 
-      <section className="grid gap-3 md:grid-cols-[1fr_220px]">
-        <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold text-foreground">Proximos passos</h2>
-          <div className="mt-3 space-y-2">
-            {currentResponse.suggestions.map((suggestion) => (
-              <div className="flex items-center gap-2 text-sm text-slate-700" key={suggestion}>
-                <span aria-hidden className="h-2 w-2 rounded-full bg-mint" />
-                {suggestion}
-              </div>
-            ))}
+          <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">Abrir</h2>
+            <div className="mt-3 space-y-2">
+              {currentResponse.quickLinks.map((link) => (
+                <Link
+                  className="flex h-10 items-center justify-center rounded-lg border border-line text-sm font-medium text-foreground transition hover:bg-slate-50"
+                  href={link.href}
+                  key={`${link.href}-${link.label}`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+        </section>
+      ) : null}
 
-        <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold text-foreground">Abrir</h2>
-          <div className="mt-3 space-y-2">
-            {currentResponse.quickLinks.map((link) => (
-              <Link
-                className="flex h-10 items-center justify-center rounded-lg border border-line text-sm font-medium text-foreground transition hover:bg-slate-50"
-                href={link.href}
-                key={`${link.href}-${link.label}`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-3 md:grid-cols-2">
-        <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold text-foreground">Base da resposta</h2>
-          <div className="mt-3 space-y-2">
-            {currentResponse.evidence.map((item) => (
-              <div className="flex items-start gap-2 text-sm leading-6 text-slate-700" key={item}>
-                <span aria-hidden className="mt-2 h-2 w-2 shrink-0 rounded-full bg-sky" />
-                {item}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold text-foreground">Dados que ajudam</h2>
-          <div className="mt-3 space-y-2">
-            {currentResponse.dataGaps.length ? (
-              currentResponse.dataGaps.map((item) => (
+      {response ? (
+        <section className="grid gap-3 md:grid-cols-2">
+          <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">Base da resposta</h2>
+            <div className="mt-3 space-y-2">
+              {currentResponse.evidence.map((item) => (
                 <div className="flex items-start gap-2 text-sm leading-6 text-slate-700" key={item}>
-                  <span aria-hidden className="mt-2 h-2 w-2 shrink-0 rounded-full bg-gold" />
+                  <span aria-hidden className="mt-2 h-2 w-2 shrink-0 rounded-full bg-sky" />
                   {item}
                 </div>
-              ))
-            ) : (
-              <p className="text-sm leading-6 text-slate-600">Os dados principais para essa resposta ja estao cadastrados.</p>
-            )}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+
+          <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">Dados que ajudam</h2>
+            <div className="mt-3 space-y-2">
+              {currentResponse.dataGaps.length ? (
+                currentResponse.dataGaps.map((item) => (
+                  <div className="flex items-start gap-2 text-sm leading-6 text-slate-700" key={item}>
+                    <span aria-hidden className="mt-2 h-2 w-2 shrink-0 rounded-full bg-gold" />
+                    {item}
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm leading-6 text-slate-600">Os dados principais para essa resposta ja estao cadastrados.</p>
+              )}
+            </div>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -593,17 +591,36 @@ const intentLabels: Record<RoutineAssistantResponse["intent"], string> = {
 };
 
 interface AssistantApiResponse {
-  error?: AIHealthCode;
+  error?: string;
   modeDetail?: string;
   model?: string;
   response?: RoutineAssistantResponse;
-  source?: "ai" | "rules";
+  source?: "ai" | "error";
 }
 
 interface ConversationMessage {
   content: string;
   id: string;
   role: "assistant" | "user";
+}
+
+const aiHealthCodes = new Set<AIHealthCode>([
+  "auth_required",
+  "configured",
+  "insufficient_quota",
+  "invalid_api_key",
+  "invalid_response",
+  "model_unavailable",
+  "not_configured",
+  "rate_limited",
+  "ready",
+  "request_rejected",
+  "service_unavailable",
+  "timeout"
+]);
+
+function toAIHealthCode(value: string | undefined): AIHealthCode {
+  return value && aiHealthCodes.has(value as AIHealthCode) ? (value as AIHealthCode) : "service_unavailable";
 }
 
 function getCompletionMessage(proposal: AssistantCommandProposal) {

@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { shouldUseLocalAssistant } from "@/lib/ai/economy";
 import { AIProviderError, getAIProviderFailure, getConfiguredAIProvider } from "@/lib/ai/provider";
 import {
   buildRoutineAssistantResponse,
@@ -17,6 +16,7 @@ export interface AssistantConversationMessage {
 
 export interface AskAssistantOptions {
   allowOnline?: boolean;
+  fallbackError?: string;
   fallbackModeDetail?: string;
   history?: AssistantConversationMessage[];
   promptCacheKey?: string;
@@ -27,8 +27,8 @@ export interface AssistantServiceResult {
   error?: string;
   modeDetail?: string;
   model?: string;
-  response: RoutineAssistantResponse;
-  source: "ai" | "rules";
+  response?: RoutineAssistantResponse;
+  source: "ai" | "error";
 }
 
 const assistantIntentSchema = z.enum([
@@ -61,34 +61,27 @@ export async function askAssistant(
   context: Omit<RoutineAssistantInput, "question">,
   options: AskAssistantOptions = {}
 ): Promise<AssistantServiceResult> {
-  const localResponse = buildRoutineAssistantResponse({ ...context, question });
   const provider = getConfiguredAIProvider();
 
   if (provider.name === "none") {
     return {
-      modeDetail: "IA online nao configurada; resposta gerada pelo motor local do Gavium.",
-      response: localResponse,
-      source: "rules"
-    };
-  }
-
-  if (shouldUseLocalAssistant(question, localResponse)) {
-    return {
-      modeDetail: "Modo economico: resposta calculada no proprio Gavium, sem consumir creditos da OpenAI.",
-      response: localResponse,
-      source: "rules"
+      error: "not_configured",
+      modeDetail: "A IA online ainda nao esta configurada. Adicione a chave da OpenAI na Vercel e publique novamente.",
+      source: "error"
     };
   }
 
   if (options.allowOnline === false) {
     return {
+      error: options.fallbackError ?? "auth_required",
       modeDetail:
         options.fallbackModeDetail ??
-        "Entre na sua conta para usar a IA online. O motor local continua disponivel sem consumir creditos.",
-      response: localResponse,
-      source: "rules"
+        "Entre na sua conta para usar a IA online.",
+      source: "error"
     };
   }
+
+  const localResponse = buildRoutineAssistantResponse({ ...context, question });
 
   try {
     const completion = await provider.complete({
@@ -168,30 +161,10 @@ Responda em portugues brasileiro natural, direto e especifico. Evite respostas p
     const failure = getAIProviderFailure(error);
     return {
       error: failure.code,
-      modeDetail: `${failure.detail} Nesta pergunta, usei o motor local do Gavium.`,
-      response: localResponse,
-      source: "rules"
+      modeDetail: failure.detail,
+      source: "error"
     };
   }
-}
-
-export async function askAssistantFallback(question: string, context?: Omit<RoutineAssistantInput, "question">) {
-  if (context) {
-    return askAssistant(question, context);
-  }
-
-  if (getConfiguredAIProvider().name === "none") {
-    return {
-      source: "rules" as const,
-      answer:
-        "A IA ainda nao esta configurada. Por enquanto, o Gavium usa regras internas para mostrar proximos itens, faltas, medias e prazos."
-    };
-  }
-
-  return {
-    source: "ai" as const,
-    answer: `Pergunta recebida: ${question}`
-  };
 }
 
 function buildModelContext(

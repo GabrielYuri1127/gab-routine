@@ -1,6 +1,6 @@
 # IA No Gavium
 
-O app funciona sem chave externa usando a IA local por regras. Para ativar resposta por API no deploy:
+O Assistente usa sempre a IA online. Para ativar as respostas no deploy:
 
 ```bash
 AI_PROVIDER=openai
@@ -12,17 +12,15 @@ Essas variaveis devem ficar no servidor, como variaveis de ambiente da Vercel. N
 
 ## Como Funciona
 
-- A tela `/assistente` envia a pergunta para `/api/assistant`, que decide entre o motor local e a IA online.
-- O servidor calcula uma resposta segura com regras locais, incluindo base da resposta, avisos de dados faltantes e proximos passos.
-- Faltas, notas, progresso, prioridades, prazos, materiais, resumos e comandos conhecidos ficam locais e nao gastam creditos.
-- Perguntas abertas, como criar um plano de estudos ou explicar uma estrategia, usam a IA online. O usuario tambem pode pedir explicitamente `use a IA online`.
-- Abrir a tela nao faz uma chamada paga de teste; a chave e o modelo sao validados na primeira pergunta que realmente exige IA.
+- A tela `/assistente` envia toda pergunta para `/api/assistant`, que chama a OpenAI.
+- O servidor calcula contexto seguro com regras internas para ancorar numeros, datas, links, alertas e comandos. Esse calculo nao e exibido como resposta alternativa.
+- Abrir a tela nao faz uma chamada paga de teste; a chave e o modelo sao validados na primeira pergunta.
 - Perguntas como "o que falta?" ou "o que falta para publicar?" usam o status real de Vercel, IA online, Google Classroom e Supabase, sem confundir com faltas de aula.
 - Comandos claros de alteracao viram uma acao automatica. O app salva falta, nota, atividade ou tarefa direto quando reconhece os dados essenciais, e pede complemento quando faltam disciplina, data, nota ou titulo.
-- Se `AI_PROVIDER=openai` e `AI_API_KEY` existirem, a API usa contexto reduzido da rotina e ate seis mensagens recentes nas perguntas abertas. Numeros, datas, links e acoes continuam ancorados no calculo local.
-- Quando Supabase esta configurado, somente usuarios autenticados consomem a IA online. Pessoas sem login continuam usando o modo local.
+- A API usa contexto reduzido da rotina e ate seis mensagens recentes. Numeros, datas, links e acoes continuam ancorados na validacao interna.
+- Quando Supabase esta configurado, somente usuarios autenticados podem usar o Assistente.
 - O servidor aplica limite temporario por usuario, timeout e identificador anonimizado. Quando a chave secreta do Supabase esta disponivel, o uso fica registrado em `ai_usage`; sem ela, existe contingencia em memoria. A requisicao usa `store: false`.
-- Se a API falhar, o app volta automaticamente para a resposta local.
+- Se a API falhar, o app mostra o erro e nao executa comandos nem produz uma resposta local.
 - O estilo em Configuracoes muda o tom do assistente entre direto, equilibrado e mais orientador.
 
 ## Comandos Ja Suportados
@@ -46,6 +44,6 @@ mova comprar livro para amanha as 14h
 
 Depois de entender o comando, o app usa as mesmas funcoes internas das telas manuais para salvar ou atualizar os dados e mostra uma mensagem de conclusao. Se duas tarefas tiverem nomes ambiguos, nenhuma alteracao e executada automaticamente.
 
-## Limite Atual
+## Requisitos De Uso
 
-Sem `AI_API_KEY`, o app nao conversa com uma IA externa. Mesmo assim, ele responde usando regras locais para rotina, faltas, notas, prazos e status de publicacao. A IA online interpreta perguntas livres, considera o contexto e mantem continuidade curta, enquanto calculos e alteracoes continuam validados pelo sistema.
+Sem `AI_API_KEY`, creditos disponiveis e um modelo liberado para a chave, o Assistente nao responde. O erro correspondente aparece na propria tela. Ao alterar a chave ou o modelo na Vercel, e necessario fazer um novo deploy; ao apenas adicionar creditos ou elevar o limite da mesma conta da OpenAI, nao e necessario redeploy.

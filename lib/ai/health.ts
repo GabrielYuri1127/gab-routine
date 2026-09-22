@@ -25,7 +25,7 @@ export function getAIConfigurationStatus(provider: AIProvider = getConfiguredAIP
       checkedAt,
       code: "not_configured",
       configured: false,
-      detail: "A IA online ainda nao esta configurada. O motor local continua disponivel."
+      detail: "A IA online ainda nao esta configurada. Adicione a chave da OpenAI na Vercel e publique novamente."
     };
   }
 
@@ -34,7 +34,7 @@ export function getAIConfigurationStatus(provider: AIProvider = getConfiguredAIP
     checkedAt,
     code: "configured",
     configured: true,
-    detail: "Modo economico ativo: a IA online so sera testada quando uma pergunta realmente precisar dela."
+    detail: "IA online configurada. Todas as perguntas do Assistente usam a OpenAI."
   };
 }
 
