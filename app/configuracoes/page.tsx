@@ -4,7 +4,6 @@ import { SupportWhatsAppCard } from "@/components/support-whatsapp-card";
 import { ClassroomImportPanel } from "@/features/classroom/components/classroom-import-panel";
 import { AppPreferencesPanel } from "@/features/settings/components/app-preferences-panel";
 import { DataTools } from "@/features/settings/components/data-tools";
-import { IntegrationStatusPanel } from "@/features/settings/components/integration-status-panel";
 import { PushNotificationsPanel } from "@/features/settings/components/push-notifications-panel";
 import { PwaInstallPanel } from "@/features/settings/components/pwa-install-panel";
 import { ThemeSettingsPanel } from "@/features/settings/components/theme-settings-panel";
@@ -14,17 +13,16 @@ export default function SettingsPage() {
     <div className="space-y-5">
       <header>
         <p className="text-sm font-medium text-mint">Configuracoes</p>
-        <h1 className="mt-1 text-2xl font-semibold text-foreground sm:text-3xl">Controle do Gavium</h1>
+        <h1 className="mt-1 text-2xl font-semibold text-foreground sm:text-3xl">Personalize o Gavium</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          Ajuste horarios importantes e guarde um backup antes de publicar ou trocar de aparelho.
+          Ajuste o visual, as notificacoes, suas contas e a forma como o app organiza sua rotina.
         </p>
       </header>
 
       <ThemeSettingsPanel />
-      <AppPreferencesPanel />
-      <IntegrationStatusPanel />
-      <PwaInstallPanel />
       <PushNotificationsPanel />
+      <AppPreferencesPanel />
+      <PwaInstallPanel />
       <DataTools />
       <ClassroomImportPanel />
       <SupportWhatsAppCard />

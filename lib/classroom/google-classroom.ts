@@ -37,21 +37,36 @@ interface ClassroomPage<T> {
 
 type ClassroomEnv = Record<string, string | undefined>;
 
+export type ClassroomConfigurationIssue = "invalid_client_id" | "missing_credentials";
+
 export function isClassroomConfigured(env: ClassroomEnv = process.env) {
-  return Boolean(env.GOOGLE_CLASSROOM_CLIENT_ID && env.GOOGLE_CLASSROOM_CLIENT_SECRET);
+  return getClassroomConfigurationIssue(env) === null;
+}
+
+export function getClassroomConfigurationIssue(env: ClassroomEnv = process.env): ClassroomConfigurationIssue | null {
+  const clientId = normalizeClassroomEnvValue(env.GOOGLE_CLASSROOM_CLIENT_ID);
+  const clientSecret = normalizeClassroomEnvValue(env.GOOGLE_CLASSROOM_CLIENT_SECRET);
+
+  if (!clientId || !clientSecret) {
+    return "missing_credentials";
+  }
+
+  return isGoogleOAuthClientId(clientId) ? null : "invalid_client_id";
 }
 
 export function getClassroomRedirectUri(requestUrl: string, env: ClassroomEnv = process.env) {
-  if (env.GOOGLE_CLASSROOM_REDIRECT_URI) {
-    return env.GOOGLE_CLASSROOM_REDIRECT_URI;
+  const configuredRedirect = normalizeClassroomEnvValue(env.GOOGLE_CLASSROOM_REDIRECT_URI);
+  if (configuredRedirect) {
+    return configuredRedirect;
   }
 
   return new URL("/api/classroom/callback", requestUrl).toString();
 }
 
 export function buildClassroomAuthUrl(state: string, requestUrl: string, env: ClassroomEnv = process.env) {
-  const clientId = env.GOOGLE_CLASSROOM_CLIENT_ID;
-  if (!clientId || !env.GOOGLE_CLASSROOM_CLIENT_SECRET) {
+  const clientId = normalizeClassroomEnvValue(env.GOOGLE_CLASSROOM_CLIENT_ID);
+  const clientSecret = normalizeClassroomEnvValue(env.GOOGLE_CLASSROOM_CLIENT_SECRET);
+  if (!clientId || !clientSecret || !isGoogleOAuthClientId(clientId)) {
     throw new Error("Google Classroom OAuth is not configured.");
   }
 
@@ -69,8 +84,8 @@ export function buildClassroomAuthUrl(state: string, requestUrl: string, env: Cl
 }
 
 export async function exchangeClassroomCode(code: string, requestUrl: string, env: ClassroomEnv = process.env) {
-  const clientId = env.GOOGLE_CLASSROOM_CLIENT_ID;
-  const clientSecret = env.GOOGLE_CLASSROOM_CLIENT_SECRET;
+  const clientId = normalizeClassroomEnvValue(env.GOOGLE_CLASSROOM_CLIENT_ID);
+  const clientSecret = normalizeClassroomEnvValue(env.GOOGLE_CLASSROOM_CLIENT_SECRET);
 
   if (!clientId || !clientSecret) {
     throw new Error("Google Classroom OAuth is not configured.");
@@ -100,8 +115,8 @@ export async function exchangeClassroomCode(code: string, requestUrl: string, en
 }
 
 export async function refreshClassroomAccessToken(refreshToken: string, env: ClassroomEnv = process.env) {
-  const clientId = env.GOOGLE_CLASSROOM_CLIENT_ID;
-  const clientSecret = env.GOOGLE_CLASSROOM_CLIENT_SECRET;
+  const clientId = normalizeClassroomEnvValue(env.GOOGLE_CLASSROOM_CLIENT_ID);
+  const clientSecret = normalizeClassroomEnvValue(env.GOOGLE_CLASSROOM_CLIENT_SECRET);
 
   if (!clientId || !clientSecret) {
     throw new Error("Google Classroom OAuth is not configured.");
@@ -126,6 +141,22 @@ export async function refreshClassroomAccessToken(refreshToken: string, env: Cla
   }
 
   return payload as ClassroomTokenResponse;
+}
+
+function normalizeClassroomEnvValue(value: string | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const hasWrappingQuotes =
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"));
+  return hasWrappingQuotes ? trimmed.slice(1, -1).trim() : trimmed;
+}
+
+function isGoogleOAuthClientId(value: string) {
+  return /^[0-9]+-[a-z0-9_-]+\.apps\.googleusercontent\.com$/i.test(value);
 }
 
 export async function revokeClassroomToken(token: string) {

@@ -30,6 +30,8 @@ https://seu-dominio.vercel.app/api/classroom/callback
 5. Preencha as variaveis do app e rode novamente `supabase/schema.sql`.
 6. Entre no Gavium e acesse `/configuracoes`.
 
+Se o Google mostrar `Error 401: invalid_client`, o Client ID salvo na Vercel foi apagado, esta incompleto ou pertence a outra credencial. Crie ou escolha um OAuth Client do tipo **Aplicacao da Web**, copie novamente o Client ID e o Client Secret para a Vercel e confira o redirect exato acima. Depois das alteracoes, faca um novo deploy. O Gavium verifica esse erro antes de abrir a tela do Google sempre que possivel.
+
 Os escopos usados pelo app sao `classroom.courses.readonly` e `classroom.coursework.me.readonly`. Eles permitem listar as turmas e os trabalhos visiveis para a propria conta sem editar dados no Google.
 
 ## Mais De Uma Conta

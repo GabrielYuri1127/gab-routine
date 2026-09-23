@@ -30,6 +30,7 @@ const CLASSROOM_IMPORTS_STORAGE_KEY = "gab-routine:classroom:imports";
 interface ClassroomStatus {
   callbackPath: string;
   configured: boolean;
+  oauthStatus?: "invalid_client" | "not_configured" | "ready" | "redirect_mismatch" | "unverified";
   persistentConfigured: boolean;
   scopes: string[];
 }
@@ -66,7 +67,13 @@ export function ClassroomImportPanel() {
       })
       .catch(() => {
         if (active) {
-          setStatus({ callbackPath: "/api/classroom/callback", configured: false, persistentConfigured: false, scopes: [] });
+          setStatus({
+            callbackPath: "/api/classroom/callback",
+            configured: false,
+            oauthStatus: "unverified",
+            persistentConfigured: false,
+            scopes: []
+          });
         }
       });
 
@@ -343,20 +350,25 @@ export function ClassroomImportPanel() {
     connections.length > 0 &&
     connectionVerifications.length === connections.length &&
     connectionVerifications.every((verification) => verification.status === "ready");
-  const connectionBadge = !status?.configured
-    ? "Aguardando chaves"
-    : !status.persistentConfigured
-      ? "Importacao pronta"
-      : !connections.length
-        ? "Pronto para conectar"
-        : verifying
-          ? "Verificando conexoes"
-          : hasVerificationError
-            ? "Reconexao necessaria"
-            : allConnectionsVerified
-              ? "Conexoes verificadas"
-              : "Sincronizacao pronta";
-  const connectionBadgeTone = !status?.configured || hasVerificationError ? "gold" : "mint";
+  const oauthNeedsRepair = status?.oauthStatus === "invalid_client" || status?.oauthStatus === "redirect_mismatch";
+  const connectionBadge = !status
+    ? "Verificando"
+    : oauthNeedsRepair
+      ? "Conexao indisponivel"
+      : !status.configured
+        ? "Indisponivel"
+        : !status.persistentConfigured
+          ? "Importacao pronta"
+          : !connections.length
+            ? "Pronto para conectar"
+            : verifying
+              ? "Verificando conexoes"
+              : hasVerificationError
+                ? "Reconexao necessaria"
+                : allConnectionsVerified
+                  ? "Conexoes verificadas"
+                  : "Sincronizacao pronta";
+  const connectionBadgeTone = oauthNeedsRepair ? "coral" : !status?.configured || hasVerificationError ? "gold" : "mint";
 
   return (
     <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
@@ -388,7 +400,7 @@ export function ClassroomImportPanel() {
         ) : (
           <Button disabled>
             <AlertCircle aria-hidden className="h-4 w-4" />
-            Configure as chaves
+            Conexao indisponivel
           </Button>
         )}
 
@@ -407,8 +419,7 @@ export function ClassroomImportPanel() {
 
       {!status?.configured ? (
         <div className="mt-4 rounded-lg border border-dashed border-line bg-slate-50 p-3 text-sm leading-6 text-slate-600">
-          Use <code>GOOGLE_CLASSROOM_CLIENT_ID</code>, <code>GOOGLE_CLASSROOM_CLIENT_SECRET</code> e{" "}
-          <code>GOOGLE_CLASSROOM_REDIRECT_URI</code> no ambiente do app.
+          {getClassroomUnavailableMessage(status?.oauthStatus)}
         </div>
       ) : null}
 
@@ -866,6 +877,17 @@ function normalizeName(value: string) {
 
 function hasResourceMarker(resources: AcademicResource[], marker: string) {
   return resources.some((resource) => resource.notes?.includes(marker));
+}
+
+function getClassroomUnavailableMessage(status: ClassroomStatus["oauthStatus"]) {
+  if (status === "invalid_client") {
+    return "A credencial antiga do Google nao existe mais. A conexao precisa ser atualizada antes de adicionar uma conta.";
+  }
+  if (status === "redirect_mismatch") {
+    return "O endereco de retorno do Google precisa ser corrigido antes de adicionar uma conta.";
+  }
+
+  return "A conexao com o Google Classroom ainda nao esta disponivel. Tente novamente depois.";
 }
 
 function Mini({ label, value }: { label: string; value: string }) {

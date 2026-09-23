@@ -9,7 +9,15 @@ import {
   toTimeFromClassroomDueTime,
   verifyClassroomAccess
 } from "../lib/classroom/google-classroom";
+import { probeClassroomOAuthClient } from "../lib/classroom/oauth-diagnostics";
 import { createClassroomOAuthState, verifyClassroomOAuthState } from "../lib/classroom/oauth-state";
+
+const validClientId = "123456789012-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com";
+const classroomEnv = {
+  GOOGLE_CLASSROOM_CLIENT_ID: validClientId,
+  GOOGLE_CLASSROOM_CLIENT_SECRET: "client-secret",
+  GOOGLE_CLASSROOM_REDIRECT_URI: "https://gab-routine.vercel.app/api/classroom/callback"
+};
 
 describe("Google Classroom mapping", () => {
   it("formats Classroom due dates and due times", () => {
@@ -27,16 +35,45 @@ describe("Google Classroom mapping", () => {
 
   it("asks Google to show the account chooser", () => {
     const authUrl = buildClassroomAuthUrl("state-1", "https://gab-routine.vercel.app/configuracoes", {
-      GOOGLE_CLASSROOM_CLIENT_ID: "client-id",
-      GOOGLE_CLASSROOM_CLIENT_SECRET: "client-secret",
-      GOOGLE_CLASSROOM_REDIRECT_URI: "https://gab-routine.vercel.app/api/classroom/callback"
+      ...classroomEnv,
+      GOOGLE_CLASSROOM_CLIENT_ID: `  "${validClientId}"  `
     });
 
     assert.equal(authUrl.searchParams.get("access_type"), "offline");
+    assert.equal(authUrl.searchParams.get("client_id"), validClientId);
     assert.match(authUrl.searchParams.get("prompt") ?? "", /consent/);
     assert.match(authUrl.searchParams.get("prompt") ?? "", /select_account/);
     assert.equal(CLASSROOM_SCOPES.includes("openid"), true);
     assert.equal(CLASSROOM_SCOPES.includes("email"), true);
+  });
+
+  it("detects a deleted OAuth client before opening the Google page", async () => {
+    const authError = Buffer.from("invalid_client The OAuth client was not found.").toString("base64url");
+    const status = await probeClassroomOAuthClient(
+      "https://gab-routine.vercel.app/configuracoes",
+      classroomEnv,
+      async () =>
+        new Response(null, {
+          headers: { Location: `https://accounts.google.com/signin/oauth/error?authError=${authError}` },
+          status: 302
+        })
+    );
+
+    assert.equal(status, "invalid_client");
+  });
+
+  it("accepts an OAuth client that reaches the Google sign-in flow", async () => {
+    const status = await probeClassroomOAuthClient(
+      "https://gab-routine.vercel.app/configuracoes",
+      classroomEnv,
+      async () =>
+        new Response(null, {
+          headers: { Location: "https://accounts.google.com/v3/signin/identifier" },
+          status: 302
+        })
+    );
+
+    assert.equal(status, "ready");
   });
 
   it("verifies live access to active courses and coursework", async () => {

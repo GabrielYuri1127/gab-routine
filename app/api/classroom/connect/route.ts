@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { buildClassroomAuthUrl, isClassroomConfigured } from "@/lib/classroom/google-classroom";
+import { probeClassroomOAuthClient } from "@/lib/classroom/oauth-diagnostics";
 import { createClassroomOAuthState } from "@/lib/classroom/oauth-state";
 import { getSupabaseUserFromRequest } from "@/lib/supabase/server";
 
@@ -14,12 +15,26 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   if (!isClassroomConfigured()) {
-    return NextResponse.json({ error: "Google Classroom ainda nao esta configurado." }, { status: 503 });
+    return NextResponse.json({ error: "A conexao com o Google Classroom ainda nao esta disponivel." }, { status: 503 });
   }
 
   const user = await getSupabaseUserFromRequest(request);
   if (!user) {
     return NextResponse.json({ error: "Entre na sua conta antes de conectar o Classroom." }, { status: 401 });
+  }
+
+  const oauthStatus = await probeClassroomOAuthClient(request.url);
+  if (oauthStatus === "invalid_client") {
+    return NextResponse.json(
+      { error: "A credencial do Google Classroom precisa ser atualizada antes de conectar." },
+      { status: 503 }
+    );
+  }
+  if (oauthStatus === "redirect_mismatch") {
+    return NextResponse.json(
+      { error: "O retorno do Google Classroom precisa ser corrigido antes de conectar." },
+      { status: 503 }
+    );
   }
 
   const state = createClassroomOAuthState(user.id);

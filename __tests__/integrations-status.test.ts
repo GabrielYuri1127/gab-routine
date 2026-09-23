@@ -10,7 +10,7 @@ describe("integration status", () => {
         AI_API_KEY: "secret",
         AI_MODEL: "gpt-5",
         AI_PROVIDER: "openai",
-        GOOGLE_CLASSROOM_CLIENT_ID: "classroom-client",
+        GOOGLE_CLASSROOM_CLIENT_ID: "123456789012-classroomclient.apps.googleusercontent.com",
         GOOGLE_CLASSROOM_CLIENT_SECRET: "classroom-secret",
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "public-key",
         NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
@@ -65,7 +65,7 @@ describe("integration status", () => {
 
   it("requires secure Supabase storage for persistent Classroom sync", () => {
     const report = buildIntegrationStatus({
-      GOOGLE_CLASSROOM_CLIENT_ID: "classroom-client",
+      GOOGLE_CLASSROOM_CLIENT_ID: "123456789012-classroomclient.apps.googleusercontent.com",
       GOOGLE_CLASSROOM_CLIENT_SECRET: "classroom-secret"
     });
     const classroom = report.items.find((item) => item.id === "classroom");
