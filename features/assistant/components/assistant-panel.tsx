@@ -133,7 +133,7 @@ export function AssistantPanel() {
         }
       }
 
-      const result = await fetch("/api/assistant/health", {
+      const result = await fetch("/api/assistant/health?probe=1", {
         cache: "no-store",
         headers
       });

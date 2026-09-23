@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import type { IntegrationStatusItem, IntegrationStatusReport, IntegrationState } from "@/lib/integrations/status";
 
 const stateLabels: Record<IntegrationState, string> = {
+  configured: "configurado",
   future: "futuro",
   needs_setup: "falta configurar",
   optional: "opcional",
@@ -14,6 +15,7 @@ const stateLabels: Record<IntegrationState, string> = {
 };
 
 const stateTones: Record<IntegrationState, "coral" | "gold" | "mint" | "neutral" | "sky"> = {
+  configured: "sky",
   future: "neutral",
   needs_setup: "gold",
   optional: "sky",
@@ -81,7 +83,14 @@ export function IntegrationStatusPanel() {
 }
 
 function StatusCard({ item }: { item: IntegrationStatusItem }) {
-  const Icon = item.state === "ready" ? CheckCircle2 : item.state === "future" ? Clock3 : item.state === "optional" ? Settings2 : AlertCircle;
+  const Icon =
+    item.state === "ready"
+      ? CheckCircle2
+      : item.state === "future"
+        ? Clock3
+        : item.state === "configured" || item.state === "optional"
+          ? Settings2
+          : AlertCircle;
 
   return (
     <div className="rounded-lg border border-line bg-white p-4 shadow-sm">

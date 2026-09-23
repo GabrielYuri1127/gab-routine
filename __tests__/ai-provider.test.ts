@@ -244,4 +244,12 @@ describe("AI provider failover", () => {
 
     assert.equal(provider.name, "auto");
   });
+
+  it("detects a Gemini key even when AI_PROVIDER is omitted", () => {
+    const provider = getConfiguredAIProvider({
+      GEMINI_API_KEY: "gemini-key"
+    });
+
+    assert.equal(provider.name, "gemini");
+  });
 });

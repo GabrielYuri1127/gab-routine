@@ -2,7 +2,7 @@ import { getClassroomRedirectUri, isClassroomConfigured } from "../classroom/goo
 import { getConfiguredAIProvider } from "../ai/provider";
 import { getPushMissingConfig } from "../../services/notifications/push-service";
 
-export type IntegrationState = "ready" | "needs_setup" | "optional" | "future";
+export type IntegrationState = "ready" | "configured" | "needs_setup" | "optional" | "future";
 export type IntegrationCategory = "agora" | "futuro";
 
 export interface IntegrationStatusItem {
@@ -24,7 +24,7 @@ type IntegrationEnv = Record<string, string | undefined>;
 
 export function buildIntegrationStatus(env: IntegrationEnv = process.env, requestUrl = "http://localhost:3000") {
   const configuredAIProvider = getConfiguredAIProvider(env);
-  const aiReady = configuredAIProvider.name !== "none";
+  const aiConfigured = configuredAIProvider.name !== "none";
   const aiDescription =
     configuredAIProvider.name === "auto"
       ? "OpenAI com contingencia automatica no Gemini"
@@ -69,13 +69,15 @@ export function buildIntegrationStatus(env: IntegrationEnv = process.env, reques
       },
       {
         category: "agora",
-        detail: aiReady
-          ? `IA online configurada com ${aiDescription}; todas as perguntas do Assistente usam um provedor online.`
+        detail: aiConfigured
+          ? `Credenciais de IA cadastradas para ${aiDescription}. A disponibilidade e testada de verdade ao abrir o Assistente.`
           : "A IA online precisa ser configurada para o Assistente responder.",
         id: "ai",
-        missing: aiReady ? [] : ["AI_PROVIDER=auto", "AI_API_KEY ou GEMINI_API_KEY"],
-        nextStep: aiReady ? "Usar a IA online em /assistente." : "Adicionar variaveis de IA na Vercel e fazer novo deploy.",
-        state: aiReady ? "ready" : "needs_setup",
+        missing: aiConfigured ? [] : ["AI_PROVIDER=auto", "OPENAI_API_KEY ou GEMINI_API_KEY"],
+        nextStep: aiConfigured
+          ? "Abrir /assistente para executar o teste real do provedor."
+          : "Adicionar variaveis de IA na Vercel e fazer novo deploy.",
+        state: aiConfigured ? "configured" : "needs_setup",
         title: "IA online"
       },
       {

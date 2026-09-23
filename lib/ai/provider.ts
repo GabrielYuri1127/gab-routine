@@ -265,7 +265,9 @@ function buildTextFormat(format: AIProviderRequest["responseFormat"]) {
 type AIProviderEnv = Record<string, string | undefined>;
 
 export function getConfiguredAIProvider(env: AIProviderEnv = process.env): AIProvider {
-  const providerName = (env.AI_PROVIDER ?? "none").trim().toLowerCase();
+  const configuredProviderName = env.AI_PROVIDER?.trim().toLowerCase();
+  const providerName =
+    configuredProviderName || (env.OPENAI_API_KEY || env.GEMINI_API_KEY || env.AI_API_KEY ? "auto" : "none");
   const legacyKey = env.AI_API_KEY?.trim();
   const openAIKey = env.OPENAI_API_KEY?.trim() || (providerName !== "gemini" ? legacyKey : undefined);
   const geminiKey = env.GEMINI_API_KEY?.trim() || (providerName === "gemini" ? legacyKey : undefined);

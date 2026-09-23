@@ -25,10 +25,10 @@ describe("integration status", () => {
     const push = report.items.find((item) => item.id === "push");
     const future = report.items.filter((item) => item.category === "futuro");
 
-    assert.equal(ai?.state, "ready");
-    assert.match(ai?.detail ?? "", /configurada/);
-    assert.match(ai?.detail ?? "", /todas as perguntas/);
-    assert.doesNotMatch(ai?.detail ?? "", /ativa/);
+    assert.equal(ai?.state, "configured");
+    assert.match(ai?.detail ?? "", /Credenciais de IA cadastradas/);
+    assert.match(ai?.detail ?? "", /testada de verdade/);
+    assert.doesNotMatch(ai?.detail ?? "", /todas as perguntas|ativa/);
     assert.equal(classroom?.state, "ready");
     assert.equal(push?.state, "needs_setup");
     assert.equal(future.length > 0, true);
@@ -57,7 +57,7 @@ describe("integration status", () => {
     });
     const ai = report.items.find((item) => item.id === "ai");
 
-    assert.equal(ai?.state, "ready");
+    assert.equal(ai?.state, "configured");
     assert.match(ai?.detail ?? "", /contingencia automatica/);
     assert.equal(JSON.stringify(report).includes("openai-secret"), false);
     assert.equal(JSON.stringify(report).includes("gemini-secret"), false);
