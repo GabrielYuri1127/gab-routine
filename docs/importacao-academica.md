@@ -30,9 +30,9 @@ AI_PROVIDER=auto
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-5
 GEMINI_API_KEY=
-GEMINI_MODEL=gemini-2.5-flash-lite
+GEMINI_MODEL=gemini-3.5-flash-lite
 ```
 
-No modo `auto`, a OpenAI e usada primeiro e o Gemini assume se ela estiver sem saldo ou indisponivel. Documentos enviados pelo nivel gratuito do Gemini ficam sujeitos aos termos de tratamento de dados desse nivel; use uma configuracao paga quando o documento exigir maior privacidade contratual.
+No modo `auto`, o Gemini economico e usado primeiro e a OpenAI assume se ele estiver indisponivel. Documentos enviados pelo nivel gratuito do Gemini ficam sujeitos aos termos de tratamento de dados desse nivel; use uma configuracao paga quando o documento exigir maior privacidade contratual.
 
 Quando Supabase esta configurado, a rota exige uma sessao autenticada. O limite atual e de seis analises a cada quinze minutos por usuario ou endereco de rede.

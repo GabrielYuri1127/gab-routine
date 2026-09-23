@@ -190,6 +190,99 @@ describe("Gemini GenerateContent provider", () => {
     }
   });
 
+  it("migrates the former default to the current stable Flash-Lite model", async () => {
+    const originalFetch = globalThis.fetch;
+    const requestedUrls: string[] = [];
+    globalThis.fetch = async (input) => {
+      requestedUrls.push(String(input));
+      return new Response(
+        JSON.stringify({
+          candidates: [{ content: { parts: [{ text: "ok" }] } }],
+          modelVersion: "gemini-3.5-flash-lite"
+        }),
+        { headers: { "Content-Type": "application/json" }, status: 200 }
+      );
+    };
+
+    try {
+      const provider = new GeminiGenerateContentProvider(
+        "gemini-key",
+        "models/gemini-2.5-flash-lite",
+        "https://example.test/v1beta"
+      );
+      const result = await provider.complete({ messages: [{ content: "hello", role: "user" }] });
+
+      assert.equal(result.model, "gemini-3.5-flash-lite");
+      assert.match(requestedUrls[0] ?? "", /models\/gemini-3\.5-flash-lite:generateContent$/);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("discovers a compatible model and reuses it when the configured model is unavailable", async () => {
+    const originalFetch = globalThis.fetch;
+    const requestedUrls: string[] = [];
+    globalThis.fetch = async (input) => {
+      const url = String(input);
+      requestedUrls.push(url);
+
+      if (url.endsWith("/models/gemini-unavailable:generateContent")) {
+        return new Response(JSON.stringify({ error: { message: "model not found", status: "NOT_FOUND" } }), {
+          headers: { "Content-Type": "application/json" },
+          status: 404
+        });
+      }
+      if (url.endsWith("/models?pageSize=1000")) {
+        return new Response(
+          JSON.stringify({
+            models: [
+              {
+                baseModelId: "text-embedding-004",
+                name: "models/text-embedding-004",
+                supportedGenerationMethods: ["embedContent"]
+              },
+              {
+                baseModelId: "gemini-3.5-flash-lite",
+                name: "models/gemini-3.5-flash-lite",
+                supportedGenerationMethods: ["generateContent"]
+              }
+            ]
+          }),
+          { headers: { "Content-Type": "application/json" }, status: 200 }
+        );
+      }
+      if (url.endsWith("/models/gemini-3.5-flash-lite:generateContent")) {
+        return new Response(
+          JSON.stringify({
+            candidates: [{ content: { parts: [{ text: "online" }] } }],
+            modelVersion: "gemini-3.5-flash-lite"
+          }),
+          { headers: { "Content-Type": "application/json" }, status: 200 }
+        );
+      }
+
+      throw new Error(`Unexpected URL: ${url}`);
+    };
+
+    try {
+      const provider = new GeminiGenerateContentProvider(
+        "gemini-key",
+        "gemini-unavailable",
+        "https://example.test/v1beta"
+      );
+      const first = await provider.complete({ messages: [{ content: "hello", role: "user" }] });
+      const second = await provider.complete({ messages: [{ content: "again", role: "user" }] });
+
+      assert.equal(first.model, "gemini-3.5-flash-lite");
+      assert.equal(second.model, "gemini-3.5-flash-lite");
+      assert.equal(requestedUrls.filter((url) => url.includes("gemini-unavailable")).length, 1);
+      assert.equal(requestedUrls.filter((url) => url.endsWith("/models?pageSize=1000")).length, 1);
+      assert.equal(requestedUrls.filter((url) => url.includes("gemini-3.5-flash-lite")).length, 2);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("classifies free-tier exhaustion as a temporary limit", async () => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = async () =>
@@ -243,6 +336,41 @@ describe("AI provider failover", () => {
     });
 
     assert.equal(provider.name, "auto");
+  });
+
+  it("uses Gemini first in automatic economy mode", async () => {
+    const originalFetch = globalThis.fetch;
+    const requestedUrls: string[] = [];
+    globalThis.fetch = async (input) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      if (url.includes("api.openai.com")) {
+        throw new Error("OpenAI should not run before Gemini in automatic mode");
+      }
+
+      return new Response(
+        JSON.stringify({
+          candidates: [{ content: { parts: [{ text: "online" }] } }],
+          modelVersion: "gemini-3.5-flash-lite"
+        }),
+        { headers: { "Content-Type": "application/json" }, status: 200 }
+      );
+    };
+
+    try {
+      const provider = getConfiguredAIProvider({
+        AI_PROVIDER: "auto",
+        GEMINI_API_KEY: "gemini-key",
+        OPENAI_API_KEY: "openai-key"
+      });
+      const result = await provider.complete({ messages: [{ content: "hello", role: "user" }] });
+
+      assert.equal(result.provider, "gemini");
+      assert.match(requestedUrls[0] ?? "", /generativelanguage\.googleapis\.com/);
+      assert.equal(requestedUrls.length, 1);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 
   it("detects a Gemini key even when AI_PROVIDER is omitted", () => {

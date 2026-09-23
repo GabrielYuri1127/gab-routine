@@ -71,6 +71,15 @@ export class DisabledAIProvider implements AIProvider {
   }
 }
 
+const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite";
+const LEGACY_GEMINI_DEFAULTS = new Set(["gemini-2.5-flash-lite"]);
+const PREFERRED_GEMINI_MODELS = [
+  DEFAULT_GEMINI_MODEL,
+  "gemini-3.1-flash-lite",
+  "gemini-3.5-flash",
+  "gemini-3.8-flash"
+];
+
 export class OpenAIResponsesProvider implements AIProvider {
   name: AIProviderName = "openai";
 
@@ -148,6 +157,7 @@ export class OpenAIResponsesProvider implements AIProvider {
 
 export class GeminiGenerateContentProvider implements AIProvider {
   name: AIProviderName = "gemini";
+  private resolvedModel: string | null = null;
 
   constructor(
     private readonly apiKey: string,
@@ -156,6 +166,30 @@ export class GeminiGenerateContentProvider implements AIProvider {
   ) {}
 
   async complete(request: AIProviderRequest): Promise<AIProviderResponse> {
+    const configuredModel = normalizeGeminiModelId(this.model);
+    const initialModel = this.resolvedModel ?? migrateLegacyGeminiDefault(configuredModel);
+
+    try {
+      const completion = await this.completeWithModel(request, initialModel);
+      this.resolvedModel = initialModel;
+      return completion;
+    } catch (error) {
+      if (!(error instanceof AIProviderError) || error.code !== "model_unavailable") {
+        throw error;
+      }
+
+      const fallbackModel = await this.resolveAvailableModel(new Set([initialModel]), request.timeoutMs);
+      if (!fallbackModel) {
+        throw error;
+      }
+
+      const completion = await this.completeWithModel(request, fallbackModel);
+      this.resolvedModel = fallbackModel;
+      return completion;
+    }
+  }
+
+  private async completeWithModel(request: AIProviderRequest, model: string): Promise<AIProviderResponse> {
     const systemText = request.messages
       .filter((message) => message.role === "system")
       .map((message) => extractMessageText(message.content))
@@ -170,7 +204,7 @@ export class GeminiGenerateContentProvider implements AIProvider {
 
     let response: Response;
     try {
-      response = await fetch(`${this.baseUrl}/models/${encodeURIComponent(normalizeGeminiModelId(this.model))}:generateContent`, {
+      response = await fetch(`${this.baseUrl}/models/${encodeURIComponent(model)}:generateContent`, {
         body: JSON.stringify({
           contents,
           generationConfig: {
@@ -210,9 +244,29 @@ export class GeminiGenerateContentProvider implements AIProvider {
 
     return {
       content,
-      model: payload?.modelVersion ?? this.model,
+      model: payload?.modelVersion ?? model,
       provider: "gemini"
     };
+  }
+
+  private async resolveAvailableModel(excludedModels: Set<string>, timeoutMs = 20_000) {
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}/models?pageSize=1000`, {
+        headers: { "x-goog-api-key": this.apiKey },
+        method: "GET",
+        signal: AbortSignal.timeout(timeoutMs)
+      });
+    } catch {
+      return null;
+    }
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const payload = (await response.json().catch(() => null)) as GeminiModelListPayload | null;
+    return selectAvailableGeminiModel(payload, excludedModels);
   }
 }
 
@@ -272,17 +326,28 @@ export function getConfiguredAIProvider(env: AIProviderEnv = process.env): AIPro
   const openAIKey = env.OPENAI_API_KEY?.trim() || (providerName !== "gemini" ? legacyKey : undefined);
   const geminiKey = env.GEMINI_API_KEY?.trim() || (providerName === "gemini" ? legacyKey : undefined);
   const openAIModel = env.OPENAI_MODEL?.trim() || (providerName !== "gemini" ? env.AI_MODEL?.trim() : undefined) || "gpt-5";
-  const geminiModel = env.GEMINI_MODEL?.trim() || (providerName === "gemini" ? env.AI_MODEL?.trim() : undefined) || "gemini-2.5-flash-lite";
+  const geminiModel = env.GEMINI_MODEL?.trim() || (providerName === "gemini" ? env.AI_MODEL?.trim() : undefined) || DEFAULT_GEMINI_MODEL;
 
   if (providerName === "none" || !["auto", "gemini", "openai"].includes(providerName)) {
     return new DisabledAIProvider();
   }
 
   const providers: AIProvider[] = [];
-  if ((providerName === "openai" || providerName === "auto") && openAIKey) {
-    providers.push(new OpenAIResponsesProvider(openAIKey, openAIModel));
-  }
-  if ((providerName === "gemini" || providerName === "auto" || providerName === "openai") && geminiKey) {
+  if (providerName === "auto") {
+    if (geminiKey) {
+      providers.push(new GeminiGenerateContentProvider(geminiKey, geminiModel));
+    }
+    if (openAIKey) {
+      providers.push(new OpenAIResponsesProvider(openAIKey, openAIModel));
+    }
+  } else if (providerName === "openai") {
+    if (openAIKey) {
+      providers.push(new OpenAIResponsesProvider(openAIKey, openAIModel));
+    }
+    if (geminiKey) {
+      providers.push(new GeminiGenerateContentProvider(geminiKey, geminiModel));
+    }
+  } else if (geminiKey) {
     providers.push(new GeminiGenerateContentProvider(geminiKey, geminiModel));
   }
 
@@ -330,6 +395,14 @@ interface GeminiErrorPayload {
   };
 }
 
+interface GeminiModelListPayload {
+  models?: Array<{
+    baseModelId?: string;
+    name?: string;
+    supportedGenerationMethods?: string[];
+  }>;
+}
+
 const failureDetails: Record<AIProviderFailureCode, string> = {
   invalid_api_key: "A chave da IA foi recusada. Confira OPENAI_API_KEY ou GEMINI_API_KEY na Vercel e faca um novo deploy.",
   insufficient_quota: "A conta principal de IA esta sem creditos. Adicione saldo na OpenAI ou configure GEMINI_API_KEY como contingencia.",
@@ -375,7 +448,12 @@ function classifyGeminiError(status: number, payload: GeminiErrorPayload | null)
   if (status === 401 || status === 403 || providerCode.includes("api key not valid")) {
     return "invalid_api_key";
   }
-  if (status === 404 || providerCode.includes("not_found")) {
+  if (
+    status === 404 ||
+    providerCode.includes("not_found") ||
+    providerCode.includes("not found") ||
+    providerCode.includes("not supported for generatecontent")
+  ) {
     return "model_unavailable";
   }
   if (status === 429 || providerCode.includes("resource_exhausted")) {
@@ -499,4 +577,41 @@ function sanitizeGeminiJsonSchema(value: unknown): unknown {
 
 function normalizeGeminiModelId(model: string) {
   return model.replace(/^models\//, "");
+}
+
+function migrateLegacyGeminiDefault(model: string) {
+  return LEGACY_GEMINI_DEFAULTS.has(model) ? DEFAULT_GEMINI_MODEL : model;
+}
+
+function selectAvailableGeminiModel(payload: GeminiModelListPayload | null, excludedModels: Set<string>) {
+  const candidates = [
+    ...new Set(
+      (payload?.models ?? [])
+        .filter((model) =>
+          model.supportedGenerationMethods?.some((method) => method.toLowerCase() === "generatecontent")
+        )
+        .map((model) => normalizeGeminiModelId(model.baseModelId || model.name || ""))
+        .filter((model) => model.startsWith("gemini-") && !excludedModels.has(model) && isGeneralGeminiModel(model))
+    )
+  ];
+
+  for (const preferredModel of PREFERRED_GEMINI_MODELS) {
+    if (candidates.includes(preferredModel)) {
+      return preferredModel;
+    }
+  }
+
+  return candidates.sort((left, right) => scoreGeminiModel(right) - scoreGeminiModel(left))[0] ?? null;
+}
+
+function isGeneralGeminiModel(model: string) {
+  return !/(?:aqa|audio|embedding|image|imagen|live|lyria|native-audio|robotics|tts|veo)/i.test(model);
+}
+
+function scoreGeminiModel(model: string) {
+  const versionMatch = model.match(/^gemini-(\d+)(?:\.(\d+))?/);
+  const versionScore = versionMatch ? Number(versionMatch[1]) * 10 + Number(versionMatch[2] ?? 0) : 0;
+  const familyScore = model.includes("flash-lite") ? 400 : model.includes("flash") ? 300 : 100;
+  const stabilityScore = /(?:exp|experimental|preview)/i.test(model) ? 0 : 100;
+  return familyScore + stabilityScore + versionScore;
 }

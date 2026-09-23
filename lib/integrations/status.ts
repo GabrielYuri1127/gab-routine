@@ -27,7 +27,7 @@ export function buildIntegrationStatus(env: IntegrationEnv = process.env, reques
   const aiConfigured = configuredAIProvider.name !== "none";
   const aiDescription =
     configuredAIProvider.name === "auto"
-      ? "OpenAI com contingencia automatica no Gemini"
+      ? "Gemini com contingencia automatica na OpenAI"
       : configuredAIProvider.name === "gemini"
         ? "Gemini"
         : "OpenAI";

@@ -49,7 +49,7 @@ describe("integration status", () => {
     assert.equal(push?.missing.includes("CRON_SECRET"), true);
   });
 
-  it("reports OpenAI with Gemini fallback when both keys are configured", () => {
+  it("reports Gemini with OpenAI fallback when both keys are configured", () => {
     const report = buildIntegrationStatus({
       AI_PROVIDER: "auto",
       GEMINI_API_KEY: "gemini-secret",
@@ -58,6 +58,7 @@ describe("integration status", () => {
     const ai = report.items.find((item) => item.id === "ai");
 
     assert.equal(ai?.state, "configured");
+    assert.match(ai?.detail ?? "", /Gemini/);
     assert.match(ai?.detail ?? "", /contingencia automatica/);
     assert.equal(JSON.stringify(report).includes("openai-secret"), false);
     assert.equal(JSON.stringify(report).includes("gemini-secret"), false);

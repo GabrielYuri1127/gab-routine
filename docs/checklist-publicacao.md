@@ -50,7 +50,7 @@ Use este checklist antes de compartilhar o Gavium com amigos, familiares ou no p
 
 - Confirmar que o Assistente informa claramente quando nenhuma IA online esta configurada.
 - Configurar `AI_PROVIDER=auto`, `OPENAI_API_KEY` e/ou `GEMINI_API_KEY` apenas no servidor.
-- Confirmar que a OpenAI sem saldo troca automaticamente para o Gemini.
+- Confirmar que o Gemini responde mesmo quando a OpenAI esta sem saldo.
 - Fazer novo deploy depois de mudar variaveis.
 - Perguntar no assistente: `O que devo fazer agora?`
 - Conferir se a resposta mostra base e dados faltantes.
