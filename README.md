@@ -16,7 +16,7 @@ Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, fa
 - Zod
 - Supabase free para cadastro, login e persistencia em nuvem por usuario
 - PWA com manifest, service worker e icone maskable para Android
-- Web Push para lembretes no Android com VAPID, Supabase Cron e GitHub Actions de contingencia
+- Web Push para lembretes no Android com VAPID, Supabase Cron e acionamento manual de emergencia
 - Google Classroom via OAuth somente leitura, com varias contas persistentes por usuario
 - Tutorial interno e perfil personalizavel para uso por outras pessoas
 - Suporte por WhatsApp com link direto
@@ -115,7 +115,7 @@ As preferencias padrao ficam em `services/notifications/defaults.ts`. A central 
 - `app/api/notifications/dispatch`
 - `.github/workflows/notifications.yml`
 
-Veja `docs/push-notifications.md` para gerar as chaves VAPID, ativar no Android e configurar o agendamento automatico pelo GitHub Actions.
+Veja `docs/push-notifications.md` para gerar as chaves VAPID, ativar no Android, configurar o agendamento automatico pelo Supabase Cron e manter o GitHub Actions como acionamento manual de emergencia.
 
 ## IA
 

@@ -58,7 +58,7 @@ VAPID_SUBJECT=mailto:seu-email@exemplo.com
 CRON_SECRET=um_segredo_longo
 ```
 
-Gere as chaves com `npm run vapid`. O `CRON_SECRET` tambem precisa existir como secret no GitHub Actions, com o mesmo valor usado na Vercel.
+Gere as chaves com `npm run vapid`. O `CRON_SECRET` precisa ser o mesmo na Vercel e no Supabase Vault usado por `supabase/notification-cron.sql`. Para usar o workflow manual de emergencia, salve tambem esse valor e `NOTIFICATION_DISPATCH_URL` nos secrets do GitHub Actions.
 
 ## Ambientes
 

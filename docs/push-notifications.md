@@ -53,9 +53,9 @@ Authorization: Bearer CRON_SECRET
 
 O agendador principal recomendado e o Supabase Cron, que chama a rota a cada minuto sem depender de um navegador aberto. Rode `supabase/notification-cron.sql` no SQL Editor e, no final, execute a chamada comentada trocando o segundo argumento pelo mesmo `CRON_SECRET` salvo na Vercel. A URL de producao ja aparece pronta no arquivo.
 
-O repositorio tambem tem `.github/workflows/notifications.yml`, que tenta chamar a rota a cada 10 minutos como contingencia.
+O repositorio tambem tem `.github/workflows/notifications.yml` para um acionamento manual de emergencia. Ele nao possui agenda automatica, evitando que dois agendadores processem o mesmo lembrete quase ao mesmo tempo.
 
-Configure estes secrets no GitHub:
+Se quiser usar esse acionamento manual, configure estes secrets no GitHub:
 
 ```text
 CRON_SECRET=mesmo_valor_da_vercel
@@ -64,12 +64,12 @@ NOTIFICATION_DISPATCH_URL=https://gab-routine.vercel.app/api/notifications/dispa
 
 Quando a rota roda, ela procura lembretes vencidos nos snapshots do Supabase, envia push para os aparelhos inscritos e marca esses lembretes como enviados. O Supabase guarda a URL e o segredo criptografados no Vault; eles nao ficam gravados no repositorio nem no texto do job.
 
-O retorno do dispatch inclui `remindersDue`, `sent`, `expiredSubscriptions` e `failureReasons`. Se houver lembrete vencido e todas as entregas falharem, a rota devolve erro para que o GitHub Actions fique vermelho e mostre a causa em vez de registrar um falso sucesso.
+O retorno do dispatch inclui `remindersDue`, `sent`, `expiredSubscriptions` e `failureReasons`. Se houver lembrete vencido e todas as entregas falharem, a rota devolve erro ao chamador. No acionamento manual, o GitHub Actions fica vermelho e mostra a causa em vez de registrar um falso sucesso.
 
 ## Observacoes
 
 - HTTPS e obrigatorio em producao.
-- O GitHub informa oficialmente que workflows agendados podem atrasar ou ate ser descartados em periodos de alta carga. Por isso ele fica como contingencia, nao como unico relogio dos lembretes.
+- O Supabase Cron e o unico relogio automatico dos lembretes. O workflow do GitHub fica disponivel apenas para acionamento manual de emergencia.
 - Se a pessoa bloquear notificacoes no navegador, ela precisa liberar nas configuracoes do Android/navegador.
 - Se o Android bloquear notificacoes do Chrome ou do PWA no nivel do sistema, libere em Configuracoes > Apps > Gavium/Chrome > Notificacoes.
 - Lembretes muito antigos nao sao disparados para evitar enxurrada de notificacoes atrasadas.
