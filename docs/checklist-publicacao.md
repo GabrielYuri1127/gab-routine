@@ -5,7 +5,7 @@ Use este checklist antes de compartilhar o Gavium com amigos, familiares ou no p
 ## Antes De Compartilhar
 
 - Abrir `/configuracoes`.
-- Conferir o painel `Status de publicacao`.
+- Conferir o painel `Status dos servicos`.
 - Conferir nome do app, nome do usuario e cor principal.
 - Exportar um backup se o navegador ja tiver dados importantes.
 - Usar `Restaurar perfil padrao` se quiser enviar o app limpo.
@@ -43,6 +43,7 @@ Use este checklist antes de compartilhar o Gavium com amigos, familiares ou no p
 - Conectar uma conta institucional.
 - Conectar uma segunda conta institucional se necessario.
 - Sincronizar novamente sem refazer o OAuth.
+- Usar `Verificar conexoes` e confirmar a leitura de turmas e atividades.
 - Desconectar uma conta de teste e confirmar a remocao.
 - Verificar se as contas aparecem separadas antes da importacao.
 

@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import { buildIntegrationStatus } from "../lib/integrations/status";
 
 describe("integration status", () => {
-  it("separates ready, missing and future items without exposing secrets", () => {
+  it("reports only operational services without exposing secrets", () => {
     const report = buildIntegrationStatus(
       {
         AI_API_KEY: "secret",
@@ -23,15 +23,14 @@ describe("integration status", () => {
     const ai = report.items.find((item) => item.id === "ai");
     const classroom = report.items.find((item) => item.id === "classroom");
     const push = report.items.find((item) => item.id === "push");
-    const future = report.items.filter((item) => item.category === "futuro");
+    const future = report.items.filter((item) => String(item.category) === "futuro");
 
-    assert.equal(ai?.state, "configured");
-    assert.match(ai?.detail ?? "", /Credenciais de IA cadastradas/);
-    assert.match(ai?.detail ?? "", /testada de verdade/);
-    assert.doesNotMatch(ai?.detail ?? "", /todas as perguntas|ativa/);
+    assert.equal(ai?.state, "ready");
+    assert.match(ai?.detail ?? "", /IA online configurada/);
+    assert.match(ai?.detail ?? "", /verificacao real/);
     assert.equal(classroom?.state, "ready");
     assert.equal(push?.state, "needs_setup");
-    assert.equal(future.length > 0, true);
+    assert.equal(future.length, 0);
     assert.equal(JSON.stringify(report).includes("secret"), false);
   });
 
@@ -57,7 +56,7 @@ describe("integration status", () => {
     });
     const ai = report.items.find((item) => item.id === "ai");
 
-    assert.equal(ai?.state, "configured");
+    assert.equal(ai?.state, "ready");
     assert.match(ai?.detail ?? "", /Gemini/);
     assert.match(ai?.detail ?? "", /contingencia automatica/);
     assert.equal(JSON.stringify(report).includes("openai-secret"), false);

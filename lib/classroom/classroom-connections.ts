@@ -105,7 +105,8 @@ export async function getClassroomConnection(userId: string, connectionId: strin
   return {
     account: rowToAccount(row),
     connectionId: row.id,
-    refreshToken: decryptToken(row.refresh_token_encrypted)
+    refreshToken: decryptToken(row.refresh_token_encrypted),
+    scope: row.scope ?? undefined
   };
 }
 

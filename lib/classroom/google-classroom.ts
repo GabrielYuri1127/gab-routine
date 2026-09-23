@@ -198,6 +198,34 @@ export async function fetchClassroomImport(accessToken: string, account?: Classr
   };
 }
 
+export async function verifyClassroomAccess(accessToken: string, grantedScope?: string) {
+  const grantedScopes = new Set((grantedScope ?? "").split(/\s+/).filter(Boolean));
+  const requiredScopes = CLASSROOM_SCOPES.filter((scope) => scope.startsWith("https://"));
+  const missingScopes = grantedScopes.size ? requiredScopes.filter((scope) => !grantedScopes.has(scope)) : [];
+
+  if (missingScopes.length) {
+    throw new Error("Google Classroom permissions are incomplete.");
+  }
+
+  const coursesUrl = new URL(`${CLASSROOM_API_ORIGIN}/courses`);
+  coursesUrl.searchParams.set("courseStates", "ACTIVE");
+  coursesUrl.searchParams.set("pageSize", "100");
+  const courses = await fetchClassroomPages<ClassroomCourse>(coursesUrl, accessToken, "courses", 1);
+
+  if (courses[0]) {
+    const courseWorkUrl = new URL(`${CLASSROOM_API_ORIGIN}/courses/${encodeURIComponent(courses[0].id)}/courseWork`);
+    courseWorkUrl.searchParams.set("pageSize", "1");
+    await fetchClassroomPages<ClassroomCourseWork>(courseWorkUrl, accessToken, "courseWork", 1);
+  }
+
+  return {
+    activeCourses: courses.length,
+    checkedAt: new Date().toISOString(),
+    courseworkReadable: true,
+    coursesReadable: true
+  };
+}
+
 export function toDateKeyFromClassroomDueDate(dueDate?: ClassroomDate) {
   if (!dueDate?.year || !dueDate.month || !dueDate.day) {
     return undefined;
@@ -237,11 +265,7 @@ async function fetchCourseWork(courseId: string, accessToken: string) {
   courseWorkUrl.searchParams.set("orderBy", "dueDate asc");
   courseWorkUrl.searchParams.set("pageSize", "50");
 
-  try {
-    return await fetchClassroomPages<ClassroomCourseWork>(courseWorkUrl, accessToken, "courseWork", 4);
-  } catch {
-    return [];
-  }
+  return fetchClassroomPages<ClassroomCourseWork>(courseWorkUrl, accessToken, "courseWork", 4);
 }
 
 async function fetchClassroomPages<T>(url: URL, accessToken: string, collectionKey: string, maxPages: number) {

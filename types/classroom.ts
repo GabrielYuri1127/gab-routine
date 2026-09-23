@@ -24,6 +24,16 @@ export interface ClassroomConnectionSummary extends ClassroomAccount {
   lastSyncedAt?: string;
 }
 
+export interface ClassroomConnectionVerification {
+  activeCourses: number;
+  checkedAt: string;
+  connectionId: string;
+  courseworkReadable: boolean;
+  coursesReadable: boolean;
+  detail: string;
+  status: "ready" | "error";
+}
+
 export interface ClassroomCourse {
   alternateLink?: string;
   courseState?: string;

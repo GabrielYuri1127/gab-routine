@@ -30,6 +30,8 @@ https://seu-dominio.vercel.app/api/classroom/callback
 5. Preencha as variaveis do app e rode novamente `supabase/schema.sql`.
 6. Entre no Gavium e acesse `/configuracoes`.
 
+Os escopos usados pelo app sao `classroom.courses.readonly` e `classroom.coursework.me.readonly`. Eles permitem listar as turmas e os trabalhos visiveis para a propria conta sem editar dados no Google.
+
 ## Mais De Uma Conta
 
 O botao `Adicionar conta Classroom` sempre pede o seletor de conta do Google. Para importar duas contas institucionais:
@@ -51,8 +53,9 @@ O app usa email/id da conta para separar as previas e marcadores nas disciplinas
 - Links do Classroom ficam guardados nas observacoes da disciplina ou atividade.
 - Cada conta conectada fica separada na previa antes da importacao.
 - `Sincronizar` busca as mudancas sem exigir um novo login no Google.
+- `Verificar conexoes` renova o token e testa diretamente a leitura de turmas e trabalhos. A tela avisa quando uma conta precisa ser reconectada.
 - `Desconectar` revoga o acesso no Google e remove a conexao salva.
 - Ao conectar novamente, o Google mostra o seletor de conta.
 - Itens sem data nao viram atividades, porque nao entram bem na agenda.
 
-O refresh token do Google nunca vai para o navegador. Ele fica criptografado no servidor, em `classroom_connections`, sem politica de acesso direto pelo cliente. O `localStorage` guarda apenas a previa dos cursos e trabalhos, nunca credenciais.
+O refresh token do Google nunca vai para o navegador. Ele fica criptografado no servidor, em `classroom_connections`, sem politica de acesso direto pelo cliente. O diagnostico tambem roda no servidor e devolve somente o estado da conexao. O `localStorage` guarda apenas a previa dos cursos e trabalhos, nunca credenciais.

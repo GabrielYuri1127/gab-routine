@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, ExternalLink, GraduationCap, RefreshCw, Trash2, UploadCloud } from "lucide-react";
+import { AlertCircle, CheckCircle2, ExternalLink, GraduationCap, RefreshCw, ShieldCheck, Trash2, UploadCloud } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,7 @@ import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabas
 import type { AcademicActivity, AcademicResource } from "@/types/academic";
 import type {
   ClassroomAccount,
+  ClassroomConnectionVerification,
   ClassroomConnectionSummary,
   ClassroomCourse,
   ClassroomCourseWork,
@@ -49,6 +50,8 @@ export function ClassroomImportPanel() {
   const [connections, setConnections] = useState<ClassroomConnectionSummary[]>([]);
   const [imports, setImports] = useState<ClassroomImportPayload[]>([]);
   const [message, setMessage] = useState("");
+  const [verifications, setVerifications] = useState<Record<string, ClassroomConnectionVerification>>({});
+  const [verifying, setVerifying] = useState(false);
   const [workingId, setWorkingId] = useState("");
 
   useEffect(() => {
@@ -83,7 +86,13 @@ export function ClassroomImportPanel() {
         .then((response) => (response?.ok ? response.json() : null))
         .then((payload: { connections?: ClassroomConnectionSummary[] } | null) => {
           if (active) {
-            setConnections(payload?.connections ?? []);
+            const nextConnections = payload?.connections ?? [];
+            setConnections(nextConnections);
+            if (nextConnections.length) {
+              void verifyConnections(nextConnections, false);
+            } else {
+              setVerifications({});
+            }
           }
         })
         .catch(() => {
@@ -222,6 +231,18 @@ export function ClassroomImportPanel() {
           item.connectionId === connection.connectionId ? { ...item, lastSyncedAt: new Date().toISOString() } : item
         )
       );
+      setVerifications((current) => ({
+        ...current,
+        [connection.connectionId]: {
+          activeCourses: payload.import?.courses.length ?? 0,
+          checkedAt: new Date().toISOString(),
+          connectionId: connection.connectionId,
+          courseworkReadable: true,
+          coursesReadable: true,
+          detail: `Conexao ativa: ${payload.import?.courses.length ?? 0} turma(s) sincronizada(s) e leitura de atividades confirmada.`,
+          status: "ready"
+        }
+      }));
       setMessage(`Sincronizei ${getAccountLabel(payload.import)}. A previa esta pronta para importar.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Nao foi possivel sincronizar esta conta.");
@@ -255,6 +276,11 @@ export function ClassroomImportPanel() {
       saveStoredImports(storageUserId, nextImports);
       setImports(nextImports);
       setConnections((current) => current.filter((item) => item.connectionId !== connection.connectionId));
+      setVerifications((current) => {
+        const next = { ...current };
+        delete next[connection.connectionId];
+        return next;
+      });
       setMessage(`${connection.email ?? connection.name ?? "Conta Google"} foi desconectada.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Nao foi possivel desconectar esta conta.");
@@ -262,6 +288,75 @@ export function ClassroomImportPanel() {
       setWorkingId("");
     }
   }
+
+  async function verifyConnections(targetConnections = connections, announce = true) {
+    if (!targetConnections.length) {
+      return;
+    }
+
+    setVerifying(true);
+    if (announce) {
+      setMessage("");
+    }
+
+    try {
+      const token = await getClassroomAccessToken();
+      if (!token) {
+        throw new Error("Entre novamente no Gavium para verificar o Google Classroom.");
+      }
+
+      const response = await fetch("/api/classroom/verify", {
+        cache: "no-store",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | { error?: string; verifications?: ClassroomConnectionVerification[] }
+        | null;
+
+      if (!response.ok || !payload?.verifications) {
+        throw new Error(payload?.error ?? "Nao foi possivel verificar o Google Classroom.");
+      }
+
+      setVerifications(
+        Object.fromEntries(payload.verifications.map((verification) => [verification.connectionId, verification]))
+      );
+      if (announce) {
+        const failures = payload.verifications.filter((verification) => verification.status === "error").length;
+        setMessage(
+          failures
+            ? `${failures} conta(s) precisam ser reconectadas; veja o diagnostico abaixo.`
+            : "Conexao com o Google Classroom verificada: turmas e atividades estao acessiveis."
+        );
+      }
+    } catch (error) {
+      if (announce) {
+        setMessage(error instanceof Error ? error.message : "Nao foi possivel verificar o Google Classroom.");
+      }
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  const connectionVerifications = connections.map((connection) => verifications[connection.connectionId]).filter(Boolean);
+  const hasVerificationError = connectionVerifications.some((verification) => verification.status === "error");
+  const allConnectionsVerified =
+    connections.length > 0 &&
+    connectionVerifications.length === connections.length &&
+    connectionVerifications.every((verification) => verification.status === "ready");
+  const connectionBadge = !status?.configured
+    ? "Aguardando chaves"
+    : !status.persistentConfigured
+      ? "Importacao pronta"
+      : !connections.length
+        ? "Pronto para conectar"
+        : verifying
+          ? "Verificando conexoes"
+          : hasVerificationError
+            ? "Reconexao necessaria"
+            : allConnectionsVerified
+              ? "Conexoes verificadas"
+              : "Sincronizacao pronta";
+  const connectionBadgeTone = !status?.configured || hasVerificationError ? "gold" : "mint";
 
   return (
     <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
@@ -275,9 +370,7 @@ export function ClassroomImportPanel() {
             Conecte uma ou mais contas institucionais. Cada conta fica separada na previa e pode ser importada sem misturar origem.
           </p>
         </div>
-        <Badge tone={status?.configured ? "mint" : "gold"}>
-          {status?.persistentConfigured ? "Sincronizacao pronta" : status?.configured ? "Importacao pronta" : "Aguardando chaves"}
-        </Badge>
+        <Badge tone={connectionBadgeTone}>{connectionBadge}</Badge>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -298,6 +391,13 @@ export function ClassroomImportPanel() {
             Configure as chaves
           </Button>
         )}
+
+        {connections.length ? (
+          <Button disabled={verifying || Boolean(workingId)} onClick={() => void verifyConnections()} variant="secondary">
+            <ShieldCheck aria-hidden className={`h-4 w-4 ${verifying ? "animate-pulse" : ""}`} />
+            {verifying ? "Verificando..." : "Verificar conexoes"}
+          </Button>
+        ) : null}
 
         <Button disabled={imports.length < 2 || totals.datedCourseWork === 0} onClick={importAll} variant="secondary">
           <UploadCloud aria-hidden className="h-4 w-4" />
@@ -324,10 +424,19 @@ export function ClassroomImportPanel() {
                     {connection.email ?? "Email nao informado"}
                     {connection.lastSyncedAt ? ` - sincronizada ${formatSyncDate(connection.lastSyncedAt)}` : " - ainda nao sincronizada"}
                   </p>
+                  {verifications[connection.connectionId] ? (
+                    <p
+                      className={`mt-1 text-xs ${
+                        verifications[connection.connectionId].status === "ready" ? "text-mint" : "text-coral"
+                      }`}
+                    >
+                      {verifications[connection.connectionId].detail}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex shrink-0 gap-2">
                   <Button
-                    disabled={Boolean(workingId)}
+                    disabled={verifying || Boolean(workingId)}
                     onClick={() => syncConnection(connection)}
                     size="sm"
                     variant="secondary"
@@ -338,7 +447,7 @@ export function ClassroomImportPanel() {
                   <Button
                     aria-label={`Desconectar ${connection.email ?? connection.name ?? "conta Google"}`}
                     className="text-coral hover:bg-red-50 hover:text-red-700"
-                    disabled={Boolean(workingId)}
+                    disabled={verifying || Boolean(workingId)}
                     onClick={() => removeConnection(connection)}
                     size="icon"
                     title="Desconectar conta"

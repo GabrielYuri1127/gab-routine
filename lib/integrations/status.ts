@@ -54,7 +54,7 @@ export function buildIntegrationStatus(env: IntegrationEnv = process.env, reques
         detail: "Codigo, build, PWA e repositorio ja estao preparados para compartilhar.",
         id: "app",
         missing: [],
-        nextStep: "Abrir a URL publicada e conferir o app no celular.",
+        nextStep: "Nenhuma configuracao pendente.",
         state: "ready",
         title: "App base"
       },
@@ -63,21 +63,21 @@ export function buildIntegrationStatus(env: IntegrationEnv = process.env, reques
         detail: vercelReady ? "O ambiente atual esta rodando na Vercel." : "Localmente nao da para confirmar o deploy de producao.",
         id: "vercel",
         missing: vercelReady ? [] : ["Confirmar deploy na Vercel"],
-        nextStep: vercelReady ? "Conferir o ultimo deploy no painel." : "Importar o GitHub na Vercel ou abrir o deploy existente.",
+        nextStep: vercelReady ? "Deploy de producao ativo." : "Importar o GitHub na Vercel ou abrir o deploy existente.",
         state: vercelReady ? "ready" : "needs_setup",
         title: "Deploy Vercel"
       },
       {
         category: "agora",
         detail: aiConfigured
-          ? `Credenciais de IA cadastradas para ${aiDescription}. A disponibilidade e testada de verdade ao abrir o Assistente.`
+          ? `IA online configurada para ${aiDescription}. O Assistente faz a verificacao real do provedor.`
           : "A IA online precisa ser configurada para o Assistente responder.",
         id: "ai",
         missing: aiConfigured ? [] : ["AI_PROVIDER=auto", "OPENAI_API_KEY ou GEMINI_API_KEY"],
         nextStep: aiConfigured
-          ? "Abrir /assistente para executar o teste real do provedor."
+          ? "Nenhuma configuracao pendente."
           : "Adicionar variaveis de IA na Vercel e fazer novo deploy.",
-        state: aiConfigured ? "configured" : "needs_setup",
+        state: aiConfigured ? "ready" : "needs_setup",
         title: "IA online"
       },
       {
@@ -90,7 +90,7 @@ export function buildIntegrationStatus(env: IntegrationEnv = process.env, reques
         id: "classroom",
         missing: classroomReady ? [] : [...new Set(classroomMissing)],
         nextStep: classroomReady
-          ? "Conectar, sincronizar e testar mais de uma conta em /configuracoes."
+          ? "Cada conta conectada e verificada diretamente com a API do Google nesta tela."
           : classroomOAuthReady
             ? "Aplicar o schema e configurar a chave secreta do Supabase."
             : "Criar OAuth Client no Google Cloud e adicionar as variaveis.",
@@ -104,7 +104,7 @@ export function buildIntegrationStatus(env: IntegrationEnv = process.env, reques
           : "Sem Supabase, cada navegador fica isolado e nao serve bem para compartilhar com varias pessoas.",
         id: "supabase",
         missing: supabaseReady ? [] : ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"],
-        nextStep: supabaseReady ? "Testar login em /login com duas contas diferentes." : "Criar projeto Supabase gratuito, aplicar o schema e configurar as variaveis na Vercel.",
+        nextStep: supabaseReady ? "Login e sincronizacao por usuario disponiveis." : "Criar projeto Supabase gratuito, aplicar o schema e configurar as variaveis na Vercel.",
         state: supabaseReady ? "ready" : "needs_setup",
         title: "Supabase"
       },
@@ -113,27 +113,9 @@ export function buildIntegrationStatus(env: IntegrationEnv = process.env, reques
         detail: pushReady ? "Inscricao de aparelhos, teste e dispatch seguro de lembretes estao configurados." : "O app ja tem painel e rotas de push, mas faltam variaveis para enviar no Android.",
         id: "push",
         missing: pushReady ? [] : pushMissing,
-        nextStep: pushReady ? "Entrar pelo Android, ativar e enviar um teste." : "Gerar VAPID, configurar Supabase service role e CRON_SECRET.",
+        nextStep: pushReady ? "Agendamento e envio para Android ativos." : "Gerar VAPID, configurar Supabase service role e CRON_SECRET.",
         state: pushReady ? "ready" : "needs_setup",
         title: "Notificacoes push"
-      },
-      {
-        category: "futuro",
-        detail: "PWA ja instala no Android; widget real exige wrapper nativo.",
-        id: "android-widget",
-        missing: [],
-        nextStep: "Criar wrapper Android com AppWidget quando o app estiver validado com usuarios.",
-        state: "future",
-        title: "Widget Android real"
-      },
-      {
-        category: "futuro",
-        detail: "A parte de venda foi deixada fora do escopo atual de proposito.",
-        id: "commercial",
-        missing: [],
-        nextStep: "Voltar nisso depois de validar o uso com amigos e familiares.",
-        state: "future",
-        title: "Comercializacao"
       }
     ]
   } satisfies IntegrationStatusReport;

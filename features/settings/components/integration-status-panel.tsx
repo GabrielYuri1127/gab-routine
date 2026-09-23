@@ -47,7 +47,6 @@ export function IntegrationStatusPanel() {
   }, []);
 
   const nowItems = useMemo(() => report?.items.filter((item) => item.category === "agora") ?? [], [report]);
-  const futureItems = useMemo(() => report?.items.filter((item) => item.category === "futuro") ?? [], [report]);
   const missingCount = nowItems.filter((item) => item.state === "needs_setup").length;
 
   return (
@@ -56,10 +55,10 @@ export function IntegrationStatusPanel() {
         <div>
           <div className="mb-2 flex items-center gap-2">
             <Rocket aria-hidden className="h-5 w-5 text-mint" />
-            <h2 className="text-lg font-semibold text-foreground">Status de publicacao</h2>
+            <h2 className="text-lg font-semibold text-foreground">Status dos servicos</h2>
           </div>
           <p className="max-w-2xl text-sm leading-6 text-slate-600">
-            Veja o que precisa ser resolvido agora e o que fica como melhoria futura.
+            Confirmacao objetiva das integracoes que afetam o funcionamento do Gavium.
           </p>
         </div>
         <Badge tone={missingCount ? "gold" : "mint"}>{missingCount ? `${missingCount} pendente(s)` : "base pronta"}</Badge>
@@ -67,16 +66,6 @@ export function IntegrationStatusPanel() {
 
       <div className="grid gap-3 lg:grid-cols-2">
         {report ? nowItems.map((item) => <StatusCard item={item} key={item.id} />) : <LoadingCard />}
-      </div>
-
-      <div className="pt-2">
-        <div className="mb-3 flex items-center gap-2">
-          <Clock3 aria-hidden className="h-4 w-4 text-slate-500" />
-          <h3 className="text-sm font-semibold text-foreground">Melhorias futuras</h3>
-        </div>
-        <div className="grid gap-3 lg:grid-cols-2">
-          {report ? futureItems.map((item) => <StatusCard item={item} key={item.id} />) : <LoadingCard />}
-        </div>
       </div>
     </section>
   );
