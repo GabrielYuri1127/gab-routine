@@ -24,13 +24,14 @@ describe("OpenAI Responses provider", () => {
     globalThis.fetch = fakeFetch;
 
     try {
-      const provider = new OpenAIResponsesProvider("test-key", "gpt-test", "https://example.test/v1");
+      const provider = new OpenAIResponsesProvider("test-key", "gpt-5-test", "https://example.test/v1");
       const result = await provider.complete({
         messages: [
           { content: "system rules", role: "system" },
           { content: "hello", role: "user" }
         ],
         promptCacheKey: "cache-user",
+        reasoningEffort: "minimal",
         safetyIdentifier: "safe-user"
       });
 
@@ -39,6 +40,7 @@ describe("OpenAI Responses provider", () => {
       assert.equal(result.model, "gpt-test");
       assert.equal(body.store, false);
       assert.equal(body.prompt_cache_key, "cache-user");
+      assert.deepEqual(body.reasoning, { effort: "minimal" });
       assert.equal(body.safety_identifier, "safe-user");
       assert.equal(Object.hasOwn(body, "temperature"), false);
     } finally {
@@ -273,9 +275,11 @@ describe("Gemini GenerateContent provider", () => {
 
   it("migrates the former default to the current stable Flash-Lite model", async () => {
     const originalFetch = globalThis.fetch;
+    let requestBody: Record<string, unknown> | null = null;
     const requestedUrls: string[] = [];
-    globalThis.fetch = async (input) => {
+    globalThis.fetch = async (input, init) => {
       requestedUrls.push(String(input));
+      requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
       return new Response(
         JSON.stringify({
           candidates: [{ content: { parts: [{ text: "ok" }] } }],
@@ -291,10 +295,17 @@ describe("Gemini GenerateContent provider", () => {
         "models/gemini-2.5-flash-lite",
         "https://example.test/v1beta"
       );
-      const result = await provider.complete({ messages: [{ content: "hello", role: "user" }] });
+      const result = await provider.complete({
+        messages: [{ content: "hello", role: "user" }],
+        reasoningEffort: "minimal"
+      });
 
       assert.equal(result.model, "gemini-3.5-flash-lite");
       assert.match(requestedUrls[0] ?? "", /models\/gemini-3\.5-flash-lite:generateContent$/);
+      assert.deepEqual(
+        (requestBody as { generationConfig?: { thinkingConfig?: unknown } } | null)?.generationConfig?.thinkingConfig,
+        { thinkingLevel: "minimal" }
+      );
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -385,6 +396,34 @@ describe("Gemini GenerateContent provider", () => {
 });
 
 describe("AI provider failover", () => {
+  it("reserves part of one timeout budget for the fallback provider", async () => {
+    const attemptTimeouts: number[] = [];
+    const primary: AIProvider = {
+      name: "gemini",
+      async complete(request) {
+        attemptTimeouts.push(request.timeoutMs ?? 0);
+        throw new AIProviderError("service_unavailable", 503);
+      }
+    };
+    const fallback: AIProvider = {
+      name: "openai",
+      async complete(request) {
+        attemptTimeouts.push(request.timeoutMs ?? 0);
+        return { content: "ok", model: "gpt-test", provider: "openai" };
+      }
+    };
+    const provider = new FailoverAIProvider([primary, fallback]);
+
+    const result = await provider.complete({
+      messages: [{ content: "hello", role: "user" }],
+      timeoutMs: 45_000
+    });
+
+    assert.equal(result.provider, "openai");
+    assert.ok(attemptTimeouts[0] >= 29_000 && attemptTimeouts[0] <= 30_000);
+    assert.ok(attemptTimeouts[1] > 30_000 && attemptTimeouts[1] <= 45_000);
+  });
+
   it("uses Gemini when OpenAI has no credits", async () => {
     const calls: string[] = [];
     const openAI: AIProvider = {

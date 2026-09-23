@@ -71,13 +71,11 @@ export function AssistantPanel() {
     (!supabaseConfigured || Boolean(sessionEmail));
   const assistantBadge = loading
     ? "IA online pensando"
-    : error || source === "error"
-      ? "IA indisponivel"
-      : availabilityChecking
-        ? "Verificando"
-        : apiReady
-          ? "IA online"
-          : "IA indisponivel";
+    : availabilityChecking
+      ? "Verificando"
+      : apiReady
+        ? "IA online"
+        : "IA indisponivel";
   const assistantModeDetail = response
     ? modeDetail
     : availabilityChecking
@@ -217,20 +215,20 @@ export function AssistantPanel() {
 
       if (payload.error || payload.source !== "ai" || !payload.response) {
         const detail = payload.modeDetail ?? "A IA online nao conseguiu responder agora. Tente novamente.";
+        setQuestion(cleanQuestion);
         setResponse(null);
         setSource("error");
         setError(detail);
-        setConversation((current) => [
-          ...current,
-          { content: detail, id: createId("chat-assistant"), role: "assistant" as const }
-        ].slice(-10));
-        setAiHealth({
-          available: false,
-          checkedAt: new Date().toISOString(),
-          code: toAIHealthCode(payload.error),
-          configured: payload.error !== "not_configured",
-          detail
-        });
+        removePendingQuestion(setConversation, cleanQuestion);
+        if (!isTransientAIError(payload.error) || aiHealth?.available !== true) {
+          setAiHealth({
+            available: false,
+            checkedAt: new Date().toISOString(),
+            code: toAIHealthCode(payload.error),
+            configured: payload.error !== "not_configured",
+            detail
+          });
+        }
         return;
       }
 
@@ -251,11 +249,9 @@ export function AssistantPanel() {
       });
     } catch (requestError) {
       const detail = requestError instanceof Error ? requestError.message : "Nao consegui acessar a IA online agora.";
+      setQuestion(cleanQuestion);
       setResponse(null);
-      setConversation((current) => [
-        ...current,
-        { content: detail, id: createId("chat-assistant"), role: "assistant" as const }
-      ].slice(-10));
+      removePendingQuestion(setConversation, cleanQuestion);
       setSource("error");
       setModeDetail(detail);
       setError(detail);
@@ -383,7 +379,7 @@ export function AssistantPanel() {
             <Bot aria-hidden className="h-5 w-5 text-mint" />
             <h2 className="text-lg font-semibold text-foreground">Assistente</h2>
           </span>
-          <Badge tone={error || source === "error" ? "coral" : apiReady ? "mint" : "sky"}>{assistantBadge}</Badge>
+          <Badge tone={!apiReady && (error || source === "error") ? "coral" : apiReady ? "mint" : "sky"}>{assistantBadge}</Badge>
         </div>
         <p className="mb-4 text-xs leading-5 text-slate-500">{assistantModeDetail}</p>
 
@@ -644,6 +640,20 @@ const aiHealthCodes = new Set<AIHealthCode>([
 
 function toAIHealthCode(value: string | undefined): AIHealthCode {
   return value && aiHealthCodes.has(value as AIHealthCode) ? (value as AIHealthCode) : "service_unavailable";
+}
+
+function isTransientAIError(value: string | undefined) {
+  return value === "timeout" || value === "rate_limited" || value === "service_unavailable" || value === "invalid_response";
+}
+
+function removePendingQuestion(
+  setConversation: React.Dispatch<React.SetStateAction<ConversationMessage[]>>,
+  question: string
+) {
+  setConversation((current) => {
+    const latest = current.at(-1);
+    return latest?.role === "user" && latest.content === question ? current.slice(0, -1) : current;
+  });
 }
 
 function getCompletionMessage(proposal: AssistantCommandProposal) {

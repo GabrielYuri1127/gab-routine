@@ -17,6 +17,9 @@ const MAX_REQUEST_BYTES = 300_000;
 const RATE_LIMIT_MAX = 20;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1_000;
 
+export const maxDuration = 60;
+export const runtime = "nodejs";
+
 const historyMessageSchema = z.object({
   content: z.string().trim().min(1).max(2_000),
   role: z.enum(["assistant", "user"])

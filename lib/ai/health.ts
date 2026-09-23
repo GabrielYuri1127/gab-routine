@@ -82,6 +82,7 @@ export async function probeAIProvider(provider: AIProvider = getConfiguredAIProv
         },
         { content: "Confirme a disponibilidade.", role: "user" }
       ],
+      reasoningEffort: "minimal",
       responseFormat: {
         name: "gavium_ai_health",
         schema: {

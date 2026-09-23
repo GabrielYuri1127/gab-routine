@@ -63,6 +63,8 @@ const generatedResponseSchema = z
 
 type GeneratedAssistantResponse = z.infer<typeof generatedResponseSchema>;
 
+const ASSISTANT_TIMEOUT_MS = 45_000;
+
 export async function askAssistant(
   question: string,
   context: Omit<RoutineAssistantInput, "question">,
@@ -94,7 +96,7 @@ export async function askAssistant(
   try {
     const completion = await provider.complete({
       enableWebSearch,
-      maxOutputTokens: 1_100,
+      maxOutputTokens: enableWebSearch ? 900 : 700,
       messages: [
         {
           role: "system",
@@ -122,6 +124,7 @@ Responda em portugues brasileiro natural, direto e especifico. Evite respostas p
         }
       ],
       promptCacheKey: options.promptCacheKey,
+      reasoningEffort: enableWebSearch ? "low" : "minimal",
       responseFormat: enableWebSearch
         ? undefined
         : {
@@ -157,7 +160,8 @@ Responda em portugues brasileiro natural, direto e especifico. Evite respostas p
             strict: true,
             type: "json_schema"
           },
-      safetyIdentifier: options.safetyIdentifier
+      safetyIdentifier: options.safetyIdentifier,
+      timeoutMs: ASSISTANT_TIMEOUT_MS
     });
 
     if (enableWebSearch) {

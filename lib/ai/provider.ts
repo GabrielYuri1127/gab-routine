@@ -15,6 +15,7 @@ export interface AIProviderRequest {
   messages: AIMessage[];
   maxOutputTokens?: number;
   promptCacheKey?: string;
+  reasoningEffort?: "minimal" | "low" | "medium" | "high";
   temperature?: number;
   responseFormat?: "json" | JsonSchemaResponseFormat;
   safetyIdentifier?: string;
@@ -118,6 +119,10 @@ export class OpenAIResponsesProvider implements AIProvider {
           max_output_tokens: request.maxOutputTokens ?? 500,
           model: this.model,
           prompt_cache_key: request.promptCacheKey,
+          reasoning:
+            request.reasoningEffort && supportsOpenAIReasoning(this.model)
+              ? { effort: request.reasoningEffort }
+              : undefined,
           safety_identifier: request.safetyIdentifier,
           store: false,
           ...(typeof request.temperature === "number" ? { temperature: request.temperature } : {}),
@@ -218,6 +223,7 @@ export class GeminiGenerateContentProvider implements AIProvider {
           contents,
           generationConfig: {
             maxOutputTokens: request.maxOutputTokens ?? 500,
+            ...buildGeminiThinkingConfig(model, request.reasoningEffort),
             ...(typeof request.temperature === "number" ? { temperature: request.temperature } : {}),
             ...(request.responseFormat
               ? {
@@ -292,10 +298,22 @@ export class FailoverAIProvider implements AIProvider {
 
   async complete(request: AIProviderRequest): Promise<AIProviderResponse> {
     let lastError: unknown;
+    const totalTimeoutMs = request.timeoutMs ?? 20_000;
+    const deadline = Date.now() + totalTimeoutMs;
 
-    for (const provider of this.providers) {
+    for (const [index, provider] of this.providers.entries()) {
+      const remainingMs = deadline - Date.now();
+      if (remainingMs <= 0) {
+        throw new AIProviderError("timeout");
+      }
+
+      const providersAfterThis = this.providers.length - index - 1;
+      const reserveMs =
+        providersAfterThis > 0 ? Math.min(15_000, Math.max(5_000, Math.floor(totalTimeoutMs / 3))) : 0;
+      const attemptTimeoutMs = Math.max(1_000, remainingMs - reserveMs);
+
       try {
-        return await provider.complete(request);
+        return await provider.complete({ ...request, timeoutMs: attemptTimeoutMs });
       } catch (error) {
         lastError = error;
       }
@@ -648,6 +666,28 @@ function sanitizeGeminiJsonSchema(value: unknown): unknown {
 
 function normalizeGeminiModelId(model: string) {
   return model.replace(/^models\//, "");
+}
+
+function buildGeminiThinkingConfig(model: string, effort: AIProviderRequest["reasoningEffort"]) {
+  if (!effort) {
+    return {};
+  }
+
+  if (/^gemini-3(?:\.|-)/i.test(model)) {
+    const thinkingLevel = effort === "minimal" && /gemini-(?:3\.1-pro|3\.[78]-flash)/i.test(model) ? "low" : effort;
+    return { thinkingConfig: { thinkingLevel } };
+  }
+
+  if (/^gemini-2\.5-(?:flash|flash-lite)/i.test(model)) {
+    const thinkingBudget = effort === "minimal" ? 0 : effort === "low" ? 512 : -1;
+    return { thinkingConfig: { thinkingBudget } };
+  }
+
+  return {};
+}
+
+function supportsOpenAIReasoning(model: string) {
+  return /^(?:gpt-5|o[134])(?:[.-]|$)/i.test(model);
 }
 
 function migrateLegacyGeminiDefault(model: string) {
