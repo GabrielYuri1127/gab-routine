@@ -1,7 +1,9 @@
 "use client";
 
-import { Bot, CheckSquare, Palette, UserRound } from "lucide-react";
+import { Camera, Bot, CheckSquare, Palette, Trash2, UserRound } from "lucide-react";
+import { useState, type ChangeEvent } from "react";
 
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_APP_PREFERENCE } from "@/features/data/seed";
 import { useRoutineData } from "@/features/data/routine-store";
@@ -40,6 +42,8 @@ const primaryContextLabels = [
 export function AppPreferencesPanel() {
   const { data, updateAppPreference } = useRoutineData();
   const preferences = data.appPreference;
+  const [photoError, setPhotoError] = useState("");
+  const [photoLoading, setPhotoLoading] = useState(false);
 
   function restoreDefaults() {
     updateAppPreference(DEFAULT_APP_PREFERENCE);
@@ -54,11 +58,57 @@ export function AppPreferencesPanel() {
     updateAppPreference({ contexts: nextContexts.length ? nextContexts : [preferences.primaryContext || "produtividade"] });
   }
 
+  async function handleProfilePhoto(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+
+    setPhotoError("");
+    setPhotoLoading(true);
+    try {
+      updateAppPreference({ profilePhoto: await prepareProfilePhoto(file) });
+    } catch (error) {
+      setPhotoError(error instanceof Error ? error.message : "Nao foi possivel preparar a foto.");
+    } finally {
+      setPhotoLoading(false);
+    }
+  }
+
   return (
     <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
         <UserRound aria-hidden className="h-5 w-5 text-mint" />
         <h2 className="text-lg font-semibold text-foreground">Perfil do app</h2>
+      </div>
+
+      <div className="mb-5 flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-center">
+        <ProfileAvatar displayName={preferences.displayName} photo={preferences.profilePhoto} size="lg" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-foreground">Foto de perfil</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">A imagem e reduzida antes de ser salva e acompanha seus dados sincronizados.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-line bg-white px-3 text-sm font-medium text-foreground transition hover:bg-slate-50">
+              <Camera aria-hidden className="h-4 w-4" />
+              {photoLoading ? "Preparando..." : preferences.profilePhoto ? "Trocar foto" : "Escolher foto"}
+              <input
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                disabled={photoLoading}
+                onChange={handleProfilePhoto}
+                type="file"
+              />
+            </label>
+            {preferences.profilePhoto ? (
+              <Button onClick={() => updateAppPreference({ profilePhoto: "" })} size="sm" variant="ghost">
+                <Trash2 aria-hidden className="h-4 w-4" />
+                Remover
+              </Button>
+            ) : null}
+          </div>
+          {photoError ? <p className="mt-2 text-xs text-coral">{photoError}</p> : null}
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -339,4 +389,56 @@ export function AppPreferencesPanel() {
       </div>
     </section>
   );
+}
+
+async function prepareProfilePhoto(file: File) {
+  if (!new Set(["image/jpeg", "image/png", "image/webp"]).has(file.type)) {
+    throw new Error("Use uma imagem JPG, PNG ou WebP.");
+  }
+
+  if (file.size > 8 * 1024 * 1024) {
+    throw new Error("Escolha uma imagem de ate 8 MB.");
+  }
+
+  const image = await loadImage(file);
+  const canvas = document.createElement("canvas");
+  const outputSize = 384;
+  const sourceSize = Math.min(image.naturalWidth, image.naturalHeight);
+  canvas.width = outputSize;
+  canvas.height = outputSize;
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("Nao foi possivel preparar a imagem neste navegador.");
+  }
+
+  context.drawImage(
+    image,
+    (image.naturalWidth - sourceSize) / 2,
+    (image.naturalHeight - sourceSize) / 2,
+    sourceSize,
+    sourceSize,
+    0,
+    0,
+    outputSize,
+    outputSize
+  );
+
+  return canvas.toDataURL("image/webp", 0.82);
+}
+
+function loadImage(file: File) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const source = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(source);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(source);
+      reject(new Error("Nao foi possivel ler esta imagem."));
+    };
+    image.src = source;
+  });
 }

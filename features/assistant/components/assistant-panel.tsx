@@ -15,7 +15,7 @@ import {
   TrendingUp,
   type LucideIcon
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,15 +51,13 @@ export function AssistantPanel() {
   const { addActivity, addAttendanceRecord, addEvent, addGrade, addReminder, addTask, data, updateTask } = useRoutineData();
   const today = getTodayInAppTimeZone();
   const supabaseConfigured = isSupabaseConfigured();
-  const [actionMessage, setActionMessage] = useState("");
   const [aiHealth, setAiHealth] = useState<AIHealthStatus | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [modeDetail, setModeDetail] = useState("Verificando a IA online.");
-  const [model, setModel] = useState("");
   const [question, setQuestion] = useState("");
-  const [lastQuestion, setLastQuestion] = useState("");
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
+  const conversationRef = useRef<HTMLDivElement>(null);
   const [sessionEmail, setSessionEmail] = useState<string | null | undefined>(supabaseConfigured ? undefined : null);
   const [source, setSource] = useState<"ai" | "error">("ai");
   const [response, setResponse] = useState<RoutineAssistantResponse | null>(null);
@@ -76,11 +74,13 @@ export function AssistantPanel() {
       : apiReady
         ? "IA online"
         : "IA indisponivel";
-  const assistantModeDetail = response
-    ? modeDetail
-    : availabilityChecking
-      ? "Verificando sua conta e a configuracao da IA online."
-      : error || aiHealth?.detail || "Nao consegui verificar a IA online agora.";
+  const assistantModeDetail = availabilityChecking
+    ? "Verificando sua conta e a configuracao da IA online."
+    : apiReady
+      ? response
+        ? modeDetail
+        : aiHealth?.detail || "IA online pronta para responder."
+      : "A IA online precisa de atencao antes de responder.";
   const needsLogin = aiHealth?.code === "auth_required";
   const needsAttention = Boolean(
     sessionEmail && aiHealth?.configured && aiHealth.available === false && aiHealth.code !== "auth_required"
@@ -160,6 +160,13 @@ export function AssistantPanel() {
     };
   }, [sessionEmail, supabaseConfigured]);
 
+  useEffect(() => {
+    const container = conversationRef.current;
+    if (container) {
+      container.scrollTo({ behavior: "smooth", top: container.scrollHeight });
+    }
+  }, [conversation, loading]);
+
   async function ask(nextQuestion: string) {
     const cleanQuestion = nextQuestion.trim();
     if (!cleanQuestion) {
@@ -167,10 +174,7 @@ export function AssistantPanel() {
     }
 
     setError("");
-    setActionMessage("");
     setLoading(true);
-    setModel("");
-    setLastQuestion(cleanQuestion);
     setQuestion("");
     const requestHistory = conversation.slice(-6).map(({ content, role }) => ({ content, role }));
     setConversation((current) => [
@@ -210,7 +214,6 @@ export function AssistantPanel() {
         throw new Error(payload?.modeDetail || payload?.error || "Nao consegui acessar a IA online agora.");
       }
 
-      setModel(payload.model ?? "");
       setModeDetail(payload.modeDetail ?? "IA online ativa.");
 
       if (payload.error || payload.source !== "ai" || !payload.response) {
@@ -263,6 +266,15 @@ export function AssistantPanel() {
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     ask(question);
+  }
+
+  function handleQuestionKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      if (!loading) {
+        void ask(question);
+      }
+    }
   }
 
   function applyCommandIfNeeded(nextResponse: RoutineAssistantResponse) {
@@ -368,7 +380,6 @@ export function AssistantPanel() {
       });
     }
 
-    setActionMessage(getCompletionMessage(proposal));
   }
 
   return (
@@ -396,34 +407,68 @@ export function AssistantPanel() {
           </div>
         ) : null}
 
-        {needsAttention ? (
+        {needsAttention && !error ? (
           <div className="mb-4 border-l-2 border-coral bg-coral/5 px-3 py-3">
             <p className="text-sm leading-6 text-slate-700">{aiHealth?.detail}</p>
           </div>
         ) : null}
 
-        {conversation.length ? (
-          <div className="mb-4 border-y border-line bg-slate-50/70 py-3">
-            <div className="mb-3 flex items-center justify-between gap-3 px-3">
-              <p className="text-xs font-semibold uppercase text-slate-500">Conversa recente</p>
+        <form onSubmit={handleSubmit}>
+          <label className="sr-only" htmlFor="assistant-question">
+            Pergunta
+          </label>
+          <div className="flex items-end gap-2 rounded-lg border border-line bg-white p-2 focus-within:border-strong">
+            <textarea
+              className="max-h-36 min-h-12 min-w-0 flex-1 resize-y border-0 bg-transparent px-2 py-2 text-sm leading-6 text-foreground outline-none"
+              id="assistant-question"
+              onChange={(event) => setQuestion(event.target.value)}
+              onKeyDown={handleQuestionKeyDown}
+              placeholder="Escreva sua pergunta..."
+              rows={2}
+              value={question}
+            />
+            <button
+              aria-label={loading ? "Aguardando resposta" : "Enviar pergunta"}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-contrast text-white transition hover:bg-contrast-hover disabled:cursor-not-allowed disabled:opacity-45"
+              disabled={loading || !question.trim()}
+              title="Enviar pergunta"
+              type="submit"
+            >
+              {loading ? <Loader2 aria-hidden className="h-5 w-5 animate-spin" /> : <Send aria-hidden className="h-5 w-5" />}
+            </button>
+          </div>
+        </form>
+
+        {error && source === "error" ? (
+          <div className="mt-3 border-l-2 border-coral bg-coral/5 px-3 py-3 text-sm leading-6 text-slate-700">{error}</div>
+        ) : null}
+
+        {conversation.length || loading ? (
+          <div className="mt-4 border-t border-line pt-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase text-slate-500">Conversa</p>
               <button
                 aria-label="Limpar conversa"
-                className="flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition hover:bg-white hover:text-foreground"
-                onClick={() => setConversation([])}
+                className="flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-foreground"
+                onClick={() => {
+                  setConversation([]);
+                  setError("");
+                  setResponse(null);
+                }}
                 title="Limpar conversa"
                 type="button"
               >
                 <Trash2 aria-hidden className="h-4 w-4" />
               </button>
             </div>
-            <div aria-live="polite" className="max-h-64 space-y-3 overflow-y-auto px-3">
+            <div aria-live="polite" className="max-h-80 space-y-3 overflow-y-auto pr-1" ref={conversationRef}>
               {conversation.map((message) => (
                 <div className={message.role === "user" ? "flex justify-end" : "flex justify-start"} key={message.id}>
                   <div
                     className={
                       message.role === "user"
                         ? "max-w-[88%] rounded-lg bg-contrast px-3 py-2 text-sm leading-6 text-white"
-                        : "max-w-[88%] border-l-2 border-mint bg-white px-3 py-2 text-sm leading-6 text-slate-700"
+                        : "max-w-[92%] border-l-2 border-mint bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700"
                     }
                   >
                     {message.content}
@@ -431,7 +476,7 @@ export function AssistantPanel() {
                 </div>
               ))}
               {loading ? (
-                <div className="flex items-center gap-2 text-sm text-slate-500">
+                <div className="flex items-center gap-2 border-l-2 border-mint bg-slate-50 px-3 py-3 text-sm text-slate-500">
                   <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
                   Analisando seus dados
                 </div>
@@ -440,56 +485,24 @@ export function AssistantPanel() {
           </div>
         ) : null}
 
-        <form className="space-y-3" onSubmit={handleSubmit}>
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700">Pergunta</span>
-            <textarea
-              className="mt-1 min-h-28 w-full resize-y rounded-lg border border-line bg-white px-3 py-3 text-sm text-foreground outline-none focus:border-strong"
-              onChange={(event) => setQuestion(event.target.value)}
-              placeholder="Ex.: o que devo priorizar hoje?"
-              value={question}
-            />
-          </label>
-          <Button className="w-full" disabled={loading} type="submit">
-            {loading ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <Send aria-hidden className="h-4 w-4" />}
-            {loading ? "Pensando" : "Perguntar"}
-          </Button>
-        </form>
-
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
           {promptSuggestions.map((suggestion) => {
             const Icon = suggestion.icon;
 
             return (
-            <button
-              className="flex min-h-11 items-center gap-2 rounded-lg border border-line px-3 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-foreground"
-              disabled={loading}
-              key={suggestion.label}
-              onClick={() => ask(suggestion.label)}
-              type="button"
-            >
-              <Icon aria-hidden className="h-4 w-4 shrink-0 text-slate-400" />
-              <span>{suggestion.label}</span>
-            </button>
+              <button
+                className="flex min-h-10 shrink-0 items-center gap-2 rounded-md border border-line px-3 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-foreground"
+                disabled={loading}
+                key={suggestion.label}
+                onClick={() => ask(suggestion.label)}
+                type="button"
+              >
+                <Icon aria-hidden className="h-4 w-4 shrink-0 text-slate-400" />
+                <span>{suggestion.label}</span>
+              </button>
             );
           })}
         </div>
-      </section>
-
-      <section className="rounded-lg border border-line bg-contrast p-4 text-white shadow-soft" style={{ borderTop: `4px solid ${data.appPreference.accentColor}` }}>
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <span className="flex items-center gap-2 text-sm font-medium text-white/75">
-            <Sparkles aria-hidden className="h-4 w-4" />
-            {model ? `Resposta com ${model}` : "Resposta"}
-          </span>
-          <Badge tone="neutral">{intentLabels[currentResponse.intent]}</Badge>
-        </div>
-        {lastQuestion ? <p className="mb-2 text-sm text-white/60">Pergunta: {lastQuestion}</p> : null}
-        <p className="text-base leading-7 text-white/90">{currentResponse.answer}</p>
-        {error ? <p className="mt-3 text-sm text-white/65">{error}</p> : null}
-        {actionMessage && actionMessage !== currentResponse.answer ? (
-          <p className="mt-3 text-sm font-medium text-white/75">{actionMessage}</p>
-        ) : null}
       </section>
 
       {response && currentResponse.highlights.length ? (
@@ -593,21 +606,6 @@ export function AssistantPanel() {
     </div>
   );
 }
-
-const intentLabels: Record<RoutineAssistantResponse["intent"], string> = {
-  attendance: "faltas",
-  command: "acao",
-  conversation: "conversa",
-  course_progress: "curso",
-  date_time: "data",
-  deadlines: "prazos",
-  grades: "notas",
-  resources: "materiais",
-  now: "agora",
-  readiness: "status",
-  summary: "resumo",
-  work: "trabalho"
-};
 
 interface AssistantApiResponse {
   error?: string;

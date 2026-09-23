@@ -33,6 +33,7 @@ export const DEFAULT_APP_PREFERENCE: AppPreference = {
   },
   gender: "",
   primaryContext: "faculdade",
+  profilePhoto: "",
   profileLabel: "faculdade e trabalho",
   productivityGoal: "Organizar a vida acadêmica e o trabalho sem perder prazos."
 };

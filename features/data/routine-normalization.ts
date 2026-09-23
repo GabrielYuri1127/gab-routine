@@ -1,4 +1,5 @@
 import { buildSeedData, DEFAULT_APP_PREFERENCE, LOCAL_USER_ID, type RoutineData } from "@/features/data/seed";
+import { normalizeProfilePhoto } from "@/lib/profile-photo";
 import type { AppPreference } from "@/types/domain";
 
 export function createEmptyRoutineData(userId = LOCAL_USER_ID, email?: string | null, metadata?: unknown): RoutineData {
@@ -108,6 +109,7 @@ function normalizeAppPreference(value: unknown, userId = LOCAL_USER_ID): AppPref
     discoverySource: normalizeText(parsed.discoverySource),
     gender: normalizeText(parsed.gender),
     primaryContext,
+    profilePhoto: normalizeProfilePhoto(parsed.profilePhoto),
     productivityGoal: normalizeText(parsed.productivityGoal),
     enabledModules: {
       ...DEFAULT_APP_PREFERENCE.enabledModules,
@@ -144,6 +146,9 @@ function buildProfilePreferenceFromMetadata(metadata: unknown, email?: string | 
     gender: readMetadataString(metadata, "gender"),
     id: DEFAULT_APP_PREFERENCE.id,
     primaryContext,
+    profilePhoto: normalizeProfilePhoto(
+      readMetadataString(metadata, "avatar_url") || readMetadataString(metadata, "picture")
+    ),
     profileLabel: getContextLabel(primaryContext),
     productivityGoal: readMetadataString(metadata, "productivity_goal"),
     userId

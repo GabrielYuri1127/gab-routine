@@ -18,6 +18,7 @@ import {
 import type { ReactNode } from "react";
 
 import { MobileAddMenu } from "@/components/mobile-add-menu";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { RoutineDataProvider } from "@/features/data/routine-data-provider";
 import { useRoutineData } from "@/features/data/routine-store";
@@ -86,13 +87,16 @@ function AppShellContent({ children }: { children: ReactNode }) {
         <div className="space-y-2 border-t border-line p-4">
           <ThemeToggle />
           <div className="flex items-center gap-3 rounded-md bg-slate-50 px-3 py-3">
-            <span
-              aria-hidden
-              className={cn(
-                "h-2.5 w-2.5 shrink-0 rounded-full",
-                cloud.status === "error" ? "bg-coral" : cloud.configured ? "bg-mint" : "bg-slate-300"
-              )}
-            />
+            <span className="relative shrink-0">
+              <ProfileAvatar displayName={preferences.displayName} photo={preferences.profilePhoto} size="sm" />
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-slate-50",
+                  cloud.status === "error" ? "bg-coral" : cloud.configured ? "bg-mint" : "bg-slate-300"
+                )}
+              />
+            </span>
             <span className="min-w-0">
               <span className="block truncate text-xs font-medium text-foreground">
                 {cloud.configured ? "Dados sincronizados" : "Dados neste dispositivo"}
@@ -104,14 +108,14 @@ function AppShellContent({ children }: { children: ReactNode }) {
       </aside>
 
       <header className="sticky top-0 z-20 flex h-16 w-full min-w-0 items-center justify-between border-b border-line bg-white/95 px-4 backdrop-blur lg:hidden">
-        <Link className="flex min-w-0 items-center gap-3" href="/">
+        <Link className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden" href="/">
           <img alt="" aria-hidden className="h-9 w-9 rounded-md shadow-sm" src="/brand/gavium-mark.svg" />
           <span className="min-w-0">
             <span className="block truncate text-sm font-semibold text-foreground">{appName}</span>
             <span className="block truncate text-xs text-slate-500">{courseLabel}</span>
           </span>
         </Link>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle compact />
           <Link
             aria-label="Abrir assistente"
@@ -121,11 +125,11 @@ function AppShellContent({ children }: { children: ReactNode }) {
             <Bot aria-hidden className="h-5 w-5" />
           </Link>
           <Link
-            aria-label="Abrir configurações"
+            aria-label="Abrir perfil e configurações"
             className="flex h-10 w-10 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100"
             href="/configuracoes"
           >
-            <Settings aria-hidden className="h-5 w-5" />
+            <ProfileAvatar displayName={preferences.displayName} photo={preferences.profilePhoto} size="sm" />
           </Link>
         </div>
       </header>

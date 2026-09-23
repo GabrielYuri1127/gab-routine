@@ -5,6 +5,7 @@ import { createContext, useContext } from "react";
 import type { AcademicActivity, AttendanceRecord, Grade, Subject } from "@/types/academic";
 import type { AppPreference, EnabledModules, Event, NotificationPreference, Reminder, Task } from "@/types/domain";
 import { buildSeedData, DEFAULT_APP_PREFERENCE, LOCAL_USER_ID, type RoutineData } from "@/features/data/seed";
+import { normalizeProfilePhoto } from "@/lib/profile-photo";
 
 export const STORAGE_KEY = "gab-routine:data:v4";
 const LEGACY_STORAGE_KEYS = ["gab-routine:data:v3", "gab-routine:data:v2"];
@@ -192,6 +193,7 @@ export function normalizeAppPreference(value: unknown, userId = LOCAL_USER_ID): 
     discoverySource: normalizeText(parsed.discoverySource),
     gender: normalizeText(parsed.gender),
     primaryContext,
+    profilePhoto: normalizeProfilePhoto(parsed.profilePhoto),
     productivityGoal: normalizeText(parsed.productivityGoal),
     enabledModules: {
       ...DEFAULT_APP_PREFERENCE.enabledModules,
@@ -228,6 +230,9 @@ function buildProfilePreferenceFromMetadata(metadata: unknown, email?: string | 
     gender: readMetadataString(metadata, "gender"),
     id: DEFAULT_APP_PREFERENCE.id,
     primaryContext,
+    profilePhoto: normalizeProfilePhoto(
+      readMetadataString(metadata, "avatar_url") || readMetadataString(metadata, "picture")
+    ),
     profileLabel: getContextLabel(primaryContext),
     productivityGoal: readMetadataString(metadata, "productivity_goal"),
     userId

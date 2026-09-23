@@ -44,6 +44,7 @@ export interface AppPreference {
   enabledModules: EnabledModules;
   gender: string;
   primaryContext: string;
+  profilePhoto?: string;
   profileLabel: string;
   productivityGoal: string;
 }
