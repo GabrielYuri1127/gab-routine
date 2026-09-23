@@ -60,6 +60,7 @@ Use este checklist antes de compartilhar o Gavium com amigos, familiares ou no p
 - Rodar `npm run vapid` e guardar as chaves.
 - Configurar `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` e `CRON_SECRET` na Vercel.
 - Configurar `CRON_SECRET` e `NOTIFICATION_DISPATCH_URL` nos secrets do GitHub.
+- Rodar `supabase/notification-cron.sql` e confirmar o job `gavium-notification-dispatch` ativo.
 - Rodar novamente `supabase/schema.sql`.
 - Entrar no app pelo Android.
 - Ativar notificacoes em `/configuracoes`.

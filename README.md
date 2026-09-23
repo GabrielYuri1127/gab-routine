@@ -16,7 +16,7 @@ Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, fa
 - Zod
 - Supabase free para cadastro, login e persistencia em nuvem por usuario
 - PWA com manifest, service worker e icone maskable para Android
-- Web Push para lembretes no Android quando VAPID, Supabase e agendamento estiverem configurados
+- Web Push para lembretes no Android com VAPID, Supabase Cron e GitHub Actions de contingencia
 - Google Classroom via OAuth somente leitura, com varias contas persistentes por usuario
 - Tutorial interno e perfil personalizavel para uso por outras pessoas
 - Suporte por WhatsApp com link direto
