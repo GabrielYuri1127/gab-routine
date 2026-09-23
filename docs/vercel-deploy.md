@@ -23,9 +23,11 @@ Configure em `Project Settings > Environment Variables`.
 Para IA online:
 
 ```env
-AI_PROVIDER=openai
-AI_API_KEY=sua_chave_openai
-AI_MODEL=gpt-5
+AI_PROVIDER=auto
+OPENAI_API_KEY=sua_chave_openai
+OPENAI_MODEL=gpt-5
+GEMINI_API_KEY=sua_chave_gemini
+GEMINI_MODEL=gemini-2.5-flash-lite
 ```
 
 Para Google Classroom:

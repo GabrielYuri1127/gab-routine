@@ -25,7 +25,7 @@ export function getAIConfigurationStatus(provider: AIProvider = getConfiguredAIP
       checkedAt,
       code: "not_configured",
       configured: false,
-      detail: "A IA online ainda nao esta configurada. Adicione a chave da OpenAI na Vercel e publique novamente."
+      detail: "A IA online ainda nao esta configurada. Adicione OPENAI_API_KEY ou GEMINI_API_KEY na Vercel e publique novamente."
     };
   }
 
@@ -34,7 +34,10 @@ export function getAIConfigurationStatus(provider: AIProvider = getConfiguredAIP
     checkedAt,
     code: "configured",
     configured: true,
-    detail: "IA online configurada. Todas as perguntas do Assistente usam a OpenAI."
+    detail:
+      provider.name === "auto"
+        ? "IA online configurada com troca automatica entre OpenAI e Gemini."
+        : `IA online configurada com ${provider.name === "gemini" ? "Gemini" : "OpenAI"}.`
   };
 }
 

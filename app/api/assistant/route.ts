@@ -87,7 +87,7 @@ export async function POST(request: Request) {
   );
 
   if (user && result.source === "ai" && result.response) {
-    await recordAIUsage(user.id, result.model ?? "unknown", result.response.intent);
+    await recordAIUsage(user.id, result.provider ?? "unknown", result.model ?? "unknown", result.response.intent);
   }
 
   return NextResponse.json(result);
@@ -142,13 +142,13 @@ async function hasPersistentCapacity(userId: string): Promise<boolean | null> {
   }
 }
 
-async function recordAIUsage(userId: string, model: string, action: string) {
+async function recordAIUsage(userId: string, provider: string, model: string, action: string) {
   try {
     const client = createSupabaseServiceClient();
     await client.from("ai_usage").insert({
       action,
       model,
-      provider: "openai",
+      provider,
       user_id: userId
     });
   } catch {

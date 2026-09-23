@@ -3,8 +3,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { assignRoutineDataUser, normalizeRoutineData } from "@/features/data/routine-store";
 import { APP_TIME_ZONE } from "@/lib/date";
 import {
-  isExpiredPushSubscriptionError,
+  getPushDeliveryFailure,
   sendPushNotification,
+  type PushDeliveryFailureCode,
   type StoredPushSubscription
 } from "@/services/notifications/push-service";
 import type { Reminder } from "@/types/domain";
@@ -20,21 +21,36 @@ interface RoutineSnapshotRow {
 export interface NotificationDispatchResult {
   expiredSubscriptions: number;
   failed: number;
+  failureReasons: Partial<Record<PushDeliveryFailureCode, number>>;
+  remindersDue: number;
   remindersMarkedSent: number;
   sent: number;
   usersChecked: number;
   usersWithDueReminders: number;
+  usersWithoutSubscriptions: number;
 }
 
-export async function dispatchDueReminderNotifications(client: SupabaseClient): Promise<NotificationDispatchResult> {
-  const now = new Date();
+interface NotificationDispatchOptions {
+  now?: Date;
+  sendNotification?: typeof sendPushNotification;
+}
+
+export async function dispatchDueReminderNotifications(
+  client: SupabaseClient,
+  options: NotificationDispatchOptions = {}
+): Promise<NotificationDispatchResult> {
+  const now = options.now ?? new Date();
+  const sendNotification = options.sendNotification ?? sendPushNotification;
   const result: NotificationDispatchResult = {
     expiredSubscriptions: 0,
     failed: 0,
+    failureReasons: {},
+    remindersDue: 0,
     remindersMarkedSent: 0,
     sent: 0,
     usersChecked: 0,
-    usersWithDueReminders: 0
+    usersWithDueReminders: 0,
+    usersWithoutSubscriptions: 0
   };
 
   const { data: snapshots, error: snapshotsError } = await client
@@ -57,11 +73,6 @@ export async function dispatchDueReminderNotifications(client: SupabaseClient): 
 
   for (const row of (snapshots ?? []) as RoutineSnapshotRow[]) {
     result.usersChecked += 1;
-    const userSubscriptions = subscriptionsByUser.get(row.user_id) ?? [];
-    if (userSubscriptions.length === 0) {
-      continue;
-    }
-
     const routineData = assignRoutineDataUser(normalizeRoutineData(row.data, row.user_id), row.user_id);
     const dueReminders = routineData.reminders.filter((reminder) => isDueReminder(reminder, now));
     if (dueReminders.length === 0) {
@@ -69,16 +80,25 @@ export async function dispatchDueReminderNotifications(client: SupabaseClient): 
     }
 
     result.usersWithDueReminders += 1;
+    result.remindersDue += dueReminders.length;
+    const userSubscriptions = subscriptionsByUser.get(row.user_id) ?? [];
+    if (userSubscriptions.length === 0) {
+      result.usersWithoutSubscriptions += 1;
+      continue;
+    }
+
     const payload = buildReminderPayload(dueReminders);
     let sentForUser = 0;
 
     for (const subscription of userSubscriptions) {
       try {
-        await sendPushNotification(subscription, payload);
+        await sendNotification(subscription, payload);
         sentForUser += 1;
         result.sent += 1;
       } catch (error) {
-        if (isExpiredPushSubscriptionError(error)) {
+        const failure = getPushDeliveryFailure(error);
+        result.failureReasons[failure.code] = (result.failureReasons[failure.code] ?? 0) + 1;
+        if (failure.expired) {
           result.expiredSubscriptions += 1;
           if (subscription.id) {
             await client.from("push_subscriptions").delete().eq("id", subscription.id);

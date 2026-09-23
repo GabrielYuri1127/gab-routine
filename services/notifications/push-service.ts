@@ -15,6 +15,23 @@ export interface PushPayload {
   url?: string;
 }
 
+export type PushDeliveryFailureCode =
+  | "expired_subscription"
+  | "invalid_subscription"
+  | "vapid_rejected"
+  | "vapid_config_invalid"
+  | "payload_too_large"
+  | "rate_limited"
+  | "push_service_unavailable"
+  | "delivery_failed";
+
+export interface PushDeliveryFailure {
+  code: PushDeliveryFailureCode;
+  detail: string;
+  expired: boolean;
+  statusCode?: number;
+}
+
 type PushEnv = Record<string, string | undefined>;
 
 export function getPushConfig(env: PushEnv = process.env) {
@@ -73,13 +90,76 @@ export async function sendPushNotification(subscription: StoredPushSubscription,
 }
 
 export function isExpiredPushSubscriptionError(error: unknown) {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "statusCode" in error &&
-    (Number((error as { statusCode?: number }).statusCode) === 404 ||
-      Number((error as { statusCode?: number }).statusCode) === 410)
-  );
+  return getPushDeliveryFailure(error).expired;
+}
+
+export function getPushDeliveryFailure(error: unknown): PushDeliveryFailure {
+  const statusCode = getPushErrorStatusCode(error);
+  const errorMessage = error instanceof Error ? error.message.toLowerCase() : "";
+
+  if (statusCode === 404 || statusCode === 410) {
+    return {
+      code: "expired_subscription",
+      detail: "A inscricao deste aparelho expirou. Abra o Gavium no Android e ative as notificacoes novamente.",
+      expired: true,
+      statusCode
+    };
+  }
+  if (errorMessage.includes("vapid") || errorMessage.includes("public key") || errorMessage.includes("private key")) {
+    return {
+      code: "vapid_config_invalid",
+      detail: "As chaves VAPID do servidor sao invalidas. Gere um novo par, atualize as duas variaveis e faca redeploy.",
+      expired: false,
+      statusCode
+    };
+  }
+  if (statusCode === 401 || statusCode === 403) {
+    return {
+      code: "vapid_rejected",
+      detail: "O servico de push recusou as chaves VAPID. Atualize o par de chaves e reative o aparelho.",
+      expired: false,
+      statusCode
+    };
+  }
+  if (statusCode === 400) {
+    return {
+      code: "invalid_subscription",
+      detail: "A inscricao salva pelo navegador e invalida. Desative e ative as notificacoes novamente.",
+      expired: false,
+      statusCode
+    };
+  }
+  if (statusCode === 413) {
+    return {
+      code: "payload_too_large",
+      detail: "A notificacao ficou grande demais para o servico de push.",
+      expired: false,
+      statusCode
+    };
+  }
+  if (statusCode === 429) {
+    return {
+      code: "rate_limited",
+      detail: "O servico de push limitou os envios temporariamente. Tente novamente em alguns minutos.",
+      expired: false,
+      statusCode
+    };
+  }
+  if (statusCode && statusCode >= 500) {
+    return {
+      code: "push_service_unavailable",
+      detail: "O servico de notificacoes do navegador esta indisponivel agora. Tente novamente em alguns minutos.",
+      expired: false,
+      statusCode
+    };
+  }
+
+  return {
+    code: "delivery_failed",
+    detail: "O servidor nao conseguiu entregar a notificacao. Reative as notificacoes neste aparelho e teste novamente.",
+    expired: false,
+    statusCode
+  };
 }
 
 function toWebPushSubscription(subscription: StoredPushSubscription): WebPushSubscription {
@@ -90,4 +170,13 @@ function toWebPushSubscription(subscription: StoredPushSubscription): WebPushSub
       p256dh: subscription.p256dh
     }
   };
+}
+
+function getPushErrorStatusCode(error: unknown) {
+  if (typeof error !== "object" || error === null || !("statusCode" in error)) {
+    return undefined;
+  }
+
+  const statusCode = Number((error as { statusCode?: unknown }).statusCode);
+  return Number.isFinite(statusCode) ? statusCode : undefined;
 }

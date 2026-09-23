@@ -44,9 +44,23 @@ describe("integration status", () => {
     assert.equal(supabase?.state, "needs_setup");
     assert.equal(supabase?.missing.includes("NEXT_PUBLIC_SUPABASE_URL"), true);
     assert.equal(ai?.state, "needs_setup");
-    assert.equal(ai?.missing.includes("AI_API_KEY"), true);
+    assert.equal(ai?.missing.some((item) => item.includes("AI_API_KEY")), true);
     assert.equal(push?.state, "needs_setup");
     assert.equal(push?.missing.includes("CRON_SECRET"), true);
+  });
+
+  it("reports OpenAI with Gemini fallback when both keys are configured", () => {
+    const report = buildIntegrationStatus({
+      AI_PROVIDER: "auto",
+      GEMINI_API_KEY: "gemini-secret",
+      OPENAI_API_KEY: "openai-secret"
+    });
+    const ai = report.items.find((item) => item.id === "ai");
+
+    assert.equal(ai?.state, "ready");
+    assert.match(ai?.detail ?? "", /contingencia automatica/);
+    assert.equal(JSON.stringify(report).includes("openai-secret"), false);
+    assert.equal(JSON.stringify(report).includes("gemini-secret"), false);
   });
 
   it("requires secure Supabase storage for persistent Classroom sync", () => {

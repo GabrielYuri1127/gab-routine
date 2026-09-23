@@ -31,6 +31,7 @@ export function PushNotificationsPanel() {
   const [status, setStatus] = useState<PanelStatus>("checking");
   const [permission, setPermission] = useState<PushPermissionState>("unsupported");
   const [subscribed, setSubscribed] = useState(false);
+  const [serverSynced, setServerSynced] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [supported, setSupported] = useState(false);
@@ -41,6 +42,9 @@ export function PushNotificationsPanel() {
     let active = true;
 
     async function loadState() {
+      setStatus("checking");
+      setError("");
+      setServerSynced(false);
       const browserSupported = isPushSupported();
       setSupported(browserSupported);
       setHasVapidKey(Boolean(getVapidPublicKey()));
@@ -54,15 +58,24 @@ export function PushNotificationsPanel() {
       setPermission(getPushPermissionState());
 
       try {
-        const subscription = await getCurrentPushSubscription();
+        let subscription = await getCurrentPushSubscription();
+        if (subscription && canUseCloud && getVapidPublicKey() && getPushPermissionState() === "granted") {
+          subscription = await subscribeCurrentDevice();
+          await saveSubscription(subscription);
+          if (active) {
+            setServerSynced(true);
+          }
+        }
         if (!active) {
           return;
         }
 
         setSubscribed(Boolean(subscription));
-      } catch {
+      } catch (caughtError) {
         if (active) {
           setSubscribed(false);
+          setServerSynced(false);
+          setError(caughtError instanceof Error ? caughtError.message : "Nao consegui sincronizar este aparelho.");
         }
       } finally {
         if (active) {
@@ -76,7 +89,7 @@ export function PushNotificationsPanel() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [canUseCloud, cloud.userId]);
 
   async function handleEnable() {
     setStatus("saving");
@@ -89,6 +102,7 @@ export function PushNotificationsPanel() {
       await saveSubscription(subscription);
       setPermission(getPushPermissionState());
       setSubscribed(true);
+      setServerSynced(true);
       setMessage("Notificacoes ativadas neste aparelho.");
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Nao consegui ativar notificacoes.");
@@ -112,6 +126,7 @@ export function PushNotificationsPanel() {
       }
 
       setSubscribed(false);
+      setServerSynced(false);
       setMessage("Notificacoes removidas deste aparelho.");
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Nao consegui remover notificacoes.");
@@ -129,6 +144,10 @@ export function PushNotificationsPanel() {
 
     try {
       ensureReady();
+      const subscription = await subscribeCurrentDevice();
+      await saveSubscription(subscription);
+      setSubscribed(true);
+      setServerSynced(true);
       const token = await getAccessToken();
       const response = await fetch("/api/notifications/test", {
         method: "POST",
@@ -136,13 +155,23 @@ export function PushNotificationsPanel() {
           authorization: `Bearer ${token}`
         }
       });
-      const body = (await response.json()) as { error?: string; failed?: number; sent?: number };
+      const body = (await response.json()) as {
+        error?: string;
+        expired?: number;
+        failed?: number;
+        sent?: number;
+      };
 
-      if (!response.ok) {
+      if (!response.ok || !body.sent) {
         throw new Error(body.error ?? "Falha no teste de notificacao.");
       }
 
-      setMessage(`Teste enviado para ${body.sent ?? 0} aparelho(s).`);
+      const cleaned = (body.expired ?? 0) + (body.failed ?? 0);
+      setMessage(
+        cleaned > 0
+          ? `Teste recebido por ${body.sent} aparelho(s); ${cleaned} inscricao(oes) antiga(s) foram identificadas.`
+          : `Teste enviado para ${body.sent} aparelho(s). Confira a central de notificacoes do Android.`
+      );
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Nao consegui enviar o teste.");
       setStatus("error");
@@ -168,6 +197,9 @@ export function PushNotificationsPanel() {
             <Badge tone={subscribed ? "mint" : "gold"}>{subscribed ? "ativo" : "inativo"}</Badge>
             <Badge tone={permission === "granted" ? "sky" : "gold"}>{permissionLabels[permission]}</Badge>
             <Badge tone={canUseCloud ? "mint" : "coral"}>{canUseCloud ? "conta conectada" : "sem login"}</Badge>
+            {subscribed && (
+              <Badge tone={serverSynced ? "mint" : "gold"}>{serverSynced ? "servidor sincronizado" : "sincronizacao pendente"}</Badge>
+            )}
           </div>
         </div>
 

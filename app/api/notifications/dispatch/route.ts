@@ -29,6 +29,15 @@ async function handleDispatch(request: Request) {
 
   try {
     const result = await dispatchDueReminderNotifications(createSupabaseServiceClient());
+    if (result.remindersDue > 0 && result.sent === 0 && (result.failed > 0 || result.expiredSubscriptions > 0)) {
+      return NextResponse.json(
+        {
+          error: "Havia lembretes vencidos, mas nenhum aparelho aceitou a notificacao.",
+          ...result
+        },
+        { status: 502 }
+      );
+    }
     return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(

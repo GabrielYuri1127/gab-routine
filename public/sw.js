@@ -1,4 +1,4 @@
-const CACHE_NAME = "gavium-v4";
+const CACHE_NAME = "gavium-v5";
 const APP_SHELL = ["/", "/faculdade", "/manifest.webmanifest", "/icons/icon-192.png", "/brand/gavium-mark.svg"];
 
 self.addEventListener("install", (event) => {
@@ -62,7 +62,15 @@ self.addEventListener("push", (event) => {
     title: "Gavium",
     body: "Voce tem um lembrete pendente."
   };
-  const data = event.data ? event.data.json() : fallback;
+  let data = fallback;
+  if (event.data) {
+    const rawPayload = event.data.text();
+    try {
+      data = { ...fallback, ...JSON.parse(rawPayload) };
+    } catch {
+      data = { ...fallback, body: rawPayload || fallback.body };
+    }
+  }
 
   event.waitUntil(
     self.registration.showNotification(data.title || fallback.title, {
@@ -71,6 +79,9 @@ self.addEventListener("push", (event) => {
       badge: "/icons/icon-192.png",
       tag: data.tag || "gavium",
       renotify: true,
+      silent: false,
+      timestamp: Date.now(),
+      vibrate: [180, 80, 180],
       data: data.url || "/",
       actions: [
         { action: "open", title: "Abrir" }

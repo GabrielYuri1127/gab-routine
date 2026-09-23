@@ -35,7 +35,15 @@ export async function getPushRegistration() {
   }
 
   const existing = await navigator.serviceWorker.getRegistration("/");
-  return existing ?? navigator.serviceWorker.register("/sw.js");
+  const registration = existing ?? (await navigator.serviceWorker.register("/sw.js", { scope: "/" }));
+
+  try {
+    await registration.update();
+  } catch {
+    // A temporary update failure must not discard an already active worker.
+  }
+
+  return navigator.serviceWorker.ready;
 }
 
 export async function getCurrentPushSubscription() {
@@ -55,9 +63,14 @@ export async function subscribeCurrentDevice() {
   }
 
   const registration = await getPushRegistration();
-  const current = await registration.pushManager.getSubscription();
-  if (current) {
+  let current = await registration.pushManager.getSubscription();
+  if (current && pushSubscriptionUsesVapidKey(current, vapidPublicKey)) {
     return current;
+  }
+
+  if (current) {
+    await current.unsubscribe();
+    current = null;
   }
 
   return registration.pushManager.subscribe({
@@ -80,10 +93,21 @@ export function pushSubscriptionToPayload(subscription: PushSubscription): Brows
   };
 }
 
-function urlBase64ToUint8Array(base64String: string) {
+export function pushSubscriptionUsesVapidKey(subscription: PushSubscription, vapidPublicKey = getVapidPublicKey()) {
+  const currentKey = subscription.options.applicationServerKey;
+  if (!currentKey || !vapidPublicKey) {
+    return false;
+  }
+
+  const expectedKey = urlBase64ToUint8Array(vapidPublicKey);
+  const actualKey = new Uint8Array(currentKey);
+  return expectedKey.length === actualKey.length && expectedKey.every((value, index) => value === actualKey[index]);
+}
+
+export function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = `${base64String}${padding}`.replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = window.atob(base64);
+  const rawData = globalThis.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
 
   for (let index = 0; index < rawData.length; index += 1) {

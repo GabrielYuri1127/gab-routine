@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-import { AIProviderError, getAIProviderFailure, getConfiguredAIProvider } from "@/lib/ai/provider";
+import {
+  AIProviderError,
+  getAIProviderFailure,
+  getConfiguredAIProvider,
+  type AIProviderName
+} from "@/lib/ai/provider";
 import {
   buildRoutineAssistantResponse,
   type AssistantIntent,
@@ -27,6 +32,7 @@ export interface AssistantServiceResult {
   error?: string;
   modeDetail?: string;
   model?: string;
+  provider?: AIProviderName;
   response?: RoutineAssistantResponse;
   source: "ai" | "error";
 }
@@ -66,7 +72,7 @@ export async function askAssistant(
   if (provider.name === "none") {
     return {
       error: "not_configured",
-      modeDetail: "A IA online ainda nao esta configurada. Adicione a chave da OpenAI na Vercel e publique novamente.",
+      modeDetail: "A IA online ainda nao esta configurada. Adicione OPENAI_API_KEY ou GEMINI_API_KEY na Vercel e publique novamente.",
       source: "error"
     };
   }
@@ -154,6 +160,7 @@ Responda em portugues brasileiro natural, direto e especifico. Evite respostas p
     return {
       modeDetail: `IA online ativa com ${completion.model}, contexto da rotina e memoria recente.`,
       model: completion.model,
+      provider: completion.provider,
       response: mergeGeneratedResponse(localResponse, generated),
       source: "ai"
     };

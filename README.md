@@ -128,7 +128,7 @@ A arquitetura inicial fica em:
 - `lib/ai/command-parser.ts`
 - `services/ai/`
 
-O Assistente exige `AI_PROVIDER=openai` e `AI_API_KEY` configurados no servidor. Toda pergunta autenticada enviada por `/assistente` passa pela OpenAI; as regras internas servem apenas para fornecer contexto confiavel e validar comandos antes de salvar dados. Se a OpenAI estiver sem creditos, indisponivel ou mal configurada, a tela mostra o erro e nao substitui a resposta por um resultado local. A chave nunca vai para o navegador, o acesso exige login quando Supabase esta ativo e existe um limite temporario por usuario.
+O Assistente usa IA online e aceita OpenAI, Gemini ou as duas em contingencia. A configuracao recomendada e `AI_PROVIDER=auto`: o servidor tenta a OpenAI primeiro e troca automaticamente para o Gemini quando houver falta de creditos, limite, timeout ou indisponibilidade. As regras internas fornecem contexto confiavel e validam comandos antes de salvar dados; elas nao substituem a resposta online. As chaves nunca vao para o navegador, o acesso exige login quando Supabase esta ativo e existe um limite temporario por usuario.
 
 Veja `docs/ai-setup.md` antes de configurar a IA na Vercel.
 

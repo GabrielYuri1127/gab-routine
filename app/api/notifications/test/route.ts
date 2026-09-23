@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 
 import { createSupabaseServiceClient, getSupabaseUserFromRequest } from "@/lib/supabase/server";
 import {
-  isExpiredPushSubscriptionError,
+  getPushDeliveryFailure,
   sendPushNotification,
+  type PushDeliveryFailureCode,
   type StoredPushSubscription
 } from "@/services/notifications/push-service";
 
@@ -34,6 +35,8 @@ export async function POST(request: Request) {
     let sent = 0;
     let expired = 0;
     let failed = 0;
+    let firstFailureDetail = "";
+    const failureReasons: Partial<Record<PushDeliveryFailureCode, number>> = {};
 
     for (const subscription of subscriptions) {
       try {
@@ -45,7 +48,10 @@ export async function POST(request: Request) {
         });
         sent += 1;
       } catch (sendError) {
-        if (isExpiredPushSubscriptionError(sendError)) {
+        const failure = getPushDeliveryFailure(sendError);
+        failureReasons[failure.code] = (failureReasons[failure.code] ?? 0) + 1;
+        firstFailureDetail ||= failure.detail;
+        if (failure.expired) {
           expired += 1;
           if (subscription.id) {
             await client.from("push_subscriptions").delete().eq("id", subscription.id);
@@ -56,7 +62,18 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ expired, failed, sent });
+    const result = { expired, failed, failureReasons, sent };
+    if (sent === 0) {
+      return NextResponse.json(
+        {
+          ...result,
+          error: firstFailureDetail || "Nenhum aparelho recebeu o teste. Reative as notificacoes e tente novamente."
+        },
+        { status: 502 }
+      );
+    }
+
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(
       {

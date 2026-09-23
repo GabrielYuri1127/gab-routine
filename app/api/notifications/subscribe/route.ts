@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { createSupabaseServiceClient, getSupabaseUserFromRequest } from "@/lib/supabase/server";
+import { getPushConfig } from "@/services/notifications/push-service";
 
 export const runtime = "nodejs";
 
@@ -25,6 +26,13 @@ export async function POST(request: Request) {
 
   if (!isValidSubscription(payload)) {
     return NextResponse.json({ error: "Inscricao push incompleta." }, { status: 400 });
+  }
+
+  if (!getPushConfig()) {
+    return NextResponse.json(
+      { error: "As chaves VAPID do servidor estao incompletas. Atualize as variaveis e faca redeploy." },
+      { status: 503 }
+    );
   }
 
   try {

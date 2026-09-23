@@ -1,4 +1,5 @@
 import { getClassroomRedirectUri, isClassroomConfigured } from "../classroom/google-classroom";
+import { getConfiguredAIProvider } from "../ai/provider";
 import { getPushMissingConfig } from "../../services/notifications/push-service";
 
 export type IntegrationState = "ready" | "needs_setup" | "optional" | "future";
@@ -22,8 +23,14 @@ export interface IntegrationStatusReport {
 type IntegrationEnv = Record<string, string | undefined>;
 
 export function buildIntegrationStatus(env: IntegrationEnv = process.env, requestUrl = "http://localhost:3000") {
-  const aiProvider = (env.AI_PROVIDER ?? "none").toLowerCase();
-  const aiReady = aiProvider === "openai" && Boolean(env.AI_API_KEY);
+  const configuredAIProvider = getConfiguredAIProvider(env);
+  const aiReady = configuredAIProvider.name !== "none";
+  const aiDescription =
+    configuredAIProvider.name === "auto"
+      ? "OpenAI com contingencia automatica no Gemini"
+      : configuredAIProvider.name === "gemini"
+        ? "Gemini"
+        : "OpenAI";
   const classroomOAuthReady = isClassroomConfigured(env);
   const supabaseReady = Boolean(
     env.NEXT_PUBLIC_SUPABASE_URL && (env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -63,10 +70,10 @@ export function buildIntegrationStatus(env: IntegrationEnv = process.env, reques
       {
         category: "agora",
         detail: aiReady
-          ? `IA online configurada com ${env.AI_MODEL || "modelo padrao"}; todas as perguntas do Assistente usam a OpenAI.`
+          ? `IA online configurada com ${aiDescription}; todas as perguntas do Assistente usam um provedor online.`
           : "A IA online precisa ser configurada para o Assistente responder.",
         id: "ai",
-        missing: aiReady ? [] : ["AI_PROVIDER=openai", "AI_API_KEY"],
+        missing: aiReady ? [] : ["AI_PROVIDER=auto", "AI_API_KEY ou GEMINI_API_KEY"],
         nextStep: aiReady ? "Usar a IA online em /assistente." : "Adicionar variaveis de IA na Vercel e fazer novo deploy.",
         state: aiReady ? "ready" : "needs_setup",
         title: "IA online"
