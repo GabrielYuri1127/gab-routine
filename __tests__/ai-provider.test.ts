@@ -46,6 +46,48 @@ describe("OpenAI Responses provider", () => {
     }
   });
 
+  it("enables web search and returns cited sources only when requested", async () => {
+    const originalFetch = globalThis.fetch;
+    let requestBody: Record<string, unknown> | null = null;
+    globalThis.fetch = async (_input, init) => {
+      requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      return new Response(
+        JSON.stringify({
+          model: "gpt-test",
+          output: [
+            {
+              content: [
+                {
+                  annotations: [
+                    { title: "Weather source", type: "url_citation", url: "https://weather.example/manaus" },
+                    { title: "Ignored", type: "file_citation", url: "https://example.test/file" }
+                  ],
+                  text: "Manaus weather",
+                  type: "output_text"
+                }
+              ]
+            }
+          ]
+        }),
+        { headers: { "Content-Type": "application/json" }, status: 200 }
+      );
+    };
+
+    try {
+      const provider = new OpenAIResponsesProvider("test-key", "gpt-test", "https://example.test/v1");
+      const result = await provider.complete({
+        enableWebSearch: true,
+        messages: [{ content: "weather in Manaus", role: "user" }]
+      });
+
+      const body = requestBody as { tools?: unknown[] } | null;
+      assert.deepEqual(body?.tools, [{ type: "web_search" }]);
+      assert.deepEqual(result.sources, [{ title: "Weather source", url: "https://weather.example/manaus" }]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("keeps file and image input parts in multimodal requests", async () => {
     const originalFetch = globalThis.fetch;
     let requestBody: Record<string, unknown> | null = null;
@@ -185,6 +227,45 @@ describe("Gemini GenerateContent provider", () => {
         required: ["answer"],
         type: "object"
       });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("grounds current questions with Google Search and exposes source links", async () => {
+    const originalFetch = globalThis.fetch;
+    let requestBody: Record<string, unknown> | null = null;
+    globalThis.fetch = async (_input, init) => {
+      requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      return new Response(
+        JSON.stringify({
+          candidates: [
+            {
+              content: { parts: [{ text: "Agora faz 30 graus." }] },
+              groundingMetadata: {
+                groundingChunks: [
+                  { web: { title: "Tempo em Manaus", uri: "https://weather.example/manaus" } },
+                  { web: { title: "Duplicate", uri: "https://weather.example/manaus" } }
+                ]
+              }
+            }
+          ],
+          modelVersion: "gemini-test"
+        }),
+        { headers: { "Content-Type": "application/json" }, status: 200 }
+      );
+    };
+
+    try {
+      const provider = new GeminiGenerateContentProvider("gemini-key", "gemini-test", "https://example.test/v1beta");
+      const result = await provider.complete({
+        enableWebSearch: true,
+        messages: [{ content: "Quantos graus faz em Manaus?", role: "user" }]
+      });
+
+      const body = requestBody as { tools?: unknown[] } | null;
+      assert.deepEqual(body?.tools, [{ google_search: {} }]);
+      assert.deepEqual(result.sources, [{ title: "Tempo em Manaus", url: "https://weather.example/manaus" }]);
     } finally {
       globalThis.fetch = originalFetch;
     }

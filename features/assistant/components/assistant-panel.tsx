@@ -5,6 +5,7 @@ import {
   Bot,
   BriefcaseBusiness,
   ClipboardCheck,
+  ExternalLink,
   GraduationCap,
   Loader2,
   LogIn,
@@ -551,6 +552,28 @@ export function AssistantPanel() {
                   {item}
                 </div>
               ))}
+              {currentResponse.sources?.length ? (
+                <div className={currentResponse.evidence.length ? "border-t border-line pt-3" : ""}>
+                  <p className="mb-2 text-xs font-semibold uppercase text-slate-500">Fontes online</p>
+                  <div className="space-y-2">
+                    {currentResponse.sources.map((source) => (
+                      <a
+                        className="flex items-start gap-2 break-words text-sm leading-6 text-sky-700 underline decoration-sky-300 underline-offset-2 hover:text-sky-900"
+                        href={source.url}
+                        key={source.url}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        <ExternalLink aria-hidden className="mt-1 h-4 w-4 shrink-0" />
+                        <span>{source.title}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {!currentResponse.evidence.length && !currentResponse.sources?.length ? (
+                <p className="text-sm leading-6 text-slate-600">Resposta gerada diretamente pela IA online.</p>
+              ) : null}
             </div>
           </div>
 

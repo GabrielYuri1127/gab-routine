@@ -54,6 +54,8 @@ Use este checklist antes de compartilhar o Gavium com amigos, familiares ou no p
 - Fazer novo deploy depois de mudar variaveis.
 - Perguntar no assistente: `O que devo fazer agora?`
 - Conferir se a resposta mostra base e dados faltantes.
+- Perguntar: `Quantos graus faz em Manaus?` e conferir a resposta atual e os links em `Fontes online`.
+- Confirmar que perguntas de rotina nao exibem fontes externas nem acionam busca desnecessaria.
 
 ## Notificacoes Push
 

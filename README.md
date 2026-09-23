@@ -128,7 +128,7 @@ A arquitetura inicial fica em:
 - `lib/ai/command-parser.ts`
 - `services/ai/`
 
-O Assistente usa IA online e aceita OpenAI, Gemini ou as duas em contingencia. A configuracao recomendada e `AI_PROVIDER=auto`: o servidor usa primeiro o Gemini economico e troca automaticamente para a OpenAI quando necessario. Se um modelo do Gemini deixar de estar liberado para a chave, o servidor consulta os modelos disponiveis e seleciona uma alternativa compativel. As regras internas fornecem contexto confiavel e validam comandos antes de salvar dados; elas nao substituem a resposta online. As chaves nunca vao para o navegador, o acesso exige login quando Supabase esta ativo e existe um limite temporario por usuario.
+O Assistente usa IA online e aceita OpenAI, Gemini ou as duas em contingencia. A configuracao recomendada e `AI_PROVIDER=auto`: o servidor usa primeiro o Gemini economico e troca automaticamente para a OpenAI quando necessario. Se um modelo do Gemini deixar de estar liberado para a chave, o servidor consulta os modelos disponiveis e seleciona uma alternativa compativel. Perguntas que dependem de informacao atual, como clima, noticias, precos e resultados, ativam busca online seletiva e exibem as fontes consultadas; perguntas sobre a rotina continuam no caminho contextual mais economico. As regras internas fornecem contexto confiavel e validam comandos antes de salvar dados; elas nao substituem a resposta online. As chaves nunca vao para o navegador, o acesso exige login quando Supabase esta ativo e existe um limite temporario por usuario.
 
 Veja `docs/ai-setup.md` antes de configurar a IA na Vercel.
 
@@ -158,7 +158,7 @@ O material apresentavel fica em `portfolio/`, com case study, ferramentas do pro
 ## Entregue
 
 - Home Hoje com proximo item, agenda do dia, compromissos, pendencias, lembretes e resumo da faculdade.
-- `/assistente` com modo local, IA online contextual, memoria curta e comandos automaticos quando os dados estao claros.
+- `/assistente` com IA online contextual, busca atual seletiva, fontes visiveis, memoria curta e comandos automaticos quando os dados estao claros.
 - Navegacao mobile com botao central de acao rapida.
 - `/faculdade` com busca, filtros por status, cards com atalhos e cadastro detalhado.
 - `/faculdade` com importacao inteligente de horario, historico, analitico e matriz curricular em PDF ou imagem, revisao editavel e mesclagem sem duplicar disciplinas.

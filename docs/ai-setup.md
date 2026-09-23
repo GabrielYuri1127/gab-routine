@@ -31,6 +31,8 @@ GEMINI_MODEL=gemini-3.5-flash-lite
 - Perguntas como "o que falta?" ou "o que falta para publicar?" usam o status real de Vercel, IA online, Google Classroom e Supabase, sem confundir com faltas de aula.
 - Comandos claros de alteracao viram uma acao automatica. O app salva falta, nota, atividade ou tarefa direto quando reconhece os dados essenciais, e pede complemento quando faltam disciplina, data, nota ou titulo.
 - A API usa contexto reduzido da rotina e ate seis mensagens recentes. Numeros, datas, links e acoes continuam ancorados na validacao interna.
+- Perguntas sobre clima, noticias, cotacoes, resultados e outros fatos atuais ativam a busca online do provedor. O app mostra os links devolvidos pelo Google Search Grounding ou pelo Web Search da OpenAI.
+- Perguntas sobre tarefas, faltas, notas, prazos e planejamento usam somente o contexto do Gavium. Essa separacao reduz chamadas de busca e consumo desnecessario.
 - Quando Supabase esta configurado, somente usuarios autenticados podem usar o Assistente.
 - O servidor aplica limite temporario por usuario, timeout e identificador anonimizado. Quando a chave secreta do Supabase esta disponivel, o uso fica registrado em `ai_usage`; sem ela, existe contingencia em memoria. A requisicao usa `store: false`.
 - Se a API falhar, o app mostra o erro e nao executa comandos nem produz uma resposta local.

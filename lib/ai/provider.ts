@@ -11,6 +11,7 @@ export interface AIMessage {
 }
 
 export interface AIProviderRequest {
+  enableWebSearch?: boolean;
   messages: AIMessage[];
   maxOutputTokens?: number;
   promptCacheKey?: string;
@@ -20,10 +21,16 @@ export interface AIProviderRequest {
   timeoutMs?: number;
 }
 
+export interface AIProviderSource {
+  title: string;
+  url: string;
+}
+
 export interface AIProviderResponse {
   content: string;
   model: string;
   provider?: AIProviderName;
+  sources?: AIProviderSource[];
 }
 
 export interface AIProvider {
@@ -114,7 +121,8 @@ export class OpenAIResponsesProvider implements AIProvider {
           safety_identifier: request.safetyIdentifier,
           store: false,
           ...(typeof request.temperature === "number" ? { temperature: request.temperature } : {}),
-          text: request.responseFormat ? { format: buildTextFormat(request.responseFormat) } : undefined
+          text: request.responseFormat ? { format: buildTextFormat(request.responseFormat) } : undefined,
+          tools: request.enableWebSearch ? [{ type: "web_search" }] : undefined
         }),
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
@@ -150,7 +158,8 @@ export class OpenAIResponsesProvider implements AIProvider {
     return {
       content,
       model: payload.model ?? this.model,
-      provider: "openai"
+      provider: "openai",
+      sources: extractOpenAISources(payload)
     };
   }
 }
@@ -217,7 +226,8 @@ export class GeminiGenerateContentProvider implements AIProvider {
                 }
               : {})
           },
-          systemInstruction: systemText ? { parts: [{ text: systemText }] } : undefined
+          systemInstruction: systemText ? { parts: [{ text: systemText }] } : undefined,
+          tools: request.enableWebSearch ? [{ google_search: {} }] : undefined
         }),
         headers: {
           "Content-Type": "application/json",
@@ -245,7 +255,8 @@ export class GeminiGenerateContentProvider implements AIProvider {
     return {
       content,
       model: payload?.modelVersion ?? model,
-      provider: "gemini"
+      provider: "gemini",
+      sources: extractGeminiSources(payload)
     };
   }
 
@@ -362,6 +373,11 @@ interface OpenAIResponsesPayload {
   model?: string;
   output?: Array<{
     content?: Array<{
+      annotations?: Array<{
+        title?: string;
+        type?: string;
+        url?: string;
+      }>;
       text?: string;
       type?: string;
     }>;
@@ -381,6 +397,14 @@ interface GeminiGenerateContentPayload {
     content?: {
       parts?: Array<{
         text?: string;
+      }>;
+    };
+    groundingMetadata?: {
+      groundingChunks?: Array<{
+        web?: {
+          title?: string;
+          uri?: string;
+        };
       }>;
     };
   }>;
@@ -485,6 +509,53 @@ function extractGeminiOutputText(payload: GeminiGenerateContentPayload | null) {
       .join("\n")
       .trim() ?? ""
   );
+}
+
+function extractOpenAISources(payload: OpenAIResponsesPayload) {
+  return normalizeSources(
+    (payload.output ?? [])
+      .flatMap((item) => item.content ?? [])
+      .flatMap((content) => content.annotations ?? [])
+      .filter((annotation) => annotation.type === "url_citation")
+      .map((annotation) => ({
+        title: annotation.title ?? "Fonte consultada",
+        url: annotation.url ?? ""
+      }))
+  );
+}
+
+function extractGeminiSources(payload: GeminiGenerateContentPayload | null) {
+  return normalizeSources(
+    (payload?.candidates ?? [])
+      .flatMap((candidate) => candidate.groundingMetadata?.groundingChunks ?? [])
+      .map((chunk) => ({
+        title: chunk.web?.title ?? "Fonte consultada",
+        url: chunk.web?.uri ?? ""
+      }))
+  );
+}
+
+function normalizeSources(sources: AIProviderSource[]) {
+  const seen = new Set<string>();
+
+  return sources
+    .filter((source) => {
+      try {
+        const url = new URL(source.url);
+        if (!(["http:", "https:"] as string[]).includes(url.protocol) || seen.has(url.href)) {
+          return false;
+        }
+        seen.add(url.href);
+        return true;
+      } catch {
+        return false;
+      }
+    })
+    .slice(0, 5)
+    .map((source) => ({
+      title: source.title.trim() || new URL(source.url).hostname,
+      url: source.url
+    }));
 }
 
 function extractMessageText(content: AIMessage["content"]) {

@@ -13,6 +13,7 @@ import {
   type RoutineAssistantResponse
 } from "@/lib/ai/routine-assistant";
 import { NATURAL_LANGUAGE_SYSTEM_PROMPT } from "@/lib/ai/prompts";
+import { shouldUseWebSearch } from "@/lib/ai/web-search";
 
 export interface AssistantConversationMessage {
   content: string;
@@ -88,9 +89,11 @@ export async function askAssistant(
   }
 
   const localResponse = buildRoutineAssistantResponse({ ...context, question });
+  const enableWebSearch = !localResponse.commandProposal && shouldUseWebSearch(question);
 
   try {
     const completion = await provider.complete({
+      enableWebSearch,
       maxOutputTokens: 1_100,
       messages: [
         {
@@ -99,14 +102,17 @@ export async function askAssistant(
 Voce e o assistente pessoal inteligente do Gavium.
 Responda de verdade a pergunta atual; nao apenas reescreva a resposta calculada.
 Use calculatedResponse como fonte confiavel para calculos, acoes, links, datas e alertas ja verificados pelo sistema.
-Para perguntas sobre a data atual, use o campo today e preserve a resposta calculada correta.
+O campo today contem a data atual no fuso America/Manaus. Preserve essa data quando ela fizer parte da pergunta.
 Use userContext e recentConversation para personalizar e manter continuidade.
 Voce pode orientar sobre estudos, produtividade, rotina, trabalho e organizacao mesmo quando a pergunta nao se encaixar nas regras locais.
 Nunca invente dados pessoais, tarefas, disciplinas, notas, faltas, datas, links ou acoes executadas.
 Somente diga que uma acao sera salva quando calculatedResponse.commandProposal existir. Sem commandProposal, explique ou peca o dado que falta.
 Nao altere nem proponha um comando diferente do commandProposal calculado.
-Em evidence, cite apenas fatos presentes no contexto ou deixe a lista vazia.
-Em dataGaps, informe somente dados realmente ausentes e uteis para responder melhor.
+${
+  enableWebSearch
+    ? "Use a busca online para responder fatos atuais, como clima, noticias, precos e resultados. Diferencie claramente fatos encontrados de inferencias e nao invente informacoes que a busca nao confirmou."
+    : "Em evidence, cite apenas fatos presentes no contexto ou deixe a lista vazia. Em dataGaps, informe somente dados realmente ausentes e uteis para responder melhor."
+}
 Responda em portugues brasileiro natural, direto e especifico. Evite respostas prontas e repetitivas.`
         },
         ...sanitizeHistory(options.history),
@@ -116,41 +122,54 @@ Responda em portugues brasileiro natural, direto e especifico. Evite respostas p
         }
       ],
       promptCacheKey: options.promptCacheKey,
-      responseFormat: {
-        name: "gavium_assistant_response",
-        schema: {
-          additionalProperties: false,
-          properties: {
-            answer: { maxLength: 1_500, type: "string" },
-            dataGaps: {
-              items: { maxLength: 180, type: "string" },
-              maxItems: 4,
-              type: "array"
+      responseFormat: enableWebSearch
+        ? undefined
+        : {
+            name: "gavium_assistant_response",
+            schema: {
+              additionalProperties: false,
+              properties: {
+                answer: { maxLength: 1_500, type: "string" },
+                dataGaps: {
+                  items: { maxLength: 180, type: "string" },
+                  maxItems: 4,
+                  type: "array"
+                },
+                evidence: {
+                  items: { maxLength: 220, type: "string" },
+                  maxItems: 5,
+                  type: "array"
+                },
+                intent: {
+                  enum: ["now", "date_time", "attendance", "command", "grades", "resources", "deadlines", "readiness", "summary", "conversation"],
+                  type: "string"
+                },
+                suggestions: {
+                  items: { maxLength: 160, type: "string" },
+                  maxItems: 4,
+                  minItems: 1,
+                  type: "array"
+                }
+              },
+              required: ["answer", "dataGaps", "evidence", "intent", "suggestions"],
+              type: "object"
             },
-            evidence: {
-              items: { maxLength: 220, type: "string" },
-              maxItems: 5,
-              type: "array"
-            },
-            intent: {
-              enum: ["now", "date_time", "attendance", "command", "grades", "resources", "deadlines", "readiness", "summary", "conversation"],
-              type: "string"
-            },
-            suggestions: {
-              items: { maxLength: 160, type: "string" },
-              maxItems: 4,
-              minItems: 1,
-              type: "array"
-            }
+            strict: true,
+            type: "json_schema"
           },
-          required: ["answer", "dataGaps", "evidence", "intent", "suggestions"],
-          type: "object"
-        },
-        strict: true,
-        type: "json_schema"
-      },
       safetyIdentifier: options.safetyIdentifier
     });
+
+    if (enableWebSearch) {
+      return {
+        modeDetail: `IA online ativa com ${completion.model}, busca atual e fontes consultadas.`,
+        model: completion.model,
+        provider: completion.provider,
+        response: buildWebAssistantResponse(question, localResponse, completion.content, completion.sources),
+        source: "ai"
+      };
+    }
+
     const generated = parseGeneratedResponse(completion.content);
 
     if (!generated) {
@@ -260,6 +279,43 @@ function mergeGeneratedResponse(localResponse: RoutineAssistantResponse, generat
     intent: (commandMode ? "command" : generated.intent) as AssistantIntent,
     suggestions: uniqueStrings(generated.suggestions, 4)
   };
+}
+
+function buildWebAssistantResponse(
+  question: string,
+  localResponse: RoutineAssistantResponse,
+  answer: string,
+  sources: RoutineAssistantResponse["sources"]
+): RoutineAssistantResponse {
+  const preserveDateContext = localResponse.intent === "date_time";
+
+  return {
+    ...localResponse,
+    answer: answer.trim(),
+    dataGaps: [],
+    evidence: preserveDateContext ? localResponse.evidence : [],
+    highlights: preserveDateContext ? localResponse.highlights : [],
+    intent: preserveDateContext ? "date_time" : "conversation",
+    quickLinks: preserveDateContext ? localResponse.quickLinks : [],
+    sources: sources ?? [],
+    suggestions: buildWebSuggestions(question)
+  };
+}
+
+function buildWebSuggestions(question: string) {
+  const normalized = question
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  if (/(?:temperatura|graus|clima|chuva|tempo)/.test(normalized)) {
+    return ["Ver a previsao para amanha", "Perguntar se vai chover hoje", "Organizar minha rotina com esse clima"];
+  }
+  if (/(?:noticia|noticias)/.test(normalized)) {
+    return ["Resumir as noticias principais", "Explicar uma dessas noticias", "Voltar para minhas prioridades"];
+  }
+
+  return ["Aprofundar essa resposta", "Consultar outra informacao atual", "Voltar para minha rotina"];
 }
 
 function uniqueStrings(values: string[], limit: number) {

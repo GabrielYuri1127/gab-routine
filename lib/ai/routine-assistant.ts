@@ -54,6 +54,10 @@ export interface RoutineAssistantResponse {
   highlights: AssistantHighlight[];
   intent: AssistantIntent;
   quickLinks: AssistantQuickLink[];
+  sources?: Array<{
+    title: string;
+    url: string;
+  }>;
   suggestions: string[];
 }
 
