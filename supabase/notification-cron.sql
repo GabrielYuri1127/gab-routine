@@ -2,6 +2,7 @@
 -- Run this file once in the Supabase SQL Editor, then call the configuration
 -- function shown at the bottom with the same CRON_SECRET used by Vercel.
 
+create schema if not exists extensions;
 create extension if not exists pg_cron;
 create extension if not exists pg_net with schema extensions;
 create extension if not exists supabase_vault with schema vault;
