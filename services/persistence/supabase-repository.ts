@@ -1,5 +1,5 @@
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { assignRoutineDataUser, normalizeRoutineData } from "@/features/data/routine-store";
+import { assignRoutineDataUser, normalizeRoutineData } from "@/features/data/routine-normalization";
 import type { RoutineData } from "@/features/data/seed";
 import type { Reminder, Task } from "@/types/domain";
 

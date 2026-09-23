@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { assignRoutineDataUser, normalizeRoutineData } from "@/features/data/routine-store";
+import { assignRoutineDataUser, normalizeRoutineData } from "@/features/data/routine-normalization";
 import { APP_TIME_ZONE } from "@/lib/date";
 import {
   getPushDeliveryFailure,
