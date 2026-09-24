@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { saveClassroomConnection } from "@/lib/classroom/classroom-connections";
 import { exchangeClassroomCode, fetchClassroomImport, fetchGoogleUserInfo } from "@/lib/classroom/google-classroom";
+import { getClassroomOAuthFailureQuery } from "@/lib/classroom/oauth-callback";
 import { verifyClassroomOAuthState } from "@/lib/classroom/oauth-state";
 
 const CLASSROOM_IMPORT_STORAGE_KEY = "gab-routine:classroom:last-import";
@@ -12,9 +13,14 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
+  const oauthError = url.searchParams.get("error");
   const state = url.searchParams.get("state");
   const storedState = request.cookies.get(CLASSROOM_STATE_COOKIE)?.value;
   const verifiedState = state && storedState && state === storedState ? verifyClassroomOAuthState(state) : null;
+
+  if (oauthError) {
+    return redirectToSettings(request.url, getClassroomOAuthFailureQuery(oauthError));
+  }
 
   if (!code || !verifiedState) {
     return redirectToSettings(request.url, "classroom=invalid-state");

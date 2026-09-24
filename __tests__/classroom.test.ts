@@ -10,6 +10,7 @@ import {
   verifyClassroomAccess
 } from "../lib/classroom/google-classroom";
 import { probeClassroomOAuthClient } from "../lib/classroom/oauth-diagnostics";
+import { getClassroomOAuthFailureQuery } from "../lib/classroom/oauth-callback";
 import { createClassroomOAuthState, verifyClassroomOAuthState } from "../lib/classroom/oauth-state";
 
 const validClientId = "123456789012-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com";
@@ -74,6 +75,12 @@ describe("Google Classroom mapping", () => {
     );
 
     assert.equal(status, "ready");
+  });
+
+  it("explains a Google consent denial instead of reporting an invalid state", () => {
+    assert.equal(getClassroomOAuthFailureQuery("access_denied"), "classroom=access-denied");
+    assert.equal(getClassroomOAuthFailureQuery("invalid_scope"), "classroom=scope-error");
+    assert.equal(getClassroomOAuthFailureQuery("server_error"), "classroom=oauth-error");
   });
 
   it("verifies live access to active courses and coursework", async () => {

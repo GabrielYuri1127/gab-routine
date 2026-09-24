@@ -26,6 +26,8 @@ import type {
 
 const CLASSROOM_IMPORT_STORAGE_KEY = "gab-routine:classroom:last-import";
 const CLASSROOM_IMPORTS_STORAGE_KEY = "gab-routine:classroom:imports";
+const GOOGLE_OAUTH_AUDIENCE_URL = "https://console.cloud.google.com/auth/audience?project=gavium";
+const GOOGLE_OAUTH_BRANDING_URL = "https://console.cloud.google.com/auth/branding?project=gavium";
 
 interface ClassroomStatus {
   callbackPath: string;
@@ -122,6 +124,17 @@ export function ClassroomImportPanel() {
       window.history.replaceState({}, "", window.location.pathname);
     } else if (query === "missing") {
       setMessage("Configure as chaves do Google Classroom antes de conectar.");
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (query === "access-denied") {
+      setMessage(
+        "O Google bloqueou essa conta. Adicione exatamente a conta escolhida em Publico-alvo > Usuarios de teste e tente novamente."
+      );
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (query === "scope-error") {
+      setMessage("O Google recusou as permissoes do Classroom. Revise os escopos em Acesso a dados.");
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (query === "oauth-error") {
+      setMessage("O Google nao autorizou a conexao. Revise o publico e os usuarios de teste do app OAuth.");
       window.history.replaceState({}, "", window.location.pathname);
     } else if (query === "error" || query === "invalid-state") {
       setMessage("Nao consegui concluir a conexao com o Google Classroom.");
@@ -357,10 +370,10 @@ export function ClassroomImportPanel() {
       ? "Conexao indisponivel"
       : !status.configured
         ? "Indisponivel"
-        : !status.persistentConfigured
-          ? "Importacao pronta"
-          : !connections.length
-            ? "Pronto para conectar"
+          : !status.persistentConfigured
+            ? "Importacao pronta"
+            : !connections.length
+            ? "Credencial pronta"
             : verifying
               ? "Verificando conexoes"
               : hasVerificationError
@@ -420,6 +433,34 @@ export function ClassroomImportPanel() {
       {!status?.configured ? (
         <div className="mt-4 rounded-lg border border-dashed border-line bg-slate-50 p-3 text-sm leading-6 text-slate-600">
           {getClassroomUnavailableMessage(status?.oauthStatus)}
+        </div>
+      ) : null}
+
+      {status?.configured && !connections.length ? (
+        <div className="mt-4 border-l-2 border-gold bg-gold/5 px-3 py-3 text-sm leading-6 text-slate-700">
+          <p>
+            Enquanto o OAuth estiver em teste, a conta escolhida no Google precisa estar em <strong>Usuarios de teste</strong>.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+            <a
+              className="inline-flex items-center gap-1 font-medium text-foreground underline decoration-slate-300 underline-offset-4"
+              href={GOOGLE_OAUTH_AUDIENCE_URL}
+              rel="noreferrer"
+              target="_blank"
+            >
+              Autorizar conta de teste
+              <ExternalLink aria-hidden className="h-3.5 w-3.5" />
+            </a>
+            <a
+              className="inline-flex items-center gap-1 font-medium text-foreground underline decoration-slate-300 underline-offset-4"
+              href={GOOGLE_OAUTH_BRANDING_URL}
+              rel="noreferrer"
+              target="_blank"
+            >
+              Corrigir nome exibido
+              <ExternalLink aria-hidden className="h-3.5 w-3.5" />
+            </a>
+          </div>
         </div>
       ) : null}
 
