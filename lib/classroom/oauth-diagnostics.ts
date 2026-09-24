@@ -1,7 +1,10 @@
 import {
   buildClassroomAuthUrl,
-  getClassroomConfigurationIssue
+  getClassroomConfigurationIssue,
+  getClassroomRedirectUri
 } from "./google-classroom";
+
+const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 
 export type ClassroomOAuthStatus =
   | "invalid_client"
@@ -26,6 +29,11 @@ export async function probeClassroomOAuthClient(
   }
 
   try {
+    const credentialsStatus = await probeClassroomOAuthCredentials(requestUrl, env, fetchImpl);
+    if (credentialsStatus !== "ready") {
+      return credentialsStatus;
+    }
+
     const authUrl = buildClassroomAuthUrl("gavium-configuration-check", requestUrl, env);
     authUrl.searchParams.set("prompt", "none");
 
@@ -50,6 +58,61 @@ export async function probeClassroomOAuthClient(
   }
 }
 
+export function getClassroomOAuthClientHint(env: ClassroomEnv = process.env) {
+  const clientId = normalizeClassroomEnvValue(env.GOOGLE_CLASSROOM_CLIENT_ID);
+  if (!clientId) {
+    return undefined;
+  }
+
+  const visibleStart = clientId.slice(0, 12);
+  const visibleEnd = clientId.slice(-32);
+  return clientId.length > visibleStart.length + visibleEnd.length
+    ? `${visibleStart}...${visibleEnd}`
+    : clientId;
+}
+
+async function probeClassroomOAuthCredentials(
+  requestUrl: string,
+  env: ClassroomEnv,
+  fetchImpl: typeof fetch
+): Promise<"invalid_client" | "ready" | "unverified"> {
+  const clientId = normalizeClassroomEnvValue(env.GOOGLE_CLASSROOM_CLIENT_ID);
+  const clientSecret = normalizeClassroomEnvValue(env.GOOGLE_CLASSROOM_CLIENT_SECRET);
+  if (!clientId || !clientSecret) {
+    return "invalid_client";
+  }
+
+  const response = await fetchImpl(GOOGLE_TOKEN_URL, {
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code: "4/gavium-invalid-configuration-check",
+      grant_type: "authorization_code",
+      redirect_uri: getClassroomRedirectUri(requestUrl, env)
+    }),
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    method: "POST",
+    signal: AbortSignal.timeout(6_000)
+  });
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; error_description?: string }
+    | null;
+  const oauthError = `${payload?.error ?? ""} ${payload?.error_description ?? ""}`.toLowerCase();
+
+  if (
+    oauthError.includes("invalid_client") ||
+    oauthError.includes("deleted_client") ||
+    oauthError.includes("oauth client was not found")
+  ) {
+    return "invalid_client";
+  }
+
+  return payload?.error === "invalid_grant" ? "ready" : "unverified";
+}
+
 function readGoogleOAuthError(location: string | null) {
   if (!location) {
     return "";
@@ -63,4 +126,16 @@ function readGoogleOAuthError(location: string | null) {
   } catch {
     return location.toLowerCase();
   }
+}
+
+function normalizeClassroomEnvValue(value: string | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const hasWrappingQuotes =
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"));
+  return hasWrappingQuotes ? trimmed.slice(1, -1).trim() : trimmed;
 }

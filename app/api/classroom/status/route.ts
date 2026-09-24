@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { CLASSROOM_SCOPES, isClassroomConfigured } from "@/lib/classroom/google-classroom";
-import { probeClassroomOAuthClient, type ClassroomOAuthStatus } from "@/lib/classroom/oauth-diagnostics";
+import {
+  getClassroomOAuthClientHint,
+  probeClassroomOAuthClient,
+  type ClassroomOAuthStatus
+} from "@/lib/classroom/oauth-diagnostics";
 import { getSupabaseServerConfig } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -12,11 +16,12 @@ let cachedOAuthStatus: { expiresAt: number; status: ClassroomOAuthStatus } | nul
 export async function GET(request: Request) {
   const credentialsConfigured = isClassroomConfigured();
   const oauthStatus = await getOAuthStatus(request.url);
-  const configured = credentialsConfigured && !["invalid_client", "not_configured", "redirect_mismatch"].includes(oauthStatus);
+  const configured = credentialsConfigured && oauthStatus === "ready";
   const cloudConfigured = Boolean(getSupabaseServerConfig()?.secretKey);
 
   return NextResponse.json({
     callbackPath: "/api/classroom/callback",
+    clientIdHint: getClassroomOAuthClientHint(),
     configured,
     oauthStatus,
     persistentConfigured: configured && cloudConfigured,

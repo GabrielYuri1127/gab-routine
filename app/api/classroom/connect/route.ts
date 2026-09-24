@@ -36,6 +36,12 @@ export async function POST(request: Request) {
       { status: 503 }
     );
   }
+  if (oauthStatus !== "ready") {
+    return NextResponse.json(
+      { error: "Nao foi possivel validar a conexao com o Google Classroom. Tente novamente em instantes." },
+      { status: 503 }
+    );
+  }
 
   const state = createClassroomOAuthState(user.id);
   const response = NextResponse.json({ url: buildClassroomAuthUrl(state, request.url).toString() });

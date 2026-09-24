@@ -49,32 +49,63 @@ describe("Google Classroom mapping", () => {
   });
 
   it("detects a deleted OAuth client before opening the Google page", async () => {
-    const authError = Buffer.from("invalid_client The OAuth client was not found.").toString("base64url");
+    const requestedUrls: string[] = [];
     const status = await probeClassroomOAuthClient(
       "https://gab-routine.vercel.app/configuracoes",
       classroomEnv,
-      async () =>
-        new Response(null, {
-          headers: { Location: `https://accounts.google.com/signin/oauth/error?authError=${authError}` },
-          status: 302
-        })
+      async (input) => {
+        requestedUrls.push(String(input));
+        return new Response(
+          JSON.stringify({ error: "invalid_client", error_description: "The OAuth client was not found." }),
+          {
+            headers: { "Content-Type": "application/json" },
+            status: 401
+          }
+        );
+      }
     );
 
     assert.equal(status, "invalid_client");
+    assert.deepEqual(requestedUrls, ["https://oauth2.googleapis.com/token"]);
   });
 
   it("accepts an OAuth client that reaches the Google sign-in flow", async () => {
+    const requestedUrls: string[] = [];
+    const status = await probeClassroomOAuthClient(
+      "https://gab-routine.vercel.app/configuracoes",
+      classroomEnv,
+      async (input) => {
+        requestedUrls.push(String(input));
+        if (String(input) === "https://oauth2.googleapis.com/token") {
+          return new Response(JSON.stringify({ error: "invalid_grant", error_description: "Bad Request" }), {
+            headers: { "Content-Type": "application/json" },
+            status: 400
+          });
+        }
+
+        return new Response(null, {
+          headers: { Location: "https://accounts.google.com/v3/signin/identifier" },
+          status: 302
+        });
+      }
+    );
+
+    assert.equal(status, "ready");
+    assert.equal(requestedUrls.length, 2);
+  });
+
+  it("does not claim the OAuth client is ready when Google cannot verify it", async () => {
     const status = await probeClassroomOAuthClient(
       "https://gab-routine.vercel.app/configuracoes",
       classroomEnv,
       async () =>
-        new Response(null, {
-          headers: { Location: "https://accounts.google.com/v3/signin/identifier" },
-          status: 302
+        new Response(JSON.stringify({ error: "temporarily_unavailable" }), {
+          headers: { "Content-Type": "application/json" },
+          status: 503
         })
     );
 
-    assert.equal(status, "ready");
+    assert.equal(status, "unverified");
   });
 
   it("explains a Google consent denial instead of reporting an invalid state", () => {
