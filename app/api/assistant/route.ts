@@ -13,7 +13,8 @@ import {
 } from "@/lib/supabase/server";
 import { askAssistant } from "@/services/ai/assistant-service";
 
-const MAX_REQUEST_BYTES = 300_000;
+const MAX_REQUEST_BYTES = 3_000_000;
+const MAX_AUDIO_DATA_URL_CHARS = 2_050_000;
 const RATE_LIMIT_MAX = 20;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1_000;
 
@@ -25,16 +26,46 @@ const historyMessageSchema = z.object({
   role: z.enum(["assistant", "user"])
 });
 
-const assistantRequestSchema = z.object({
-  appPreference: z.record(z.unknown()).optional(),
-  events: z.array(z.record(z.unknown())).max(250).default([]),
-  history: z.array(historyMessageSchema).max(8).default([]),
-  question: z.string().trim().min(1).max(800),
-  reminders: z.array(z.record(z.unknown())).max(250).default([]),
-  subjects: z.array(z.record(z.unknown())).max(100).default([]),
-  tasks: z.array(z.record(z.unknown())).max(500).default([]),
-  today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
-});
+const supportedAudioMimeTypes = new Set([
+  "audio/aac",
+  "audio/flac",
+  "audio/m4a",
+  "audio/mp3",
+  "audio/mp4",
+  "audio/mpeg",
+  "audio/ogg",
+  "audio/opus",
+  "audio/wav",
+  "audio/webm",
+  "audio/x-m4a",
+  "audio/x-wav"
+]);
+
+const assistantAudioSchema = z
+  .object({
+    dataUrl: z.string().max(MAX_AUDIO_DATA_URL_CHARS),
+    durationMs: z.number().int().min(100).max(60_500),
+    mimeType: z.string().refine((value) => supportedAudioMimeTypes.has(value.toLowerCase()))
+  })
+  .strict()
+  .refine(({ dataUrl, mimeType }) => {
+    const match = dataUrl.match(/^data:([^;,]+);base64,([a-zA-Z0-9+/]+={0,2})$/);
+    return Boolean(match && match[1].toLowerCase() === mimeType.toLowerCase());
+  });
+
+const assistantRequestSchema = z
+  .object({
+    appPreference: z.record(z.unknown()).optional(),
+    audio: assistantAudioSchema.optional(),
+    events: z.array(z.record(z.unknown())).max(250).default([]),
+    history: z.array(historyMessageSchema).max(8).default([]),
+    question: z.string().trim().max(800).default(""),
+    reminders: z.array(z.record(z.unknown())).max(250).default([]),
+    subjects: z.array(z.record(z.unknown())).max(100).default([]),
+    tasks: z.array(z.record(z.unknown())).max(500).default([]),
+    today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+  })
+  .refine(({ audio, question }) => Boolean(audio || question), { path: ["question"] });
 
 const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>();
 
@@ -81,6 +112,7 @@ export async function POST(request: Request) {
     } as unknown as Omit<RoutineAssistantInput, "question">,
     {
       allowOnline,
+      audio: parsed.data.audio,
       fallbackError,
       fallbackModeDetail,
       history: parsed.data.history,

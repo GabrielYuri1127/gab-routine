@@ -128,6 +128,58 @@ describe("OpenAI Responses provider", () => {
     }
   });
 
+  it("transcribes a voice message before sending it to a text response model", async () => {
+    const originalFetch = globalThis.fetch;
+    const requestedUrls: string[] = [];
+    let responseBody: Record<string, unknown> | null = null;
+    globalThis.fetch = async (input, init) => {
+      const url = String(input);
+      requestedUrls.push(url);
+
+      if (url.endsWith("/audio/transcriptions")) {
+        assert.ok(init?.body instanceof FormData);
+        return new Response(JSON.stringify({ text: "Crie uma tarefa para estudar amanha." }), {
+          headers: { "Content-Type": "application/json" },
+          status: 200
+        });
+      }
+
+      responseBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      return new Response(JSON.stringify({ model: "gpt-test", output_text: "{}" }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200
+      });
+    };
+
+    try {
+      const provider = new OpenAIResponsesProvider("test-key", "gpt-test", "https://example.test/v1");
+      await provider.complete({
+        messages: [
+          {
+            content: [
+              { text: "answer the voice request", type: "input_text" },
+              { audio_data: "data:audio/webm;base64,AA==", type: "input_audio" }
+            ],
+            role: "user"
+          }
+        ],
+        timeoutMs: 30_000
+      });
+
+      const body = responseBody as { input?: Array<{ content?: unknown[] }> } | null;
+      assert.deepEqual(requestedUrls, [
+        "https://example.test/v1/audio/transcriptions",
+        "https://example.test/v1/responses"
+      ]);
+      assert.deepEqual(body?.input?.[0]?.content, [
+        { text: "answer the voice request", type: "input_text" },
+        { text: "[Transcricao da mensagem de voz]\nCrie uma tarefa para estudar amanha.", type: "input_text" }
+      ]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("classifies a rejected key without exposing the provider response", async () => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = async () =>
@@ -168,7 +220,7 @@ describe("OpenAI Responses provider", () => {
 });
 
 describe("Gemini GenerateContent provider", () => {
-  it("converts instructions, PDF data and structured output safely", async () => {
+  it("converts instructions, PDF and audio data, and structured output safely", async () => {
     const originalFetch = globalThis.fetch;
     let requestBody: Record<string, unknown> | null = null;
     let requestHeaders: HeadersInit | undefined;
@@ -192,7 +244,8 @@ describe("Gemini GenerateContent provider", () => {
           {
             content: [
               { text: "read this", type: "input_text" },
-              { file_data: "data:application/pdf;base64,AA==", filename: "grade.pdf", type: "input_file" }
+              { file_data: "data:application/pdf;base64,AA==", filename: "grade.pdf", type: "input_file" },
+              { audio_data: "data:audio/webm;base64,AQ==", type: "input_audio" }
             ],
             role: "user"
           }
@@ -221,7 +274,8 @@ describe("Gemini GenerateContent provider", () => {
       assert.equal(body?.systemInstruction?.parts?.[0]?.text, "system rules");
       assert.deepEqual(body?.contents?.[0]?.parts, [
         { text: "read this" },
-        { inlineData: { data: "AA==", mimeType: "application/pdf" } }
+        { inlineData: { data: "AA==", mimeType: "application/pdf" } },
+        { inlineData: { data: "AQ==", mimeType: "audio/webm" } }
       ]);
       assert.equal(body?.generationConfig?.responseMimeType, "application/json");
       assert.deepEqual(body?.generationConfig?.responseJsonSchema, {

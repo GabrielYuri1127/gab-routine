@@ -3,7 +3,8 @@ export type AIProviderName = "none" | "auto" | "openrouter" | "gemini" | "groq" 
 export type AIInputContentPart =
   | { text: string; type: "input_text" }
   | { detail?: "auto" | "high" | "low"; image_url: string; type: "input_image" }
-  | { file_data: string; filename: string; type: "input_file" };
+  | { file_data: string; filename: string; type: "input_file" }
+  | { audio_data: string; type: "input_audio" };
 
 export interface AIMessage {
   role: "system" | "user" | "assistant";
@@ -98,17 +99,17 @@ export class OpenAIResponsesProvider implements AIProvider {
   ) {}
 
   async complete(request: AIProviderRequest): Promise<AIProviderResponse> {
+    const startedAt = Date.now();
     const instructions = request.messages
       .filter((message) => message.role === "system")
       .map((message) => (typeof message.content === "string" ? message.content : ""))
       .filter(Boolean)
       .join("\n\n");
-    const input = request.messages
-      .filter((message) => message.role !== "system")
-      .map((message) => ({
-        content: message.content,
-        role: message.role
-      }));
+    const input = await this.prepareInput(
+      request.messages.filter((message) => message.role !== "system"),
+      request.timeoutMs ?? 20_000
+    );
+    const remainingTimeoutMs = Math.max(1_000, (request.timeoutMs ?? 20_000) - (Date.now() - startedAt));
 
     let response: Response;
     try {
@@ -134,7 +135,7 @@ export class OpenAIResponsesProvider implements AIProvider {
           "Content-Type": "application/json"
         },
         method: "POST",
-        signal: AbortSignal.timeout(request.timeoutMs ?? 20_000)
+        signal: AbortSignal.timeout(remainingTimeoutMs)
       });
     } catch (error) {
       if (error instanceof AIProviderError) {
@@ -166,6 +167,71 @@ export class OpenAIResponsesProvider implements AIProvider {
       provider: "openai",
       sources: extractOpenAISources(payload)
     };
+  }
+
+  private async prepareInput(messages: AIMessage[], timeoutMs: number) {
+    const preparedMessages: Array<{ content: string | unknown[]; role: AIMessage["role"] }> = [];
+
+    for (const message of messages) {
+      if (typeof message.content === "string") {
+        preparedMessages.push({ content: message.content, role: message.role });
+        continue;
+      }
+
+      const content: unknown[] = [];
+      for (const part of message.content) {
+        if (part.type !== "input_audio") {
+          content.push(part);
+          continue;
+        }
+
+        const transcript = await this.transcribeAudio(part.audio_data, timeoutMs);
+        content.push({
+          text: `[Transcricao da mensagem de voz]\n${transcript}`,
+          type: "input_text"
+        });
+      }
+
+      preparedMessages.push({ content, role: message.role });
+    }
+
+    return preparedMessages;
+  }
+
+  private async transcribeAudio(dataUrl: string, timeoutMs: number) {
+    const inlineData = parseInlineData(dataUrl);
+    const extension = getAudioFileExtension(inlineData.mimeType);
+    const bytes = Buffer.from(inlineData.data, "base64");
+    const formData = new FormData();
+    formData.append("file", new Blob([bytes], { type: inlineData.mimeType }), `mensagem.${extension}`);
+    formData.append("language", "pt");
+    formData.append("model", "gpt-4o-mini-transcribe");
+
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}/audio/transcriptions`, {
+        body: formData,
+        headers: { Authorization: `Bearer ${this.apiKey}` },
+        method: "POST",
+        signal: AbortSignal.timeout(Math.min(timeoutMs, 20_000))
+      });
+    } catch (error) {
+      const name = error instanceof Error ? error.name : "";
+      throw new AIProviderError(name === "AbortError" || name === "TimeoutError" ? "timeout" : "service_unavailable");
+    }
+
+    if (!response.ok) {
+      const errorPayload = (await response.json().catch(() => null)) as OpenAIErrorPayload | null;
+      throw new AIProviderError(classifyOpenAIError(response.status, errorPayload), response.status);
+    }
+
+    const payload = (await response.json().catch(() => null)) as { text?: string } | null;
+    const transcript = payload?.text?.trim();
+    if (!transcript) {
+      throw new AIProviderError("invalid_response", response.status);
+    }
+
+    return transcript;
   }
 }
 
@@ -597,9 +663,34 @@ function toGeminiParts(content: AIMessage["content"]) {
       return { text: part.text };
     }
 
-    const dataUrl = part.type === "input_image" ? part.image_url : part.file_data;
+    const dataUrl =
+      part.type === "input_image" ? part.image_url : part.type === "input_file" ? part.file_data : part.audio_data;
     return { inlineData: parseInlineData(dataUrl) };
   });
+}
+
+function getAudioFileExtension(mimeType: string) {
+  const extensions: Record<string, string> = {
+    "audio/aac": "aac",
+    "audio/flac": "flac",
+    "audio/m4a": "m4a",
+    "audio/mp3": "mp3",
+    "audio/mp4": "mp4",
+    "audio/mpeg": "mp3",
+    "audio/ogg": "ogg",
+    "audio/opus": "opus",
+    "audio/wav": "wav",
+    "audio/webm": "webm",
+    "audio/x-m4a": "m4a",
+    "audio/x-wav": "wav"
+  };
+
+  const extension = extensions[mimeType.toLowerCase()];
+  if (!extension) {
+    throw new AIProviderError("request_rejected");
+  }
+
+  return extension;
 }
 
 function parseInlineData(dataUrl: string) {

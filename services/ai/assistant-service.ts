@@ -4,6 +4,7 @@ import {
   AIProviderError,
   getAIProviderFailure,
   getConfiguredAIProvider,
+  type AIInputContentPart,
   type AIProviderName
 } from "@/lib/ai/provider";
 import {
@@ -22,6 +23,11 @@ export interface AssistantConversationMessage {
 
 export interface AskAssistantOptions {
   allowOnline?: boolean;
+  audio?: {
+    dataUrl: string;
+    durationMs: number;
+    mimeType: string;
+  };
   fallbackError?: string;
   fallbackModeDetail?: string;
   history?: AssistantConversationMessage[];
@@ -36,6 +42,7 @@ export interface AssistantServiceResult {
   provider?: AIProviderName;
   response?: RoutineAssistantResponse;
   source: "ai" | "error";
+  transcript?: string;
 }
 
 const assistantIntentSchema = z.enum([
@@ -57,7 +64,8 @@ const generatedResponseSchema = z
     dataGaps: z.array(z.string().trim().min(1).max(180)).max(4),
     evidence: z.array(z.string().trim().min(1).max(220)).max(5),
     intent: assistantIntentSchema,
-    suggestions: z.array(z.string().trim().min(1).max(160)).min(1).max(4)
+    suggestions: z.array(z.string().trim().min(1).max(160)).min(1).max(4),
+    transcript: z.string().trim().min(1).max(1_000).optional()
   })
   .strict();
 
@@ -71,6 +79,8 @@ export async function askAssistant(
   options: AskAssistantOptions = {}
 ): Promise<AssistantServiceResult> {
   const provider = getConfiguredAIProvider();
+  const hasAudio = Boolean(options.audio);
+  const contextQuestion = question.trim() || "Mensagem de voz enviada pelo usuario.";
 
   if (provider.name === "none") {
     return {
@@ -90,8 +100,9 @@ export async function askAssistant(
     };
   }
 
-  const localResponse = buildRoutineAssistantResponse({ ...context, question });
-  const enableWebSearch = !localResponse.commandProposal && shouldUseWebSearch(question);
+  const localResponse = buildRoutineAssistantResponse({ ...context, question: contextQuestion });
+  const enableWebSearch = !hasAudio && !localResponse.commandProposal && shouldUseWebSearch(contextQuestion);
+  const userContent = buildUserContent(contextQuestion, context, localResponse, options.audio);
 
   try {
     const completion = await provider.complete({
@@ -111,6 +122,11 @@ Nunca invente dados pessoais, tarefas, disciplinas, notas, faltas, datas, links 
 Somente diga que uma acao sera salva quando calculatedResponse.commandProposal existir. Sem commandProposal, explique ou peca o dado que falta.
 Nao altere nem proponha um comando diferente do commandProposal calculado.
 ${
+  hasAudio
+    ? "Ha uma mensagem de voz anexada. Escute-a por completo, use a fala como a pergunta atual e devolva uma transcricao fiel no campo transcript. Se houver texto junto, considere texto e fala na mesma solicitacao."
+    : ""
+}
+${
   enableWebSearch
     ? "Use a busca online para responder fatos atuais, como clima, noticias, precos e resultados. Diferencie claramente fatos encontrados de inferencias e nao invente informacoes que a busca nao confirmou."
     : "Em evidence, cite apenas fatos presentes no contexto ou deixe a lista vazia. Em dataGaps, informe somente dados realmente ausentes e uteis para responder melhor."
@@ -120,7 +136,7 @@ Responda em portugues brasileiro natural, direto e especifico. Evite respostas p
         ...sanitizeHistory(options.history),
         {
           role: "user",
-          content: JSON.stringify(buildModelContext(question, context, localResponse))
+          content: userContent
         }
       ],
       promptCacheKey: options.promptCacheKey,
@@ -152,9 +168,10 @@ Responda em portugues brasileiro natural, direto e especifico. Evite respostas p
                   maxItems: 4,
                   minItems: 1,
                   type: "array"
-                }
+                },
+                ...(hasAudio ? { transcript: { maxLength: 1_000, minLength: 1, type: "string" } } : {})
               },
-              required: ["answer", "dataGaps", "evidence", "intent", "suggestions"],
+              required: ["answer", "dataGaps", "evidence", "intent", "suggestions", ...(hasAudio ? ["transcript"] : [])],
               type: "object"
             },
             strict: true,
@@ -169,7 +186,7 @@ Responda em portugues brasileiro natural, direto e especifico. Evite respostas p
         modeDetail: `IA online ativa com ${completion.model}, busca atual e fontes consultadas.`,
         model: completion.model,
         provider: completion.provider,
-        response: buildWebAssistantResponse(question, localResponse, completion.content, completion.sources),
+        response: buildWebAssistantResponse(contextQuestion, localResponse, completion.content, completion.sources),
         source: "ai"
       };
     }
@@ -180,12 +197,24 @@ Responda em portugues brasileiro natural, direto e especifico. Evite respostas p
       throw new AIProviderError("invalid_response");
     }
 
+    const transcript = hasAudio ? generated.transcript?.trim() : undefined;
+    if (hasAudio && !transcript) {
+      throw new AIProviderError("invalid_response");
+    }
+    const effectiveQuestion = [question.trim(), transcript].filter(Boolean).join("\n");
+    const effectiveLocalResponse = hasAudio
+      ? buildRoutineAssistantResponse({ ...context, question: effectiveQuestion })
+      : localResponse;
+
     return {
-      modeDetail: `IA online ativa com ${completion.model}, contexto da rotina e memoria recente.`,
+      modeDetail: hasAudio
+        ? `IA online ativa com ${completion.model}, audio compreendido e contexto da rotina.`
+        : `IA online ativa com ${completion.model}, contexto da rotina e memoria recente.`,
       model: completion.model,
       provider: completion.provider,
-      response: mergeGeneratedResponse(localResponse, generated),
-      source: "ai"
+      response: mergeGeneratedResponse(effectiveLocalResponse, generated),
+      source: "ai",
+      transcript
     };
   } catch (error) {
     const failure = getAIProviderFailure(error);
@@ -195,6 +224,29 @@ Responda em portugues brasileiro natural, direto e especifico. Evite respostas p
       source: "error"
     };
   }
+}
+
+function buildUserContent(
+  question: string,
+  context: Omit<RoutineAssistantInput, "question">,
+  localResponse: RoutineAssistantResponse,
+  audio: AskAssistantOptions["audio"]
+): string | AIInputContentPart[] {
+  const modelContext = JSON.stringify(buildModelContext(question, context, localResponse));
+  if (!audio) {
+    return modelContext;
+  }
+
+  return [
+    {
+      text: modelContext,
+      type: "input_text"
+    },
+    {
+      audio_data: audio.dataUrl,
+      type: "input_audio"
+    }
+  ];
 }
 
 function buildModelContext(
