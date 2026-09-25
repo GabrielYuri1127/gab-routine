@@ -4,11 +4,14 @@ import { describe, it } from "node:test";
 import {
   buildClassroomAuthUrl,
   CLASSROOM_SCOPES,
+  ClassroomGoogleError,
+  isClassroomReauthorizationRequired,
   mapClassroomCourseWorkType,
   toDateKeyFromClassroomDueDate,
   toTimeFromClassroomDueTime,
   verifyClassroomAccess
 } from "../lib/classroom/google-classroom";
+import { classifyClassroomPersistenceError } from "../lib/classroom/persistence-status";
 import { probeClassroomOAuthClient } from "../lib/classroom/oauth-diagnostics";
 import { getClassroomOAuthFailureQuery } from "../lib/classroom/oauth-callback";
 import { createClassroomOAuthState, verifyClassroomOAuthState } from "../lib/classroom/oauth-state";
@@ -155,6 +158,27 @@ describe("Google Classroom mapping", () => {
       verifyClassroomAccess("access-token", "https://www.googleapis.com/auth/classroom.courses.readonly"),
       /permissions are incomplete/
     );
+  });
+
+  it("only requests reconnection for revoked access or missing permissions", () => {
+    assert.equal(
+      isClassroomReauthorizationRequired(new ClassroomGoogleError("authorization_required", "revoked")),
+      true
+    );
+    assert.equal(
+      isClassroomReauthorizationRequired(new ClassroomGoogleError("permission_required", "scope")),
+      true
+    );
+    assert.equal(
+      isClassroomReauthorizationRequired(new ClassroomGoogleError("temporary_unavailable", "timeout")),
+      false
+    );
+  });
+
+  it("recognizes a missing Classroom persistence table", () => {
+    assert.equal(classifyClassroomPersistenceError({ code: "42P01" }), "schema_missing");
+    assert.equal(classifyClassroomPersistenceError({ code: "PGRST205" }), "schema_missing");
+    assert.equal(classifyClassroomPersistenceError({ code: "08006" }), "unavailable");
   });
 
   it("signs OAuth state and rejects tampering", () => {

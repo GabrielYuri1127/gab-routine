@@ -30,6 +30,21 @@ export interface ClassroomTokenResponse {
   token_type?: string;
 }
 
+export class ClassroomGoogleError extends Error {
+  constructor(
+    public readonly code: "authorization_required" | "configuration_error" | "permission_required" | "temporary_unavailable",
+    message: string
+  ) {
+    super(message);
+    this.name = "ClassroomGoogleError";
+  }
+}
+
+export function isClassroomReauthorizationRequired(error: unknown) {
+  return error instanceof ClassroomGoogleError &&
+    (error.code === "authorization_required" || error.code === "permission_required");
+}
+
 interface ClassroomPage<T> {
   nextPageToken?: string;
   [key: string]: T[] | string | undefined;
@@ -105,7 +120,9 @@ export async function exchangeClassroomCode(code: string, requestUrl: string, en
     method: "POST"
   });
 
-  const payload = (await response.json().catch(() => null)) as (Partial<ClassroomTokenResponse> & { error_description?: string }) | null;
+  const payload = (await response.json().catch(() => null)) as
+    | (Partial<ClassroomTokenResponse> & { error?: string; error_description?: string })
+    | null;
 
   if (!response.ok || !payload?.access_token) {
     throw new Error(payload?.error_description ?? "Google Classroom token exchange failed.");
@@ -134,10 +151,19 @@ export async function refreshClassroomAccessToken(refreshToken: string, env: Cla
     },
     method: "POST"
   });
-  const payload = (await response.json().catch(() => null)) as (Partial<ClassroomTokenResponse> & { error_description?: string }) | null;
+  const payload = (await response.json().catch(() => null)) as
+    | (Partial<ClassroomTokenResponse> & { error?: string; error_description?: string })
+    | null;
 
   if (!response.ok || !payload?.access_token) {
-    throw new Error(payload?.error_description ?? "Google Classroom token refresh failed.");
+    const oauthError = payload?.error;
+    const code =
+      oauthError === "invalid_grant"
+        ? "authorization_required"
+        : oauthError === "invalid_client"
+          ? "configuration_error"
+          : "temporary_unavailable";
+    throw new ClassroomGoogleError(code, payload?.error_description ?? "Google Classroom token refresh failed.");
   }
 
   return payload as ClassroomTokenResponse;
@@ -235,7 +261,7 @@ export async function verifyClassroomAccess(accessToken: string, grantedScope?: 
   const missingScopes = grantedScopes.size ? requiredScopes.filter((scope) => !grantedScopes.has(scope)) : [];
 
   if (missingScopes.length) {
-    throw new Error("Google Classroom permissions are incomplete.");
+    throw new ClassroomGoogleError("permission_required", "Google Classroom permissions are incomplete.");
   }
 
   const coursesUrl = new URL(`${CLASSROOM_API_ORIGIN}/courses`);
@@ -317,7 +343,12 @@ async function fetchClassroomPages<T>(url: URL, accessToken: string, collectionK
     const payload = (await response.json().catch(() => null)) as ClassroomPage<T> | null;
 
     if (!response.ok || !payload) {
-      throw new Error("Google Classroom request failed.");
+      const code = response.status === 401
+        ? "authorization_required"
+        : response.status === 403
+          ? "permission_required"
+          : "temporary_unavailable";
+      throw new ClassroomGoogleError(code, "Google Classroom request failed.");
     }
 
     const pageItems = payload[collectionKey];

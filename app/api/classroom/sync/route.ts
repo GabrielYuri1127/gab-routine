@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getClassroomConnection, markClassroomConnectionSynced } from "@/lib/classroom/classroom-connections";
-import { fetchClassroomImport, refreshClassroomAccessToken } from "@/lib/classroom/google-classroom";
+import {
+  fetchClassroomImport,
+  isClassroomReauthorizationRequired,
+  refreshClassroomAccessToken
+} from "@/lib/classroom/google-classroom";
 import { getSupabaseUserFromRequest } from "@/lib/supabase/server";
 
 const syncSchema = z.object({
@@ -33,9 +37,14 @@ export async function POST(request: Request) {
     await markClassroomConnectionSynced(user.id, connection.connectionId, token.expires_in);
 
     return NextResponse.json({ import: classroomImport });
-  } catch {
+  } catch (error) {
+    const reconnect = isClassroomReauthorizationRequired(error);
     return NextResponse.json(
-      { error: "Nao foi possivel sincronizar. Reconecte esta conta se o acesso do Google tiver expirado." },
+      {
+        error: reconnect
+          ? "O Google encerrou esta autorizacao. Reconecte a conta uma vez para continuar."
+          : "A conta continua salva, mas o Google nao respondeu agora. Tente sincronizar novamente."
+      },
       { status: 502 }
     );
   }

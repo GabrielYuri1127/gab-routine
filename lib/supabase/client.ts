@@ -67,6 +67,31 @@ export function createSupabaseBrowserClient() {
   return browserClient;
 }
 
+export async function getSupabaseAccessToken(options: { forceRefresh?: boolean } = {}) {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  const client = createSupabaseBrowserClient();
+  if (options.forceRefresh) {
+    const { data, error } = await client.auth.refreshSession();
+    return error ? null : (data.session?.access_token ?? null);
+  }
+
+  const { data, error } = await client.auth.getSession();
+  if (error || !data.session) {
+    return null;
+  }
+
+  const expiresAt = data.session.expires_at ?? 0;
+  if (expiresAt && expiresAt <= Math.floor(Date.now() / 1_000) + 60) {
+    const refreshed = await client.auth.refreshSession();
+    return refreshed.error ? null : (refreshed.data.session?.access_token ?? null);
+  }
+
+  return data.session.access_token;
+}
+
 const authStorage = {
   getItem(key: string) {
     return getSelectedStorage()?.getItem(key) ?? null;

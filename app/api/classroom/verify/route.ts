@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { getClassroomConnection, listClassroomConnections } from "@/lib/classroom/classroom-connections";
-import { refreshClassroomAccessToken, verifyClassroomAccess } from "@/lib/classroom/google-classroom";
+import {
+  isClassroomReauthorizationRequired,
+  refreshClassroomAccessToken,
+  verifyClassroomAccess
+} from "@/lib/classroom/google-classroom";
 import { getSupabaseUserFromRequest } from "@/lib/supabase/server";
 import type { ClassroomConnectionVerification } from "@/types/classroom";
 
@@ -33,15 +37,18 @@ export async function GET(request: Request) {
               : "Conexao ativa e permissoes confirmadas. Esta conta nao possui turmas ativas agora.",
             status: "ready"
           };
-        } catch {
+        } catch (error) {
+          const reconnect = isClassroomReauthorizationRequired(error);
           return {
             activeCourses: 0,
             checkedAt: new Date().toISOString(),
             connectionId: summary.connectionId,
             courseworkReadable: false,
             coursesReadable: false,
-            detail: "Nao foi possivel ler turmas e atividades. Reconecte esta conta para renovar as permissoes.",
-            status: "error"
+            detail: reconnect
+              ? "O Google revogou ou expirou esta autorizacao. Reconecte esta conta uma vez."
+              : "A conta continua salva, mas o Google nao respondeu agora. O Gavium tentara novamente.",
+            status: reconnect ? "reconnect" : "unavailable"
           };
         }
       })

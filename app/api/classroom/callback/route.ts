@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { saveClassroomConnection } from "@/lib/classroom/classroom-connections";
+import {
+  ClassroomConnectionStorageError,
+  saveClassroomConnection
+} from "@/lib/classroom/classroom-connections";
 import { exchangeClassroomCode, fetchClassroomImport, fetchGoogleUserInfo } from "@/lib/classroom/google-classroom";
 import { getClassroomOAuthFailureQuery } from "@/lib/classroom/oauth-callback";
 import { verifyClassroomOAuthState } from "@/lib/classroom/oauth-state";
@@ -30,18 +33,17 @@ export async function GET(request: NextRequest) {
     const token = await exchangeClassroomCode(code, request.url);
     const account = await fetchGoogleUserInfo(token.access_token);
     const classroomImport = await fetchClassroomImport(token.access_token, account);
-    let connectionSaved = false;
+    let connectionResult = account ? "import-ready" : "account-error";
 
     if (account) {
       try {
         await saveClassroomConnection(verifiedState.userId, account, token);
-        connectionSaved = true;
-      } catch {
-        connectionSaved = false;
+      } catch (error) {
+        connectionResult = getConnectionFailureQuery(error);
       }
     }
 
-    const response = new NextResponse(renderImportBridge(classroomImport, connectionSaved), {
+    const response = new NextResponse(renderImportBridge(classroomImport, connectionResult), {
       headers: {
         "Content-Type": "text/html; charset=utf-8"
       }
@@ -59,7 +61,17 @@ function redirectToSettings(requestUrl: string, query: string) {
   return response;
 }
 
-function renderImportBridge(payload: unknown, connectionSaved: boolean) {
+function getConnectionFailureQuery(error: unknown) {
+  if (error instanceof ClassroomConnectionStorageError) {
+    if (error.code === "schema_missing") return "storage-schema";
+    if (error.code === "missing_refresh_token") return "token-missing";
+    if (error.code === "not_configured") return "storage-config";
+  }
+
+  return "storage-error";
+}
+
+function renderImportBridge(payload: unknown, connectionResult: string) {
   const serializedPayload = JSON.stringify(payload).replace(/</g, "\\u003c");
 
   return `<!doctype html>
@@ -86,7 +98,7 @@ function renderImportBridge(payload: unknown, connectionSaved: boolean) {
       localStorage.setItem(storageKey, JSON.stringify(nextImport));
       localStorage.setItem(importsKey, JSON.stringify(mergedImports));
       window.location.replace(${JSON.stringify(
-        connectionSaved ? "/configuracoes?classroom=import-ready" : "/configuracoes?classroom=import-ready-local"
+        `/configuracoes?classroom=${connectionResult}`
       )});
     </script>
     <p>Google Classroom conectado. Voltando para as configuracoes...</p>

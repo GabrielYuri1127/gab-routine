@@ -31,7 +31,7 @@ export interface ClassroomConnectionVerification {
   courseworkReadable: boolean;
   coursesReadable: boolean;
   detail: string;
-  status: "ready" | "error";
+  status: "ready" | "reconnect" | "unavailable";
 }
 
 export interface ClassroomCourse {

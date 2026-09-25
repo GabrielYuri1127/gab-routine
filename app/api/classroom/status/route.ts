@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 
+import { getClassroomPersistenceStatus } from "@/lib/classroom/classroom-connections";
 import { CLASSROOM_SCOPES, isClassroomConfigured } from "@/lib/classroom/google-classroom";
 import {
   getClassroomOAuthClientHint,
   probeClassroomOAuthClient,
   type ClassroomOAuthStatus
 } from "@/lib/classroom/oauth-diagnostics";
-import { getSupabaseServerConfig } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 15;
@@ -17,14 +17,15 @@ export async function GET(request: Request) {
   const credentialsConfigured = isClassroomConfigured();
   const oauthStatus = await getOAuthStatus(request.url);
   const configured = credentialsConfigured && oauthStatus === "ready";
-  const cloudConfigured = Boolean(getSupabaseServerConfig()?.secretKey);
+  const persistenceStatus = await getClassroomPersistenceStatus();
 
   return NextResponse.json({
     callbackPath: "/api/classroom/callback",
     clientIdHint: getClassroomOAuthClientHint(),
     configured,
     oauthStatus,
-    persistentConfigured: configured && cloudConfigured,
+    persistenceStatus,
+    persistentConfigured: configured && persistenceStatus === "ready",
     scopes: CLASSROOM_SCOPES
   });
 }

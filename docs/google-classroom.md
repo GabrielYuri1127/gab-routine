@@ -47,6 +47,8 @@ O botao `Adicionar conta Classroom` sempre pede o seletor de conta do Google. Pa
 
 O app usa email/id da conta para separar as previas e marcadores nas disciplinas. Assim uma turma com o mesmo nome em contas diferentes nao fica sem origem.
 
+Enquanto o app OAuth estiver com o status **Testando**, o Google limita o refresh token de escopos do Classroom a sete dias. Isso nao depende do Gavium. Para manter a autorizacao por mais tempo, conclua o branding, publique o app no Google Auth Platform e finalize a verificacao dos escopos sensiveis antes de liberar para usuarios fora da lista de teste.
+
 ## O que entra no app
 
 - Cursos ativos viram disciplinas.
@@ -56,6 +58,7 @@ O app usa email/id da conta para separar as previas e marcadores nas disciplinas
 - Cada conta conectada fica separada na previa antes da importacao.
 - `Sincronizar` busca as mudancas sem exigir um novo login no Google.
 - `Verificar conexoes` renova o token e testa diretamente a leitura de turmas e trabalhos. A tela avisa quando uma conta precisa ser reconectada.
+- Uma indisponibilidade temporaria do Google nao apaga a conexao nem pede uma nova autorizacao; o Gavium preserva o vinculo e tenta novamente.
 - `Desconectar` revoga o acesso no Google e remove a conexao salva.
 - Ao conectar novamente, o Google mostra o seletor de conta.
 - Itens sem data nao viram atividades, porque nao entram bem na agenda.

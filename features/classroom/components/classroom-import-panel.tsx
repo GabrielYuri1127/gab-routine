@@ -13,7 +13,7 @@ import {
   toDateKeyFromClassroomDueDate,
   toTimeFromClassroomDueTime
 } from "@/lib/classroom/google-classroom";
-import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { getSupabaseAccessToken, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { AcademicActivity, AcademicResource } from "@/types/academic";
 import type {
   ClassroomAccount,
@@ -33,6 +33,7 @@ interface ClassroomStatus {
   callbackPath: string;
   configured: boolean;
   oauthStatus?: "invalid_client" | "not_configured" | "ready" | "redirect_mismatch" | "unverified";
+  persistenceStatus?: "not_configured" | "ready" | "schema_missing" | "unavailable";
   persistentConfigured: boolean;
   scopes: string[];
 }
@@ -51,6 +52,7 @@ export function ClassroomImportPanel() {
   const storageUserId = cloud.userId ?? data.userId ?? LOCAL_USER_ID;
   const [status, setStatus] = useState<ClassroomStatus | null>(null);
   const [connections, setConnections] = useState<ClassroomConnectionSummary[]>([]);
+  const [connectionsLoaded, setConnectionsLoaded] = useState(false);
   const [imports, setImports] = useState<ClassroomImportPayload[]>([]);
   const [message, setMessage] = useState("");
   const [verifications, setVerifications] = useState<Record<string, ClassroomConnectionVerification>>({});
@@ -86,17 +88,14 @@ export function ClassroomImportPanel() {
     }
 
     if (isSupabaseConfigured()) {
-      void getClassroomAccessToken()
-        .then((token) =>
-          token
-            ? fetch("/api/classroom/connections", { headers: { Authorization: `Bearer ${token}` } })
-            : Promise.resolve(null)
-        )
+      setConnectionsLoaded(false);
+      void fetchClassroomApi("/api/classroom/connections")
         .then((response) => (response?.ok ? response.json() : null))
         .then((payload: { connections?: ClassroomConnectionSummary[] } | null) => {
           if (active) {
             const nextConnections = payload?.connections ?? [];
             setConnections(nextConnections);
+            setConnectionsLoaded(true);
             if (nextConnections.length) {
               void verifyConnections(nextConnections, false);
             } else {
@@ -106,7 +105,8 @@ export function ClassroomImportPanel() {
         })
         .catch(() => {
           if (active) {
-            setConnections([]);
+            setConnectionsLoaded(true);
+            setMessage("A conexao continua salva, mas nao consegui consulta-la agora. Tente novamente em instantes.");
           }
         });
     }
@@ -119,8 +119,20 @@ export function ClassroomImportPanel() {
     if (query === "import-ready") {
       setMessage("Conta conectada e salva. Revise a previa ou sincronize novamente quando precisar.");
       window.history.replaceState({}, "", window.location.pathname);
-    } else if (query === "import-ready-local") {
-      setMessage("A previa foi carregada, mas a conexao permanente depende do schema e da chave secreta do Supabase.");
+    } else if (query === "storage-schema") {
+      setMessage("A previa foi carregada, mas falta criar a tabela classroom_connections no Supabase para salvar a conexao.");
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (query === "storage-config") {
+      setMessage("A previa foi carregada, mas o armazenamento seguro do Classroom ainda nao esta configurado.");
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (query === "token-missing") {
+      setMessage("O Google nao entregou a chave de renovacao. Remova o acesso antigo do Gavium no Google e conecte novamente uma vez.");
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (query === "account-error") {
+      setMessage("O Google autorizou o acesso, mas nao informou qual conta foi conectada. Tente novamente.");
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (query === "storage-error" || query === "import-ready-local") {
+      setMessage("A previa foi carregada, mas a conexao permanente nao foi salva. Tente conectar novamente.");
       window.history.replaceState({}, "", window.location.pathname);
     } else if (query === "missing") {
       setMessage("Configure as chaves do Google Classroom antes de conectar.");
@@ -195,20 +207,19 @@ export function ClassroomImportPanel() {
     setMessage("");
 
     try {
-      const token = await getClassroomAccessToken();
+      const token = await getSupabaseAccessToken();
       if (!token) {
         setMessage("Entre na sua conta do Gavium antes de conectar o Google Classroom.");
         window.location.assign("/login");
         return;
       }
 
-      const response = await fetch("/api/classroom/connect", {
-        headers: { Authorization: `Bearer ${token}` },
-        method: "POST"
-      });
-      const payload = (await response.json().catch(() => null)) as { error?: string; url?: string } | null;
+      const response = await fetchClassroomApi("/api/classroom/connect", { method: "POST" });
+      const payload = response
+        ? ((await response.json().catch(() => null)) as { error?: string; url?: string } | null)
+        : null;
 
-      if (!response.ok || !payload?.url) {
+      if (!response?.ok || !payload?.url) {
         throw new Error(payload?.error ?? "Nao foi possivel iniciar a conexao.");
       }
 
@@ -224,19 +235,21 @@ export function ClassroomImportPanel() {
     setMessage("");
 
     try {
-      const token = await getClassroomAccessToken();
+      const token = await getSupabaseAccessToken();
       if (!token) {
         throw new Error("Entre novamente no Gavium para sincronizar esta conta.");
       }
 
-      const response = await fetch("/api/classroom/sync", {
+      const response = await fetchClassroomApi("/api/classroom/sync", {
         body: JSON.stringify({ connectionId: connection.connectionId }),
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         method: "POST"
       });
-      const payload = (await response.json().catch(() => null)) as { error?: string; import?: ClassroomImportPayload } | null;
+      const payload = response
+        ? ((await response.json().catch(() => null)) as { error?: string; import?: ClassroomImportPayload } | null)
+        : null;
 
-      if (!response.ok || !payload?.import) {
+      if (!response?.ok || !payload?.import) {
         throw new Error(payload?.error ?? "Nao foi possivel sincronizar esta conta.");
       }
 
@@ -276,19 +289,21 @@ export function ClassroomImportPanel() {
     setMessage("");
 
     try {
-      const token = await getClassroomAccessToken();
+      const token = await getSupabaseAccessToken();
       if (!token) {
         throw new Error("Entre novamente no Gavium para desconectar esta conta.");
       }
 
-      const response = await fetch("/api/classroom/connections", {
+      const response = await fetchClassroomApi("/api/classroom/connections", {
         body: JSON.stringify({ connectionId: connection.connectionId }),
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         method: "DELETE"
       });
-      const payload = (await response.json().catch(() => null)) as { error?: string; removed?: boolean } | null;
+      const payload = response
+        ? ((await response.json().catch(() => null)) as { error?: string; removed?: boolean } | null)
+        : null;
 
-      if (!response.ok || !payload?.removed) {
+      if (!response?.ok || !payload?.removed) {
         throw new Error(payload?.error ?? "Nao foi possivel desconectar esta conta.");
       }
 
@@ -320,20 +335,22 @@ export function ClassroomImportPanel() {
     }
 
     try {
-      const token = await getClassroomAccessToken();
+      const token = await getSupabaseAccessToken();
       if (!token) {
         throw new Error("Entre novamente no Gavium para verificar o Google Classroom.");
       }
 
-      const response = await fetch("/api/classroom/verify", {
+      const response = await fetchClassroomApi("/api/classroom/verify", {
         cache: "no-store",
-        headers: { Authorization: `Bearer ${token}` }
       });
-      const payload = (await response.json().catch(() => null)) as
-        | { error?: string; verifications?: ClassroomConnectionVerification[] }
-        | null;
+      const payload = response
+        ? ((await response.json().catch(() => null)) as {
+            error?: string;
+            verifications?: ClassroomConnectionVerification[];
+          } | null)
+        : null;
 
-      if (!response.ok || !payload?.verifications) {
+      if (!response?.ok || !payload?.verifications) {
         throw new Error(payload?.error ?? "Nao foi possivel verificar o Google Classroom.");
       }
 
@@ -341,11 +358,14 @@ export function ClassroomImportPanel() {
         Object.fromEntries(payload.verifications.map((verification) => [verification.connectionId, verification]))
       );
       if (announce) {
-        const failures = payload.verifications.filter((verification) => verification.status === "error").length;
+        const failures = payload.verifications.filter((verification) => verification.status === "reconnect").length;
+        const unavailable = payload.verifications.filter((verification) => verification.status === "unavailable").length;
         setMessage(
           failures
             ? `${failures} conta(s) precisam ser reconectadas; veja o diagnostico abaixo.`
-            : "Conexao com o Google Classroom verificada: turmas e atividades estao acessiveis."
+            : unavailable
+              ? "As contas continuam salvas. O Google nao respondeu agora e o Gavium tentara novamente."
+              : "Conexao com o Google Classroom verificada: turmas e atividades estao acessiveis."
         );
       }
     } catch (error) {
@@ -358,7 +378,8 @@ export function ClassroomImportPanel() {
   }
 
   const connectionVerifications = connections.map((connection) => verifications[connection.connectionId]).filter(Boolean);
-  const hasVerificationError = connectionVerifications.some((verification) => verification.status === "error");
+  const hasVerificationError = connectionVerifications.some((verification) => verification.status === "reconnect");
+  const hasTemporaryVerificationError = connectionVerifications.some((verification) => verification.status === "unavailable");
   const allConnectionsVerified =
     connections.length > 0 &&
     connectionVerifications.length === connections.length &&
@@ -372,13 +393,17 @@ export function ClassroomImportPanel() {
         ? "Indisponivel"
           : !status.persistentConfigured
             ? "Importacao pronta"
-            : !connections.length
+            : !connectionsLoaded
+              ? "Carregando conexoes"
+              : !connections.length
             ? "Credencial pronta"
             : verifying
               ? "Verificando conexoes"
               : hasVerificationError
                 ? "Reconexao necessaria"
-                : allConnectionsVerified
+                  : hasTemporaryVerificationError
+                    ? "Conta salva"
+                    : allConnectionsVerified
                   ? "Conexoes verificadas"
                   : "Sincronizacao pronta";
   const connectionBadgeTone = oauthNeedsRepair ? "coral" : !status?.configured || hasVerificationError ? "gold" : "mint";
@@ -436,7 +461,7 @@ export function ClassroomImportPanel() {
         </div>
       ) : null}
 
-      {status?.configured && !connections.length ? (
+      {status?.configured && connectionsLoaded && !connections.length ? (
         <div className="mt-4 border-l-2 border-gold bg-gold/5 px-3 py-3 text-sm leading-6 text-slate-700">
           <p>
             Enquanto o OAuth estiver em teste, a conta escolhida no Google precisa estar em <strong>Usuarios de teste</strong>.
@@ -479,7 +504,11 @@ export function ClassroomImportPanel() {
                   {verifications[connection.connectionId] ? (
                     <p
                       className={`mt-1 text-xs ${
-                        verifications[connection.connectionId].status === "ready" ? "text-mint" : "text-coral"
+                        verifications[connection.connectionId].status === "ready"
+                          ? "text-mint"
+                          : verifications[connection.connectionId].status === "reconnect"
+                            ? "text-coral"
+                            : "text-gold"
                       }`}
                     >
                       {verifications[connection.connectionId].detail}
@@ -579,13 +608,30 @@ export function ClassroomImportPanel() {
   );
 }
 
-async function getClassroomAccessToken() {
-  if (!isSupabaseConfigured()) {
+async function fetchClassroomApi(input: string, init: RequestInit = {}) {
+  let token = await getSupabaseAccessToken();
+  if (!token) {
     return null;
   }
 
-  const { data } = await createSupabaseBrowserClient().auth.getSession();
-  return data.session?.access_token ?? null;
+  const send = (accessToken: string) =>
+    fetch(input, {
+      ...init,
+      headers: {
+        ...Object.fromEntries(new Headers(init.headers).entries()),
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
+
+  let response = await send(token);
+  if (response.status === 401) {
+    token = await getSupabaseAccessToken({ forceRefresh: true });
+    if (token) {
+      response = await send(token);
+    }
+  }
+
+  return response;
 }
 
 function formatSyncDate(value: string) {

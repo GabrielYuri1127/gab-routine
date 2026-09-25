@@ -3,8 +3,21 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import type { ClassroomAccount, ClassroomConnectionSummary } from "@/types/classroom";
 import type { ClassroomTokenResponse } from "./google-classroom";
+import { classifyClassroomPersistenceError } from "./persistence-status";
 
 const CONNECTIONS_TABLE = "classroom_connections";
+
+export type ClassroomPersistenceStatus = "not_configured" | "ready" | "schema_missing" | "unavailable";
+
+export class ClassroomConnectionStorageError extends Error {
+  constructor(
+    public readonly code: "missing_refresh_token" | "not_configured" | "schema_missing" | "write_failed",
+    message: string
+  ) {
+    super(message);
+    this.name = "ClassroomConnectionStorageError";
+  }
+}
 
 interface ClassroomConnectionRow {
   connected_at: string;
@@ -28,19 +41,29 @@ export async function saveClassroomConnection(
   account: ClassroomAccount,
   token: ClassroomTokenResponse
 ): Promise<ClassroomConnectionSummary> {
-  const client = createSupabaseServiceClient();
-  const { data: existing } = await client
+  let client;
+  try {
+    client = createSupabaseServiceClient();
+  } catch {
+    throw new ClassroomConnectionStorageError("not_configured", "Classroom connection storage is not configured.");
+  }
+
+  const { data: existing, error: existingError } = await client
     .from(CONNECTIONS_TABLE)
     .select("refresh_token_encrypted")
     .eq("user_id", userId)
     .eq("google_account_id", account.id)
     .maybeSingle();
+
+  if (existingError && classifyClassroomPersistenceError(existingError) === "schema_missing") {
+    throw new ClassroomConnectionStorageError("schema_missing", "The Classroom connections table is missing.");
+  }
   const encryptedRefreshToken = token.refresh_token
     ? encryptToken(token.refresh_token)
     : (existing as Pick<ClassroomConnectionRow, "refresh_token_encrypted"> | null)?.refresh_token_encrypted;
 
   if (!encryptedRefreshToken) {
-    throw new Error("Google did not return an offline refresh token.");
+    throw new ClassroomConnectionStorageError("missing_refresh_token", "Google did not return an offline refresh token.");
   }
 
   const now = new Date().toISOString();
@@ -67,10 +90,27 @@ export async function saveClassroomConnection(
     .single();
 
   if (error || !data) {
-    throw new Error("Could not save the Classroom connection.");
+    const code = classifyClassroomPersistenceError(error) === "schema_missing" ? "schema_missing" : "write_failed";
+    throw new ClassroomConnectionStorageError(code, "Could not save the Classroom connection.");
   }
 
   return rowToSummary(data as ClassroomConnectionRow);
+}
+
+export async function getClassroomPersistenceStatus(): Promise<ClassroomPersistenceStatus> {
+  let client;
+  try {
+    client = createSupabaseServiceClient();
+  } catch {
+    return "not_configured";
+  }
+
+  const { error } = await client.from(CONNECTIONS_TABLE).select("id", { count: "exact", head: true }).limit(1);
+  if (!error) {
+    return "ready";
+  }
+
+  return classifyClassroomPersistenceError(error);
 }
 
 export async function listClassroomConnections(userId: string): Promise<ClassroomConnectionSummary[]> {
