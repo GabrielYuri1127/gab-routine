@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SupportWhatsAppCard } from "@/components/support-whatsapp-card";
 import { ClassroomImportPanel } from "@/features/classroom/components/classroom-import-panel";
 import { AppPreferencesPanel } from "@/features/settings/components/app-preferences-panel";
+import { AdminAccessPanel } from "@/features/settings/components/admin-access-panel";
 import { DataTools } from "@/features/settings/components/data-tools";
 import { PushNotificationsPanel } from "@/features/settings/components/push-notifications-panel";
 import { PwaInstallPanel } from "@/features/settings/components/pwa-install-panel";
@@ -25,6 +26,7 @@ export default function SettingsPage() {
       <PwaInstallPanel />
       <DataTools />
       <ClassroomImportPanel />
+      <AdminAccessPanel />
       <SupportWhatsAppCard />
 
       <Link className="flex h-11 w-full items-center justify-center rounded-lg border border-line bg-white text-sm font-medium text-foreground" href="/mais">

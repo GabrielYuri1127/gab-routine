@@ -258,6 +258,32 @@ create table if not exists public.classroom_connections (
 
 create index if not exists classroom_connections_user_id_idx on public.classroom_connections(user_id);
 
+create table if not exists public.admin_access_grants (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  can_edit boolean not null default false,
+  granted_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  revoked_at timestamptz,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.admin_audit_log (
+  id uuid primary key default gen_random_uuid(),
+  actor_user_id uuid not null references auth.users(id) on delete cascade,
+  actor_label text not null,
+  target_user_id uuid not null references auth.users(id) on delete cascade,
+  action text not null,
+  summary text not null,
+  changes jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists admin_access_grants_active_idx
+  on public.admin_access_grants(expires_at)
+  where revoked_at is null;
+create index if not exists admin_audit_log_target_idx
+  on public.admin_audit_log(target_user_id, created_at desc);
+
 alter table public.semesters enable row level security;
 alter table public.routine_snapshots enable row level security;
 alter table public.subjects enable row level security;
@@ -281,8 +307,183 @@ alter table public.routines enable row level security;
 alter table public.routine_items enable row level security;
 alter table public.ai_usage enable row level security;
 alter table public.classroom_connections enable row level security;
+alter table public.admin_access_grants enable row level security;
+alter table public.admin_audit_log enable row level security;
 
 -- Classroom refresh tokens are server-only; no browser RLS policy is created for this table.
+
+drop policy if exists "manage own admin grant" on public.admin_access_grants;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'admin_access_grants' and policyname = 'read own admin grant'
+  ) then
+    create policy "read own admin grant"
+      on public.admin_access_grants for select
+      using (auth.uid() = user_id);
+  end if;
+
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'admin_audit_log' and policyname = 'read own admin audit'
+  ) then
+    create policy "read own admin audit"
+      on public.admin_audit_log for select
+      using (auth.uid() = target_user_id);
+  end if;
+end $$;
+
+create or replace function public.set_admin_access_grant(
+  p_user_id uuid,
+  p_enabled boolean,
+  p_can_edit boolean,
+  p_expires_at timestamptz,
+  p_summary text,
+  p_changes jsonb default '{}'::jsonb
+)
+returns table(
+  user_id uuid,
+  can_edit boolean,
+  granted_at timestamptz,
+  expires_at timestamptz,
+  revoked_at timestamptz,
+  updated_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_now timestamptz := now();
+begin
+  insert into public.admin_access_grants as existing_grant (
+    user_id,
+    can_edit,
+    granted_at,
+    expires_at,
+    revoked_at,
+    updated_at
+  ) values (
+    p_user_id,
+    p_enabled and p_can_edit,
+    v_now,
+    case when p_enabled then p_expires_at else v_now end,
+    case when p_enabled then null else v_now end,
+    v_now
+  )
+  on conflict (user_id) do update
+  set can_edit = excluded.can_edit,
+      granted_at = case when p_enabled then v_now else existing_grant.granted_at end,
+      expires_at = excluded.expires_at,
+      revoked_at = excluded.revoked_at,
+      updated_at = v_now;
+
+  insert into public.admin_audit_log (
+    actor_user_id,
+    actor_label,
+    target_user_id,
+    action,
+    summary,
+    changes
+  ) values (
+    p_user_id,
+    'Proprio usuario',
+    p_user_id,
+    case when p_enabled then 'access_granted' else 'access_revoked' end,
+    p_summary,
+    coalesce(p_changes, '{}'::jsonb)
+  );
+
+  return query
+  select
+    grant_row.user_id,
+    grant_row.can_edit,
+    grant_row.granted_at,
+    grant_row.expires_at,
+    grant_row.revoked_at,
+    grant_row.updated_at
+  from public.admin_access_grants as grant_row
+  where grant_row.user_id = p_user_id;
+end;
+$$;
+
+revoke all on function public.set_admin_access_grant(
+  uuid, boolean, boolean, timestamptz, text, jsonb
+) from public, anon, authenticated;
+grant execute on function public.set_admin_access_grant(
+  uuid, boolean, boolean, timestamptz, text, jsonb
+) to service_role;
+
+create or replace function public.apply_authorized_admin_routine_edit(
+  p_actor_user_id uuid,
+  p_actor_label text,
+  p_target_user_id uuid,
+  p_expected_updated_at timestamptz,
+  p_next_data jsonb,
+  p_action text,
+  p_summary text,
+  p_changes jsonb default '{}'::jsonb
+)
+returns table(data jsonb, updated_at timestamptz)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_data jsonb;
+  v_updated_at timestamptz;
+begin
+  if not exists (
+    select 1
+    from public.admin_access_grants
+    where user_id = p_target_user_id
+      and can_edit = true
+      and revoked_at is null
+      and expires_at > now()
+  ) then
+    raise exception 'admin_edit_not_authorized' using errcode = '42501';
+  end if;
+
+  update public.routine_snapshots
+  set data = p_next_data,
+      updated_at = now()
+  where user_id = p_target_user_id
+    and updated_at = p_expected_updated_at
+  returning routine_snapshots.data, routine_snapshots.updated_at
+  into v_data, v_updated_at;
+
+  if not found then
+    raise exception 'routine_snapshot_changed' using errcode = '40001';
+  end if;
+
+  insert into public.admin_audit_log (
+    actor_user_id,
+    actor_label,
+    target_user_id,
+    action,
+    summary,
+    changes
+  ) values (
+    p_actor_user_id,
+    p_actor_label,
+    p_target_user_id,
+    p_action,
+    p_summary,
+    coalesce(p_changes, '{}'::jsonb)
+  );
+
+  return query select v_data, v_updated_at;
+end;
+$$;
+
+revoke all on function public.apply_authorized_admin_routine_edit(
+  uuid, text, uuid, timestamptz, jsonb, text, text, jsonb
+) from public, anon, authenticated;
+grant execute on function public.apply_authorized_admin_routine_edit(
+  uuid, text, uuid, timestamptz, jsonb, text, text, jsonb
+) to service_role;
 
 do $$
 declare

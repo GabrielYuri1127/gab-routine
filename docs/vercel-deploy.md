@@ -45,9 +45,12 @@ Para Supabase:
 NEXT_PUBLIC_SUPABASE_URL=sua_url_supabase
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sua_chave_publicavel
 SUPABASE_SECRET_KEY=sua_chave_secreta
+GAVIUM_ADMIN_EMAILS=admin@seu-dominio.com
 ```
 
 Depois de criar ou trocar essas variaveis, aplique `supabase/schema.sql` no SQL Editor do Supabase. `routine_snapshots`, `classroom_connections` e as politicas RLS sao necessarias para separar os dados e conexoes de cada usuario.
+
+`GAVIUM_ADMIN_EMAILS` aceita um ou mais emails separados por virgula. Use uma conta exclusiva, nao adicione esse email ao codigo e nunca prefixe a variavel com `NEXT_PUBLIC_`. Depois que o usuario autorizar o suporte nas configuracoes, a conta administrativa acessa `/admin`; toda edicao fica registrada no historico do usuario.
 
 Para notificacoes push no Android:
 

@@ -26,6 +26,7 @@ Na Vercel:
 NEXT_PUBLIC_SUPABASE_URL=sua_url_supabase
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sua_chave_publicavel
 SUPABASE_SECRET_KEY=sua_chave_secreta
+GAVIUM_ADMIN_EMAILS=admin@seu-dominio.com
 ```
 
 Use `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` no navegador. Use `SUPABASE_SECRET_KEY` somente no servidor, porque ela permite que as rotas protegidas salvem notificacoes, limites da IA e conexoes do Classroom.
@@ -50,6 +51,8 @@ Se os dados misturarem, pare e confira se `supabase/schema.sql` foi executado in
 - `routine_snapshots`: guarda o estado completo do app por usuario.
 - `push_subscriptions`: guarda os aparelhos que aceitaram notificacoes.
 - `classroom_connections`: guarda por usuario apenas os metadados e o refresh token criptografado das contas Google conectadas.
+- `admin_access_grants`: guarda o consentimento temporario de cada usuario para receber suporte.
+- `admin_audit_log`: registra autorizacoes, revogacoes e alteracoes feitas pelo administrador.
 - `tasks`, `reminders`, `subjects`, `grades` e outras tabelas ficam preparadas para sincronizacao granular futura.
 
 ## Regras De Seguranca
@@ -57,3 +60,11 @@ Se os dados misturarem, pare e confira se `supabase/schema.sql` foi executado in
 Todas as tabelas principais usam `user_id` e Row Level Security. A politica `own rows` limita leitura e escrita para o dono dos dados. `classroom_connections` nao tem politica para o navegador: somente rotas autenticadas do servidor podem acessa-la.
 
 Nunca coloque `SUPABASE_SECRET_KEY` no frontend, no README publico com valor real, nem em variavel `NEXT_PUBLIC_`.
+
+## Conta Administrativa
+
+Use uma conta normal do Gavium criada somente para administracao. Depois, salve o email dessa conta em `GAVIUM_ADMIN_EMAILS` na Vercel e faca um novo deploy. Para mais de uma conta administrativa, separe os emails por virgula.
+
+O email administrativo fica apenas no servidor. Nao use `NEXT_PUBLIC_` nessa variavel e nao coloque emails reais no codigo-fonte.
+
+O painel fica em `/admin`, mas uma conta so aparece nele quando o proprio usuario ativa `Acesso de suporte` nas configuracoes. O usuario escolhe de 1 a 30 dias, decide se permite apenas consulta ou tambem edicao e pode revogar a qualquer momento. Mesmo com autorizacao de edicao, o administrador nao consegue alterar senha, login ou credenciais do Google Classroom.
