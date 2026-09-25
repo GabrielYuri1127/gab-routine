@@ -8,9 +8,12 @@ export function PwaRegister() {
       return;
     }
 
-    navigator.serviceWorker.register("/sw.js").catch(() => {
-      // PWA registration is best-effort; the app remains usable without it.
-    });
+    navigator.serviceWorker
+      .register("/sw.js", { updateViaCache: "none" })
+      .then((registration) => registration.update())
+      .catch(() => {
+        // PWA registration is best-effort; the app remains usable without it.
+      });
   }, []);
 
   return null;

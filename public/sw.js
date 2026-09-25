@@ -1,5 +1,6 @@
-const CACHE_NAME = "gavium-v5";
+const CACHE_NAME = "gavium-v6";
 const APP_SHELL = ["/", "/faculdade", "/manifest.webmanifest", "/icons/icon-192.png", "/brand/gavium-mark.svg"];
+const CACHEABLE_DESTINATIONS = new Set(["font", "image", "manifest", "script", "style"]);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -23,6 +24,10 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (event.request.headers.get("RSC") === "1" || url.searchParams.has("_rsc")) {
+    return;
+  }
+
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request)
@@ -38,23 +43,26 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) {
-        return cached;
-      }
+  if (CACHEABLE_DESTINATIONS.has(event.request.destination)) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) {
+          return cached;
+        }
 
-      return fetch(event.request)
-        .then((response) => {
+        return fetch(event.request).then((response) => {
           if (response.ok && response.type === "basic") {
             const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+            return caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put(event.request, copy))
+              .then(() => response);
           }
           return response;
-        })
-        .catch(() => caches.match("/"));
-    })
-  );
+        });
+      })
+    );
+  }
 });
 
 self.addEventListener("push", (event) => {
