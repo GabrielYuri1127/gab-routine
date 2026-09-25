@@ -7,6 +7,7 @@ import {
   ClassroomGoogleError,
   isClassroomReauthorizationRequired,
   mapClassroomCourseWorkType,
+  toClassroomDeadline,
   toDateKeyFromClassroomDueDate,
   toTimeFromClassroomDueTime,
   verifyClassroomAccess
@@ -28,6 +29,17 @@ describe("Google Classroom mapping", () => {
     assert.equal(toDateKeyFromClassroomDueDate({ day: 9, month: 9, year: 2026 }), "2026-09-09");
     assert.equal(toTimeFromClassroomDueTime({ hours: 8, minutes: 5 }), "08:05");
     assert.equal(toTimeFromClassroomDueTime(undefined), undefined);
+  });
+
+  it("converts Classroom UTC deadlines to the app timezone", () => {
+    assert.deepEqual(
+      toClassroomDeadline(
+        { day: 26, month: 9, year: 2026 },
+        { hours: 3, minutes: 30 },
+        "America/Manaus"
+      ),
+      { date: "2026-09-25", time: "23:30" }
+    );
   });
 
   it("maps Classroom work types to academic activity types", () => {

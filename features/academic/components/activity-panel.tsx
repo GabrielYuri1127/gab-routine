@@ -303,7 +303,7 @@ export function ActivityPanel({ subject }: { subject: Subject }) {
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-foreground">{activity.title}</p>
                   <p className="mt-1 text-xs text-slate-500">
-                    {typeLabels[activity.type]} - {formatDate(activity.dueDate)} {activity.time ? `as ${activity.time}` : ""}
+                    {typeLabels[activity.type]} - {formatDate(activity.dueDate)} - {activity.time ? `as ${activity.time}` : "sem horario informado"}
                   </p>
                 </div>
                 <Badge tone={tone}>{isDone(activity) ? statusLabels[activity.status] : urgencyLabel(urgency)}</Badge>

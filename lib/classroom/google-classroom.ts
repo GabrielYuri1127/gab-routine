@@ -1,4 +1,5 @@
 import type { ActivityType } from "@/types/academic";
+import { APP_TIME_ZONE } from "../date";
 import type {
   ClassroomAccount,
   ClassroomCourse,
@@ -297,6 +298,50 @@ export function toTimeFromClassroomDueTime(dueTime?: ClassroomTime) {
   }
 
   return `${pad(dueTime.hours ?? 23)}:${pad(dueTime.minutes ?? 59)}`;
+}
+
+export function toClassroomDeadline(
+  dueDate?: ClassroomDate,
+  dueTime?: ClassroomTime,
+  timeZone = APP_TIME_ZONE
+) {
+  const utcDate = toDateKeyFromClassroomDueDate(dueDate);
+  if (!utcDate) {
+    return undefined;
+  }
+
+  if (!dueTime) {
+    return { date: utcDate, time: undefined };
+  }
+
+  const instant = new Date(
+    Date.UTC(
+      dueDate?.year ?? 0,
+      (dueDate?.month ?? 1) - 1,
+      dueDate?.day ?? 1,
+      dueTime.hours ?? 0,
+      dueTime.minutes ?? 0,
+      dueTime.seconds ?? 0
+    )
+  );
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      day: "2-digit",
+      hour: "2-digit",
+      hourCycle: "h23",
+      minute: "2-digit",
+      month: "2-digit",
+      timeZone,
+      year: "numeric"
+    })
+      .formatToParts(instant)
+      .map((part) => [part.type, part.value])
+  );
+
+  return {
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    time: `${parts.hour}:${parts.minute}`
+  };
 }
 
 export function mapClassroomCourseWorkType(workType?: string): ActivityType {

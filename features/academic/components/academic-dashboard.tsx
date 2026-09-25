@@ -385,7 +385,7 @@ function Overview({
                   </span>
                   <span className="text-right text-xs font-medium text-slate-600">
                     {formatShortDate(activity.dueDate)}
-                    {activity.time ? ` · ${activity.time}` : ""}
+                    {activity.time ? ` · ${activity.time}` : " · sem horario"}
                   </span>
                 </Link>
               ))

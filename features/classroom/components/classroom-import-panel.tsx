@@ -5,22 +5,14 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LOCAL_USER_ID, type RoutineData } from "@/features/data/seed";
-import { createId, useRoutineData } from "@/features/data/routine-store";
-import { createUfamRules } from "@/lib/academic-rules/ufam";
-import {
-  mapClassroomCourseWorkType,
-  toDateKeyFromClassroomDueDate,
-  toTimeFromClassroomDueTime
-} from "@/lib/classroom/google-classroom";
+import { LOCAL_USER_ID } from "@/features/data/seed";
+import { useRoutineData } from "@/features/data/routine-store";
+import { toDateKeyFromClassroomDueDate } from "@/lib/classroom/google-classroom";
+import { mergeClassroomPayload, type ClassroomImportSummary } from "@/lib/classroom/import-routine";
 import { getSupabaseAccessToken, isSupabaseConfigured } from "@/lib/supabase/client";
-import type { AcademicActivity, AcademicResource } from "@/types/academic";
 import type {
-  ClassroomAccount,
   ClassroomConnectionVerification,
   ClassroomConnectionSummary,
-  ClassroomCourse,
-  ClassroomCourseWork,
   ClassroomImportPayload
 } from "@/types/classroom";
 
@@ -37,15 +29,6 @@ interface ClassroomStatus {
   persistentConfigured: boolean;
   scopes: string[];
 }
-
-interface ImportResult {
-  activities: number;
-  resources: number;
-  skipped: number;
-  subjects: number;
-}
-
-const subjectColors = ["#0f9f7a", "#2b7fff", "#e35d45", "#b7791f", "#7c3aed", "#0891b2"];
 
 export function ClassroomImportPanel() {
   const { cloud, data, hydrated, replaceData } = useRoutineData();
@@ -117,7 +100,14 @@ export function ClassroomImportPanel() {
 
     const query = new URLSearchParams(window.location.search).get("classroom");
     if (query === "import-ready") {
-      setMessage("Conta conectada e salva. Revise a previa ou sincronize novamente quando precisar.");
+      const latestImport = storedImports[0];
+      if (latestImport) {
+        const result = mergeClassroomPayload(data, latestImport);
+        replaceData(result.data);
+        setMessage(`${formatImportMessage(result.summary, getAccountLabel(latestImport))} A conta ficou salva para as proximas sincronizacoes.`);
+      } else {
+        setMessage("Conta conectada e salva. Sincronize para buscar as atividades.");
+      }
       window.history.replaceState({}, "", window.location.pathname);
     } else if (query === "storage-schema") {
       setMessage("A previa foi carregada, mas falta criar a tabela classroom_connections no Supabase para salvar a conexao.");
@@ -188,13 +178,22 @@ export function ClassroomImportPanel() {
   }
 
   function importAll() {
-    const total: ImportResult = { activities: 0, resources: 0, skipped: 0, subjects: 0 };
+    const total: ClassroomImportSummary = {
+      activities: 0,
+      reminders: 0,
+      resources: 0,
+      skipped: 0,
+      subjects: 0,
+      updated: 0
+    };
     const mergedData = imports.reduce((currentData, item) => {
       const result = mergeClassroomPayload(currentData, item);
       total.activities += result.summary.activities;
+      total.reminders += result.summary.reminders;
       total.resources += result.summary.resources;
       total.skipped += result.summary.skipped;
       total.subjects += result.summary.subjects;
+      total.updated += result.summary.updated;
       return result.data;
     }, data);
 
@@ -240,22 +239,11 @@ export function ClassroomImportPanel() {
         throw new Error("Entre novamente no Gavium para sincronizar esta conta.");
       }
 
-      const response = await fetchClassroomApi("/api/classroom/sync", {
-        body: JSON.stringify({ connectionId: connection.connectionId }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST"
-      });
-      const payload = response
-        ? ((await response.json().catch(() => null)) as { error?: string; import?: ClassroomImportPayload } | null)
-        : null;
-
-      if (!response?.ok || !payload?.import) {
-        throw new Error(payload?.error ?? "Nao foi possivel sincronizar esta conta.");
-      }
+      const classroomImport = await requestClassroomImport(connection);
 
       const nextImports = [
-        payload.import,
-        ...imports.filter((item) => getImportKey(item) !== getImportKey(payload.import as ClassroomImportPayload))
+        classroomImport,
+        ...imports.filter((item) => getImportKey(item) !== getImportKey(classroomImport))
       ].slice(0, 8);
       saveStoredImports(storageUserId, nextImports);
       setImports(nextImports);
@@ -267,18 +255,99 @@ export function ClassroomImportPanel() {
       setVerifications((current) => ({
         ...current,
         [connection.connectionId]: {
-          activeCourses: payload.import?.courses.length ?? 0,
+          activeCourses: classroomImport.courses.length,
           checkedAt: new Date().toISOString(),
           connectionId: connection.connectionId,
           courseworkReadable: true,
           coursesReadable: true,
-          detail: `Conexao ativa: ${payload.import?.courses.length ?? 0} turma(s) sincronizada(s) e leitura de atividades confirmada.`,
+          detail: `Conexao ativa: ${classroomImport.courses.length} turma(s) sincronizada(s) e leitura de atividades confirmada.`,
           status: "ready"
         }
       }));
-      setMessage(`Sincronizei ${getAccountLabel(payload.import)}. A previa esta pronta para importar.`);
+      const result = mergeClassroomPayload(data, classroomImport);
+      replaceData(result.data);
+      setMessage(`Sincronizei ${getAccountLabel(classroomImport)}. ${formatImportMessage(result.summary, getAccountLabel(classroomImport))}`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Nao foi possivel sincronizar esta conta.");
+    } finally {
+      setWorkingId("");
+    }
+  }
+
+  async function syncAllConnections() {
+    setWorkingId("sync-all");
+    setMessage("");
+
+    try {
+      const token = await getSupabaseAccessToken();
+      if (!token) {
+        throw new Error("Entre novamente no Gavium para sincronizar as contas.");
+      }
+
+      let mergedData = data;
+      let nextImports = imports;
+      const total: ClassroomImportSummary = {
+        activities: 0,
+        reminders: 0,
+        resources: 0,
+        skipped: 0,
+        subjects: 0,
+        updated: 0
+      };
+      const syncedConnectionIds = new Set<string>();
+      const failedAccounts: string[] = [];
+      const nextVerifications = { ...verifications };
+
+      for (const connection of connections) {
+        try {
+          const classroomImport = await requestClassroomImport(connection);
+          nextImports = [
+            classroomImport,
+            ...nextImports.filter((item) => getImportKey(item) !== getImportKey(classroomImport))
+          ].slice(0, 8);
+          const result = mergeClassroomPayload(mergedData, classroomImport);
+          mergedData = result.data;
+          total.activities += result.summary.activities;
+          total.reminders += result.summary.reminders;
+          total.resources += result.summary.resources;
+          total.skipped += result.summary.skipped;
+          total.subjects += result.summary.subjects;
+          total.updated += result.summary.updated;
+          syncedConnectionIds.add(connection.connectionId);
+          nextVerifications[connection.connectionId] = {
+            activeCourses: classroomImport.courses.length,
+            checkedAt: new Date().toISOString(),
+            connectionId: connection.connectionId,
+            courseworkReadable: true,
+            coursesReadable: true,
+            detail: `Conexao ativa: ${classroomImport.courses.length} turma(s) sincronizada(s) e leitura de atividades confirmada.`,
+            status: "ready"
+          };
+        } catch {
+          failedAccounts.push(connection.email ?? connection.name ?? "Conta Google");
+        }
+      }
+
+      if (!syncedConnectionIds.size) {
+        throw new Error("Nao foi possivel sincronizar nenhuma conta do Classroom agora.");
+      }
+
+      const syncedAt = new Date().toISOString();
+      saveStoredImports(storageUserId, nextImports);
+      setImports(nextImports);
+      replaceData(mergedData);
+      setConnections((current) =>
+        current.map((item) =>
+          syncedConnectionIds.has(item.connectionId) ? { ...item, lastSyncedAt: syncedAt } : item
+        )
+      );
+      setVerifications(nextVerifications);
+      setMessage(
+        `Sincronizei ${syncedConnectionIds.size} conta(s). ${formatImportMessage(total, "todas as contas")}` +
+          (failedAccounts.length ? ` Nao consegui atualizar: ${failedAccounts.join(", ")}.` : "")
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Nao foi possivel sincronizar as contas.");
     } finally {
       setWorkingId("");
     }
@@ -446,6 +515,13 @@ export function ClassroomImportPanel() {
           <Button disabled={verifying || Boolean(workingId)} onClick={() => void verifyConnections()} variant="secondary">
             <ShieldCheck aria-hidden className={`h-4 w-4 ${verifying ? "animate-pulse" : ""}`} />
             {verifying ? "Verificando..." : "Verificar conexoes"}
+          </Button>
+        ) : null}
+
+        {connections.length > 1 ? (
+          <Button disabled={verifying || Boolean(workingId)} onClick={syncAllConnections} variant="secondary">
+            <RefreshCw aria-hidden className={`h-4 w-4 ${workingId === "sync-all" ? "animate-spin" : ""}`} />
+            {workingId === "sync-all" ? "Sincronizando..." : "Sincronizar todas"}
           </Button>
         ) : null}
 
@@ -634,6 +710,23 @@ async function fetchClassroomApi(input: string, init: RequestInit = {}) {
   return response;
 }
 
+async function requestClassroomImport(connection: ClassroomConnectionSummary) {
+  const response = await fetchClassroomApi("/api/classroom/sync", {
+    body: JSON.stringify({ connectionId: connection.connectionId }),
+    headers: { "Content-Type": "application/json" },
+    method: "POST"
+  });
+  const payload = response
+    ? ((await response.json().catch(() => null)) as { error?: string; import?: ClassroomImportPayload } | null)
+    : null;
+
+  if (!response?.ok || !payload?.import) {
+    throw new Error(payload?.error ?? `Nao foi possivel sincronizar ${connection.email ?? connection.name ?? "esta conta"}.`);
+  }
+
+  return payload.import;
+}
+
 function formatSyncDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -714,201 +807,6 @@ function isImportPayload(value: ClassroomImportPayload) {
   return Boolean(value && Array.isArray(value.courses) && value.fetchedAt);
 }
 
-function mergeClassroomPayload(data: RoutineData, payload: ClassroomImportPayload) {
-  const nextSubjects = [...data.subjects];
-  const summary: ImportResult = { activities: 0, resources: 0, skipped: 0, subjects: 0 };
-
-  payload.courses.forEach((item, index) => {
-    const marker = getCourseMarker(item.course, payload.account);
-    const legacyMarker = `Google Classroom: ${item.course.id}`;
-    const existingIndex = nextSubjects.findIndex(
-      (subject) =>
-        subject.observations?.includes(marker) ||
-        subject.observations?.includes(legacyMarker) ||
-        (!payload.account && normalizeName(subject.name) === normalizeName(item.course.name))
-    );
-    const existingSubject = existingIndex >= 0 ? nextSubjects[existingIndex] : undefined;
-    const subjectId = existingSubject?.id ?? createId("classroom-subject");
-    const activities = [...(existingSubject?.activities ?? [])];
-    const resources = [...(existingSubject?.resources ?? [])];
-    const courseResource = buildResourceFromCourse(item.course, subjectId, payload.account, resources);
-
-    if (courseResource) {
-      resources.unshift(courseResource);
-      summary.resources += 1;
-    }
-
-    item.courseWork.forEach((work) => {
-      const activity = buildActivityFromCourseWork(work, subjectId, payload.account, activities);
-      if (activity) {
-        activities.unshift(activity);
-        summary.activities += 1;
-        return;
-      }
-
-      const resource = buildResourceFromCourseWork(work, subjectId, payload.account, resources);
-      if (resource) {
-        resources.unshift(resource);
-        summary.resources += 1;
-      } else {
-        summary.skipped += 1;
-      }
-    });
-
-    if (existingSubject) {
-      nextSubjects[existingIndex] = {
-        ...existingSubject,
-        code: existingSubject.code ?? item.course.section,
-        observations: mergeNotes(existingSubject.observations, buildCourseNotes(item.course, payload.account)),
-        room: existingSubject.room ?? item.course.room,
-        activities,
-        resources
-      };
-      return;
-    }
-
-    nextSubjects.unshift({
-      id: subjectId,
-      name: item.course.name,
-      code: item.course.section,
-      room: item.course.room,
-      semester: data.appPreference.defaultSemester,
-      workloadHours: data.appPreference.defaultWorkloadHours,
-      color: subjectColors[index % subjectColors.length],
-      status: "active",
-      rules: createUfamRules({ classesPerMeeting: data.appPreference.defaultClassesQuantity }),
-      schedules: [],
-      attendance: [],
-      grades: [],
-      activities,
-      resources,
-      observations: buildCourseNotes(item.course, payload.account)
-    });
-    summary.subjects += 1;
-  });
-
-  return {
-    data: {
-      ...data,
-      userId: data.userId || LOCAL_USER_ID,
-      subjects: nextSubjects
-    },
-    summary
-  };
-}
-
-function buildResourceFromCourse(
-  course: ClassroomCourse,
-  subjectId: string,
-  account: ClassroomAccount | undefined,
-  currentResources: AcademicResource[]
-) {
-  if (!course.alternateLink) {
-    return undefined;
-  }
-
-  const marker = getCourseMarker(course, account);
-  if (hasResourceMarker(currentResources, marker) || currentResources.some((resource) => resource.url === course.alternateLink)) {
-    return undefined;
-  }
-
-  return {
-    createdAt: new Date().toISOString(),
-    id: createId("classroom-resource"),
-    notes: buildCourseNotes(course, account),
-    subjectId,
-    title: `Classroom - ${course.name}`,
-    type: "classroom",
-    url: course.alternateLink
-  } satisfies AcademicResource;
-}
-
-function buildActivityFromCourseWork(
-  work: ClassroomCourseWork,
-  subjectId: string,
-  account: ClassroomAccount | undefined,
-  currentActivities: AcademicActivity[]
-) {
-  const dueDate = toDateKeyFromClassroomDueDate(work.dueDate);
-  if (!dueDate) {
-    return undefined;
-  }
-
-  const marker = getCourseWorkMarker(work, account);
-  const legacyMarker = `Google Classroom: ${work.courseId}/${work.id}`;
-  const duplicated = currentActivities.some(
-    (activity) =>
-      activity.notes?.includes(marker) ||
-      activity.notes?.includes(legacyMarker) ||
-      (normalizeName(activity.title) === normalizeName(work.title) && activity.dueDate === dueDate)
-  );
-
-  if (duplicated) {
-    return undefined;
-  }
-
-  return {
-    id: createId("classroom-activity"),
-    subjectId,
-    title: work.title,
-    dueDate,
-    time: toTimeFromClassroomDueTime(work.dueTime) ?? "23:59",
-    type: mapClassroomCourseWorkType(work.workType),
-    status: "not_started",
-    maxScore: work.maxPoints,
-    description: work.description,
-    notes: [marker, work.alternateLink ? `Link: ${work.alternateLink}` : ""].filter(Boolean).join("\n")
-  } satisfies AcademicActivity;
-}
-
-function buildResourceFromCourseWork(
-  work: ClassroomCourseWork,
-  subjectId: string,
-  account: ClassroomAccount | undefined,
-  currentResources: AcademicResource[]
-) {
-  if (!work.alternateLink && !work.description) {
-    return undefined;
-  }
-
-  const marker = getCourseWorkMarker(work, account);
-  const legacyMarker = `Google Classroom: ${work.courseId}/${work.id}`;
-  const duplicated = hasResourceMarker(currentResources, marker) || hasResourceMarker(currentResources, legacyMarker);
-
-  if (duplicated) {
-    return undefined;
-  }
-
-  return {
-    createdAt: new Date().toISOString(),
-    id: createId("classroom-resource"),
-    notes: [marker, work.description].filter(Boolean).join("\n"),
-    subjectId,
-    title: work.title,
-    type: work.workType === "MATERIAL" ? "document" : "classroom",
-    url: work.alternateLink
-  } satisfies AcademicResource;
-}
-
-function buildCourseNotes(course: ClassroomCourse, account?: ClassroomAccount) {
-  return [
-    getCourseMarker(course, account),
-    account?.email ? `Conta: ${account.email}` : "",
-    course.descriptionHeading ? `Descricao: ${course.descriptionHeading}` : "",
-    course.alternateLink ? `Link: ${course.alternateLink}` : ""
-  ]
-    .filter(Boolean)
-    .join("\n");
-}
-
-function getCourseMarker(course: ClassroomCourse, account?: ClassroomAccount) {
-  return `Google Classroom${account?.email ? ` (${account.email})` : ""}: ${course.id}`;
-}
-
-function getCourseWorkMarker(work: ClassroomCourseWork, account?: ClassroomAccount) {
-  return `Google Classroom${account?.email ? ` (${account.email})` : ""}: ${work.courseId}/${work.id}`;
-}
-
 function getAccountLabel(payload: ClassroomImportPayload) {
   const account = payload.account;
   if (!account) {
@@ -937,33 +835,8 @@ function getImportTotals(payload: ClassroomImportPayload) {
   return { courses, courseWork, datedCourseWork };
 }
 
-function formatImportMessage(summary: ImportResult, accountLabel: string) {
-  return `Importei ${summary.subjects} disciplina(s), ${summary.activities} atividade(s) e ${summary.resources} material(is) de ${accountLabel}. ${summary.skipped} item(ns) ja existiam ou nao tinham dado util.`;
-}
-
-function mergeNotes(current: string | undefined, next: string) {
-  if (!current) {
-    return next;
-  }
-
-  const nextMarker = next.split("\n")[0];
-  if (current.includes(next) || current.includes(nextMarker)) {
-    return current;
-  }
-
-  return `${current}\n${next}`;
-}
-
-function normalizeName(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLowerCase();
-}
-
-function hasResourceMarker(resources: AcademicResource[], marker: string) {
-  return resources.some((resource) => resource.notes?.includes(marker));
+function formatImportMessage(summary: ClassroomImportSummary, accountLabel: string) {
+  return `Importei ${summary.subjects} disciplina(s), ${summary.activities} atividade(s), ${summary.reminders} lembrete(s) e ${summary.resources} material(is) de ${accountLabel}. Atualizei ${summary.updated} entrega(s); ${summary.skipped} item(ns) nao tinham prazo ou dado novo.`;
 }
 
 function getClassroomUnavailableMessage(status: ClassroomStatus["oauthStatus"]) {
