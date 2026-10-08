@@ -1,8 +1,46 @@
-# Gavium
+# Gab Routine | Gavium
 
 <p align="center">
   <img src="public/brand/gavium-logo.svg" alt="Gavium" width="420" />
 </p>
+
+**Projeto pessoal de organizacao da rotina e da vida academica**, criado para reunir aulas, faltas, notas, tarefas e compromissos em um unico aplicativo. O repositorio conserva o nome `gab-routine`; Gavium e o nome atual do produto.
+
+[Aplicacao online](https://gab-routine.vercel.app) · [Case study](portfolio/case-study.md) · [Decisoes tecnicas](portfolio/arquitetura.md)
+
+![Tela inicial do Gavium em modo local](portfolio/images/desktop.png)
+
+<details>
+<summary>Ver a interface no celular</summary>
+<img src="portfolio/images/mobile.png" alt="Gavium no celular em modo local" width="320" />
+</details>
+
+## Apresentacao Do Projeto
+
+| Aspecto | Descricao |
+| --- | --- |
+| Problema | Informacoes do semestre e do dia a dia espalhadas em varias ferramentas. |
+| Solucao | Uma agenda pessoal com regras academicas, historico editavel e assistente contextual. |
+| Tipo | Projeto pessoal, com foco em uso no celular e instalacao como PWA. |
+| Base tecnica | Next.js, React, TypeScript, Tailwind CSS e Supabase. |
+| Estado | Aplicacao funcional. Login, IA online, Classroom e push exigem configuracao dos respectivos servicos. |
+
+Para avaliar rapidamente o codigo, veja as [decisoes tecnicas](portfolio/arquitetura.md), o [case study](portfolio/case-study.md), o [roteiro de demonstracao](portfolio/roteiro-de-apresentacao.md) e a [verificacao local](portfolio/validacao.md). A pasta [`__tests__/`](__tests__/) reune testes das regras academicas, importacoes, integracoes e assistente.
+
+## Executar Uma Demonstracao Local
+
+Requisitos: Node.js 20.9 ou superior e npm. Use uma versao LTS compativel.
+
+```bash
+git clone https://github.com/GabrielYuri1127/gab-routine.git
+cd gab-routine
+npm ci
+npm run dev
+```
+
+Abra `http://localhost:3000`. Sem configurar servicos externos, e possivel explorar as telas e a persistencia local. As credenciais opcionais ficam em `.env.local`, a partir de `.env.example`; os guias abaixo explicam como ativar cada integracao.
+
+## Visao Geral
 
 Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, faltas, notas, atividades, tarefas, compromissos e lembretes. A base atual entrega persistencia local, calendario mensal, telas editaveis, backup local, login Supabase com dados separados por usuario, PWA Android, notificacoes push preparadas e assistente com comandos automaticos.
 
