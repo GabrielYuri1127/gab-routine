@@ -6,6 +6,8 @@
 
 **Projeto pessoal de organizacao da rotina e da vida academica**, criado para reunir aulas, faltas, notas, tarefas e compromissos em um unico aplicativo. O repositorio conserva o nome `gab-routine`; Gavium e o nome atual do produto.
 
+**Responsavel pelo projeto:** [Gabriel Yuri Cavalcante de Castro](https://github.com/GabrielYuri1127).
+
 [Aplicacao online](https://gab-routine.vercel.app) · [Case study](portfolio/case-study.md) · [Decisoes tecnicas](portfolio/arquitetura.md)
 
 ![Tela inicial do Gavium em modo local](portfolio/images/desktop.png)
