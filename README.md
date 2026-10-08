@@ -25,7 +25,7 @@
 | Solucao | Uma agenda pessoal com regras academicas, historico editavel e assistente contextual. |
 | Tipo | Projeto pessoal, com foco em uso no celular e instalacao como PWA. |
 | Base tecnica | Next.js, React, TypeScript, Tailwind CSS e Supabase. |
-| Estado | Aplicacao funcional. Login, IA online, Classroom e push exigem configuracao dos respectivos servicos. |
+| Estado | Modo local verificado. Login, administracao, IA online, Classroom e push dependem de configuracao e validacao com os respectivos servicos. |
 
 Para avaliar rapidamente o codigo, veja as [decisoes tecnicas](portfolio/arquitetura.md), o [case study](portfolio/case-study.md), o [roteiro de demonstracao](portfolio/roteiro-de-apresentacao.md) e a [verificacao local](portfolio/validacao.md). A pasta [`__tests__/`](__tests__/) reune testes das regras academicas, importacoes, integracoes e assistente.
 
@@ -44,7 +44,7 @@ Abra `http://localhost:3000`. Sem configurar servicos externos, e possivel explo
 
 ## Visao Geral
 
-Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, faltas, notas, atividades, tarefas, compromissos e lembretes. A base atual entrega persistencia local, calendario mensal, telas editaveis, backup local, login Supabase com dados separados por usuario, PWA Android, notificacoes push preparadas e assistente com comandos automaticos.
+Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, faltas, notas, atividades, tarefas, compromissos e lembretes. A base inclui persistencia local, calendario mensal, telas editaveis, backup local e assistente por regras. O codigo tambem inclui integracoes com Supabase, provedores de IA, Google Classroom e Web Push, que precisam ser configuradas separadamente.
 
 ## Stack
 
@@ -54,21 +54,12 @@ Aplicativo pessoal e academico mobile-first para organizar rotina, faculdade, fa
 - Componentes locais inspirados em shadcn/ui
 - Lucide Icons
 - Zod
-- Supabase free para cadastro, login e persistencia em nuvem por usuario
+- Supabase para cadastro, login e persistencia em nuvem por usuario
 - PWA com manifest, service worker e icone maskable para Android
 - Web Push para lembretes no Android com VAPID, Supabase Cron e acionamento manual de emergencia
 - Google Classroom via OAuth somente leitura, com varias contas persistentes por usuario
 - Tutorial interno e perfil personalizavel para uso por outras pessoas
 - Suporte por WhatsApp com link direto
-
-## Como Rodar
-
-```bash
-npm install
-npm run dev
-```
-
-Depois abra `http://localhost:3000`.
 
 ## Verificacao
 
@@ -118,9 +109,9 @@ CLASSROOM_TOKEN_ENCRYPTION_KEY=
 
 O arquivo `supabase/schema.sql` prepara as tabelas principais, cria `routine_snapshots` para salvar o estado completo do app por pessoa e habilita RLS por `user_id`.
 
-Uso pessoal gratuito recomendado:
+Configuracao:
 
-- Crie um projeto no plano gratuito do Supabase.
+- Crie um projeto no Supabase.
 - Rode `supabase/schema.sql` no SQL Editor.
 - Ative autenticacao por email e senha.
 - Configure as variaveis `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
@@ -128,14 +119,20 @@ Uso pessoal gratuito recomendado:
 
 Sem essas variaveis, o app continua funcionando em modo local com `localStorage`, mas nao e o modo ideal para compartilhar com varias pessoas.
 
-Veja `docs/supabase-setup.md` para configurar e testar duas contas sem misturar dados.
+Veja [docs/supabase-setup.md](docs/supabase-setup.md) para configurar e testar duas contas sem misturar dados.
+
+## Painel Administrativo
+
+A rota `/admin` oferece suporte a contas que autorizaram acesso temporario em `Configuracoes > Acesso de suporte`. A implementacao verifica o papel administrativo, o prazo e a permissao de edicao no servidor, e registra as alteracoes em uma tabela de auditoria.
+
+Esse recurso depende do Supabase, do schema atualizado, da chave de servidor e da configuracao de administradores. Nao e um painel disponivel no modo local nem uma demonstracao de acesso irrestrito a todas as contas. Veja [docs/admin-access.md](docs/admin-access.md). O fluxo com contas reais nao foi validado nesta revisao.
 
 ## PWA Android
 
 O app ja inclui:
 
 - `public/manifest.webmanifest`
-- icone normal e maskable em SVG
+- icones PNG de instalacao, incluindo a versao maskable
 - `public/sw.js` com cache basico e estrutura inicial para push
 - painel de notificacoes em `/configuracoes`
 - inscricao de aparelho com Supabase
@@ -168,13 +165,15 @@ A arquitetura inicial fica em:
 - `lib/ai/command-parser.ts`
 - `services/ai/`
 
-O Assistente usa IA online e aceita OpenAI, Gemini ou as duas em contingencia. A configuracao recomendada e `AI_PROVIDER=auto`: o servidor usa primeiro o Gemini economico e troca automaticamente para a OpenAI quando necessario. Se um modelo do Gemini deixar de estar liberado para a chave, o servidor consulta os modelos disponiveis e seleciona uma alternativa compativel. Perguntas que dependem de informacao atual, como clima, noticias, precos e resultados, ativam busca online seletiva e exibem as fontes consultadas; perguntas sobre a rotina continuam no caminho contextual mais economico. As regras internas fornecem contexto confiavel e validam comandos antes de salvar dados; elas nao substituem a resposta online. As chaves nunca vao para o navegador, o acesso exige login quando Supabase esta ativo e existe um limite temporario por usuario.
+Quando configurado com credenciais de servidor, o Assistente pode usar OpenAI, Gemini ou ambos em contingencia. Com `AI_PROVIDER=auto` e as duas chaves, o codigo prioriza Gemini e tenta OpenAI se houver falha. Tambem ha implementacao de busca online seletiva com exibicao de fontes e validacao de comandos antes de alterar a rotina.
+
+Sem provedor configurado ou quando o servico nao pode ser usado, o assistente recorre a respostas e comandos por regras locais, com capacidades mais limitadas. As chaves privadas dos provedores ficam no servidor. A resposta online exige login quando Supabase esta configurado e aplica limitacao de uso. A integracao com provedores reais nao foi testada na verificacao local.
 
 Veja `docs/ai-setup.md` antes de configurar a IA na Vercel.
 
 ## Google Classroom
 
-A tela `/configuracoes` conecta varias contas do Google Classroom, salva os acessos de forma criptografada no servidor e permite verificar ao vivo as permissoes, sincronizar novamente, revisar a previa, importar e desconectar cada conta. Cursos ativos viram disciplinas e trabalhos datados viram atividades. Veja `docs/google-classroom.md` para configurar OAuth, Supabase e Vercel.
+Com OAuth e Supabase configurados, a tela `/configuracoes` permite conectar varias contas do Google Classroom, salvar os acessos de forma criptografada no servidor, consultar permissoes, sincronizar, revisar a previa, importar e desconectar cada conta. Cursos ativos viram disciplinas e trabalhos datados viram atividades. Veja [docs/google-classroom.md](docs/google-classroom.md) para configurar OAuth, Supabase e Vercel. A verificacao local nao incluiu contas Google reais.
 
 ## Publicacao
 
@@ -188,20 +187,22 @@ A rota `/tutorial` mostra o caminho inicial para configurar o app, cadastrar dis
 
 O material apresentavel fica em `portfolio/`, com case study, ferramentas do projeto, roteiro de apresentacao e roadmap.
 
-## Deploy Gratuito Na Vercel
+## Deploy Na Vercel
 
 1. Suba o projeto para um repositorio Git.
 2. Importe na Vercel.
-3. Configure as variaveis gratuitas quando Supabase/IA/push forem ativados.
+3. Configure as variaveis de ambiente das integracoes que forem utilizadas.
 4. Use o build padrao: `npm run build`.
 
-## Entregue
+## Recursos No Codigo
+
+Esta lista descreve a implementacao existente, nao a ativacao de todos os servicos na aplicacao publicada. Os limites e resultados da verificacao estao em [portfolio/validacao.md](portfolio/validacao.md).
 
 - Home Hoje com proximo item, agenda do dia, compromissos, pendencias, lembretes e resumo da faculdade.
 - `/assistente` com IA online contextual, busca atual seletiva, fontes visiveis, memoria curta e comandos automaticos quando os dados estao claros.
 - Navegacao mobile com botao central de acao rapida.
 - `/faculdade` com busca, filtros por status, cards com atalhos e cadastro detalhado.
-- `/faculdade` com importacao inteligente de horario, historico, analitico e matriz curricular em PDF ou imagem, revisao editavel e mesclagem sem duplicar disciplinas.
+- `/faculdade` com importacao de horario, historico, analitico e matriz curricular em PDF ou imagem, revisao editavel e mesclagem de disciplinas. O resultado da extracao deve ser conferido antes de salvar.
 - `/faculdade/[id]` com detalhes, acoes rapidas, faltas, notas, simulador, atividades e gerenciamento.
 - Faltas em registros individuais com modo rapido/completo, data passada, atalhos de aulas recentes, historico editavel e desfazer.
 - Personalizacao de disciplina com professor, sala, semestre, status, observacoes, cor, horarios e regras academicas.
@@ -218,7 +219,8 @@ O material apresentavel fica em `portfolio/`, com case study, ferramentas do pro
 - Suporte por WhatsApp em `/configuracoes`, `/mais` e `/tutorial`.
 - Marca visual propria com icone PWA, icone maskable e logo horizontal em SVG.
 - Perfil personalizavel com nome do app, usuario, cor, padroes academicos, modulos e estilo da IA.
-- `/login` com Supabase Auth real, cadastro, confirmacao de email, recuperacao/troca de senha e dados separados por usuario.
+- `/login` com integracao Supabase Auth, cadastro, confirmacao de email, recuperacao/troca de senha e dados separados por usuario quando configurado.
+- `/admin` com acesso temporario autorizado pelo usuario e auditoria de alteracoes, dependente de Supabase e configuracao administrativa.
 - Notificacoes push no Android com inscricao de dispositivo, teste manual e dispatch seguro de lembretes.
 - Persistencia local via `localStorage`.
 - Calculos academicos reutilizaveis em `lib/academic-rules`.

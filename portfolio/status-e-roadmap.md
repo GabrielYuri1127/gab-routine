@@ -2,9 +2,9 @@
 
 ## Status Atual
 
-O Gavium ja tem uma versao funcional para uso pessoal, testes com outras pessoas e apresentacao em portfolio.
+O Gavium tem uma versao local verificada e integracoes implementadas no codigo. Este documento separa implementacao, configuracao externa e possibilidades futuras. Consulte [validacao.md](validacao.md) para saber o que foi efetivamente testado; nao foi feita uma auditoria da configuracao de producao.
 
-## Pronto
+## Implementado No Codigo
 
 - Interface mobile-first.
 - Tela Hoje.
@@ -18,7 +18,7 @@ O Gavium ja tem uma versao funcional para uso pessoal, testes com outras pessoas
 - Lembretes.
 - Calendario.
 - Assistente hibrido com logica local, contexto da rotina, memoria curta e fallback automatico.
-- Integracao de IA online pela OpenAI Responses API, pronta para ativacao por variaveis de ambiente.
+- Integracoes de IA online com OpenAI e Gemini, dependentes de credenciais e disponibilidade dos provedores.
 - Comandos automaticos para faltas, notas, atividades, tarefas, lembretes e compromissos, incluindo conclusao e reagendamento de tarefas.
 - Protecao da IA por login, limite temporario por usuario, timeout e identificador anonimizado.
 - Personalizacao do app.
@@ -31,15 +31,17 @@ O Gavium ja tem uma versao funcional para uso pessoal, testes com outras pessoas
 - Google Classroom com OAuth somente leitura, multiplas contas persistentes, sincronizacao manual e desconexao individual.
 - Login Supabase com dados separados por usuario quando configurado.
 - Cadastro com perfil inicial, sessao opcional por dispositivo e recuperacao/troca de senha.
+- Administracao com consentimento temporario do usuario e auditoria de alteracoes.
 - Deploy via GitHub e Vercel.
 
-## Em Andamento Ou Preparado
+## Dependente De Configuracao E Validacao
 
-- Ativacao do Google Classroom em producao e teste real com contas institucionais.
-- Configuracao final das variaveis no ambiente de producao.
-- Ativacao e teste da IA online com uma chave real apenas no servidor.
-- Validacao com amigos e familiares.
-- Configuracao de VAPID, Supabase service role e secrets do GitHub para disparo automatico de push em producao.
+- Conferencia das variaveis, schema e permissoes no ambiente de producao.
+- Teste de login, isolamento de dados e consentimento administrativo com contas reais.
+- Teste de Google Classroom com OAuth e contas institucionais autorizadas.
+- Teste de IA online com credenciais apenas no servidor.
+- Teste de Web Push com VAPID, Supabase, agendamento e dispositivo compativel.
+- Avaliacao de uso com outras pessoas, sem resultado de usabilidade registrado nesta verificacao.
 
 ## Futuro
 

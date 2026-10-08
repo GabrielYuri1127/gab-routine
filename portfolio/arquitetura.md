@@ -12,6 +12,7 @@ O modo local salva a rotina no navegador. Quando configurado, `services/persiste
 | --- | --- | --- |
 | Rotina e regras academicas | `lib/academic-rules/`, `features/data/` | Modo local disponivel sem credenciais externas. |
 | Login e nuvem | Supabase Auth e repositorio de persistencia | Variaveis de ambiente, schema e autenticacao configurados. |
+| Administracao com consentimento | `app/admin/`, `app/api/admin/`, `lib/admin/` | Supabase, schema, credencial de servidor, papel administrativo e autorizacao temporaria do usuario. |
 | Assistente | `services/ai/`, `lib/ai/`, `app/api/assistant/` | IA online depende de provedor e chave no servidor. |
 | Google Classroom | `app/api/classroom/` e guias em `docs/` | OAuth, credenciais e permissao da conta Google. |
 | Lembretes push | `services/notifications/`, `app/api/notifications/` | HTTPS, chaves VAPID e agendamento configurados. |
@@ -37,7 +38,7 @@ npm test
 npm run build
 ```
 
-Esses comandos verificam tipos, regras de lint, testes automatizados e compilacao. Eles nao substituem testes com contas reais de Supabase, Google Classroom, provedores de IA ou dispositivos com notificacoes push.
+Esses comandos verificam tipos, regras de lint, testes automatizados e compilacao. Eles nao substituem testes com contas reais de Supabase, acesso administrativo, Google Classroom, provedores de IA ou dispositivos com notificacoes push.
 
 ## Proximos Passos
 

@@ -22,13 +22,14 @@
 - Assistente local por regras para funcionar sem chave externa.
 - Parser local de comandos com execucao automatica quando os dados estao claros.
 - Rota `/api/assistant` para resposta no servidor.
-- Preparacao para OpenAI API com resposta estruturada em JSON.
+- Integracoes com OpenAI e Gemini, com resposta estruturada e fallback local quando o provedor nao pode ser usado.
 
 ## Integracoes
 
 - Google Classroom API.
 - Google OAuth para conexao de contas.
 - Supabase para login, cadastro e persistencia em nuvem quando configurado.
+- Painel administrativo dependente de Supabase, papel administrativo e consentimento temporario do usuario.
 - Vercel para deploy.
 
 ## Mobile E PWA
